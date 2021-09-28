@@ -1,8 +1,9 @@
 {
   "name": "vscode-webdriverio",
   "displayName": "vscode-webdriverio",
-  "description": "A VSCode extension for WebdriverIO+",
+  "description": "A VSCode extension for WebdriverIO",
   "version": "0.0.1",
+  "publisher": "webdriverio",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -10,7 +11,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-webdriverio.helloWorld"
+    "onCommand:vscode-webdriverio.helloWorld",
+    "onView:webdriverio"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -18,8 +20,56 @@
       {
         "command": "vscode-webdriverio.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "webdriverio.refreshEntry",
+        "title": "Refresh",
+        "icon": {
+            "light": "resources/light/refresh.svg",
+            "dark": "resources/dark/refresh.svg"
+        }
       }
-    ]
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "webdriverio",
+          "name": "WebdriverIO",
+          "icon": "assets/logo-webdriver-io.svg"
+        }
+      ],
+      "webdriverio": [
+        {
+          "id": "webdriverio-explorer",
+          "name": "WebdriverIO",
+          "icon": "assets/logo-webdriver-io.svg",
+          "contextualTitle": "WebdriverIO"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "webdriverio",
+          "title": "WebdriverIO Testrunner",
+          "icon": "assets/logo-webdriver-io.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+            "command": "webdriverio.refreshEntry",
+            "when": "view == webdriverio",
+            "group": "navigation"
+        }
+      ]
+    }  
+  },
+  "icon": "assets/webdriverio.svg",
+  "galleryBanner": {
+    "color": "#ea5906",
+    "theme": "light"
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
