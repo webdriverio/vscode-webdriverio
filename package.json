@@ -12,14 +12,25 @@
   ],
   "activationEvents": [
     "onCommand:vscode-webdriverio.helloWorld",
-    "onView:webdriverio"
+    "onView:webdriverio-config-treeview"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vscode-webdriverio.helloWorld",
-        "title": "Hello World"
+        "command": "webdriverio.showOutput",
+        "icon": "$(terminal)",
+        "title": "WebdriverIO: Show Extension Output"
+      },
+      {
+        "command": "webdriverio.config-explorer.refreshEntry",
+        "icon": "$(gear)",
+        "title": "WebdriverIO: Update Configuration List"
+      },
+      {
+        "command": "webdriverio.testrunner.run",
+        "icon": "$(play)",
+        "title": "WebdriverIO: Run"
       },
       {
         "command": "webdriverio.refreshEntry",
@@ -31,19 +42,18 @@
       }
     ],
     "views": {
-      "explorer": [
-        {
-          "id": "webdriverio",
-          "name": "WebdriverIO",
-          "icon": "assets/logo-webdriver-io.svg"
-        }
-      ],
+      "explorer": [],
       "webdriverio": [
         {
-          "id": "webdriverio-explorer",
-          "name": "WebdriverIO",
+          "id": "webdriverio.config-explorer",
+          "name": "Configurations",
           "icon": "assets/logo-webdriver-io.svg",
-          "contextualTitle": "WebdriverIO"
+          "contextualTitle": "WebdriverIO Testrunner"
+        },
+        {
+          "id": "webdriverio-config-treeview",
+          "name": "WebdriverIO is here",
+          "icon": "assets/logo-webdriver-io.svg"
         }
       ]
     },
@@ -62,6 +72,13 @@
             "command": "webdriverio.refreshEntry",
             "when": "view == webdriverio",
             "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "webdriverio.testrunner.run",
+          "when": "viewItem == wdioConfig",
+          "group": "inline"
         }
       ]
     }  
