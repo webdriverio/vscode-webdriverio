@@ -1,6 +1,6 @@
 import {
     TreeDataProvider, EventEmitter, Event, TreeItem, window, TreeItemCollapsibleState, ThemeIcon,
-    Disposable, commands
+    Disposable, commands, Command
 } from 'vscode';
 import * as fs from 'fs/promises';
 
@@ -10,10 +10,11 @@ import { getCurrentWorkspaceFolderUri } from '../utils';
 
 const CONFIG_REGEX = /^wdio\.(.*)\.(ts|js)$/;
 const viewId = 'config-explorer';
+type ItemTypes = ConfigFileItem | AddNewConfigItem;
 
-export class ConfigFileProvider implements TreeDataProvider<ConfigFile> {
-    private _onDidChangeTreeData: EventEmitter<ConfigFile | undefined | null | void> = new EventEmitter<ConfigFile | undefined | null | void>();
-    readonly onDidChangeTreeData: Event<ConfigFile | undefined | null | void> = this._onDidChangeTreeData.event;
+export class ConfigFileProvider implements TreeDataProvider<ItemTypes> {
+    private _onDidChangeTreeData: EventEmitter<ItemTypes | undefined | null | void> = new EventEmitter<ItemTypes | undefined | null | void>();
+    readonly onDidChangeTreeData: Event<ItemTypes | undefined | null | void> = this._onDidChangeTreeData.event;
 
     private log = LoggerService.get();
     private _workspaceRoot = getCurrentWorkspaceFolderUri();
@@ -32,18 +33,24 @@ export class ConfigFileProvider implements TreeDataProvider<ConfigFile> {
             
             // commands
             commands.registerCommand(`${plugin}.${viewId}.refreshEntry`,
-                () => treeDataProvider.refresh())
+                () => treeDataProvider.refresh()),
+            commands.registerCommand(`${plugin}.${viewId}.addConfig`,
+                () => treeDataProvider.addConfig())
         );
 
         return disposables;
     }
 
-    getTreeItem(element: ConfigFile): TreeItem {
+    getTreeItem(element: ConfigFileItem): TreeItem {
         return element;
     }
 
     refresh(): void {
         this._onDidChangeTreeData.fire();
+    }
+
+    addConfig(): void {
+        window.showInformationMessage('Add Config');
     }
 
     async getChildren() {
@@ -57,16 +64,29 @@ export class ConfigFileProvider implements TreeDataProvider<ConfigFile> {
             { withFileTypes: true }
         );
         
-        /**
-         * ToDo(Christian): allow to create a config if none exist
-         */
-        return rootFiles.filter((d) => (
+        const configFiles = rootFiles.filter((d) => (
             d.isFile() && d.name.match(CONFIG_REGEX)
-        )).map((d) => new ConfigFile(d.name.match(CONFIG_REGEX)![1], d.name));
+        )).map((d) => new ConfigFileItem(d.name.match(CONFIG_REGEX)![1], d.name));
+
+        /**
+         * if no config is in the project, offer to add one
+         */
+        if (configFiles.length === 0) {
+            const newConfigFileEntry = new AddNewConfigItem(
+                'Add New Config...',
+                {
+                    title: 'Add new configuration file...',
+                    command: `${plugin}.${viewId}.addConfig`
+                }
+            );
+            return [newConfigFileEntry];
+        }
+
+        return configFiles;
     }
 }
 
-class ConfigFile extends TreeItem {
+class ConfigFileItem extends TreeItem {
     constructor(
         public readonly label: string,
         private fileName: string
@@ -78,4 +98,16 @@ class ConfigFile extends TreeItem {
     }
 
     iconPath = new ThemeIcon('gear');
+}
+
+class AddNewConfigItem extends TreeItem {
+    constructor(
+        public readonly label: string,
+        public readonly command: Command
+    ) {
+        super(label, TreeItemCollapsibleState.None);
+        this.command = command;
+    }
+
+    iconPath = new ThemeIcon('plus');
 }
