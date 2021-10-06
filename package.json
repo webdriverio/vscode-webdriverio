@@ -12,7 +12,8 @@
   ],
   "activationEvents": [
     "onCommand:vscode-webdriverio.helloWorld",
-    "onView:webdriverio-config-treeview"
+    "onView:webdriverio-config-treeview",
+    "onCustomEditor:webdriverio.configFileEditor"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -36,8 +37,8 @@
         "command": "webdriverio.refreshEntry",
         "title": "Refresh",
         "icon": {
-            "light": "resources/light/refresh.svg",
-            "dark": "resources/dark/refresh.svg"
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
         }
       }
     ],
@@ -66,12 +67,26 @@
         }
       ]
     },
+    "customEditors": [
+      {
+        "viewType": "webdriverio.configFileEditor",
+        "displayName": "WebdriverIO Configuration",
+        "selector": [
+          {
+            "filenamePattern": "wdio.*.js"
+          },
+          {
+            "filenamePattern": "wdio.*.ts"
+          }
+        ]
+      }
+    ],
     "menus": {
       "view/title": [
         {
-            "command": "webdriverio.refreshEntry",
-            "when": "view == webdriverio",
-            "group": "navigation"
+          "command": "webdriverio.refreshEntry",
+          "when": "view == webdriverio",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
@@ -81,7 +96,7 @@
           "group": "inline"
         }
       ]
-    }  
+    }
   },
   "icon": "assets/webdriverio.svg",
   "galleryBanner": {
@@ -108,5 +123,9 @@
     "glob": "^7.1.7",
     "mocha": "^9.1.1",
     "typescript": "^4.4.3"
+  },
+  "dependencies": {
+    "@wdio/types": "^7.14.1",
+    "ts-node": "^10.2.1"
   }
 }

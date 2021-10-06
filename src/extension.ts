@@ -4,6 +4,7 @@ import { showOutput } from './commands/show-output';
 import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
 import { ConfigFileProvider } from './provider/config-file';
+import { ConfigfileEditorProvider } from './editor/configfile';
 import { NodeDependenciesProvider } from './TreeDataProvider';
 
 const disposables: Disposable[] = [];
@@ -20,7 +21,9 @@ export function activate(ctx: ExtensionContext) {
 		// views
 		...ConfigFileProvider.register(),
 		// services
-		...Testrunner.register()
+		...Testrunner.register(),
+		// editors
+		...ConfigfileEditorProvider.register(ctx),
 	);
 
 	const nodeDependenciesProvider = new NodeDependenciesProvider(workspace.workspaceFolders![0].uri.path);
