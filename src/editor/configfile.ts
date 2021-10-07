@@ -11,7 +11,8 @@ import {
   WebviewPanel,
   window,
   Webview,
-  Uri
+  Uri,
+  commands
 } from 'vscode';
 import { register } from 'ts-node';
 import type { Options } from '@wdio/types';
@@ -23,6 +24,11 @@ import { plugin } from '../constants';
 const ROOT = path.join(__dirname, '..', '..');
 const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
 const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'configfile.tpl.html')).toString();
+
+interface Event {
+    type: 'command',
+    args: any
+}
 
 /**
  * load partials
@@ -37,6 +43,7 @@ fs.readdirSync(path.join(TPL_ROOT, 'partials'), { withFileTypes: true })
 export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
     private disposables: Disposable[] = [];
     private log: LoggerService = LoggerService.get();
+    private _document?: TextDocument;
 
     public static readonly viewType = `${plugin}.configFileEditor`;
 
@@ -60,6 +67,8 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         webviewPanel: WebviewPanel,
         token: CancellationToken
     ): Promise<void> {
+        this._document = document;
+
         if (token.isCancellationRequested) {
             return;
         }
@@ -70,17 +79,25 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         const { webview } = webviewPanel;
         webview.options = { enableScripts: true };
         webview.html = await this._getHtmlForWebview(webview, await this._getDocumentAsJson(document));
+        webview.onDidReceiveMessage(this._onMessage.bind(this));
     }
 
     private async _getHtmlForWebview(webview: Webview, config?: Options.Testrunner) {
         const { cspSource } = webview;
         const nonce = crypto.randomBytes(16).toString('base64');
-        const scripts = [
-            this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ])
-        ];
+        const scripts = [{
+            src: this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ]),
+            defer: false
+        }, {
+            src: this._assetUri(webview, ['src', 'editor', 'templates', 'js', 'configfile.js']),
+            defer: true
+        }];
         const stylesheets = [{
             id: 'vscode-codicon-stylesheet',
             href: this._assetUri(webview, ['node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'])
+        }, {
+            id: 'vscode-configfile-stylesheet',
+            href: this._assetUri(webview, ['src', 'editor', 'templates', 'css', 'configfile.css'])
         }];
         this.log.debug(config);
         try {
@@ -92,6 +109,16 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         } catch (err: any) {
             window.showErrorMessage(`Couldn't open WebdriverIO configuration file: ${err.message}`);
             return '';
+        }
+    }
+
+    private _onMessage(event: Event) {
+        if (event.type === 'command') {
+            return commands.executeCommand(
+                'vscode.openWith',
+                Uri.parse(this._document!.uri.path),
+                'default'
+            );
         }
     }
 

@@ -13,13 +13,14 @@
             </vscode-option>
             <%
         } else {
+            const isSelected = (
+                (typeof val === 'undefined' && it.default === option.value) ||
+                (typeof val === 'string' && val === option.value) ||
+                (Array.isArray(val) && val.includes(option.value))
+            );
             %>
             <vscode-option
-                description="<%= option.value %> on NPM"
-                <%= (
-                    (typeof val === 'undefined' && it.default === option.value) ||
-                    val === option.value
-                ) ? ' selected' : '' %>
+                <%= isSelected ? ' selected' : '' %>
             >
                 <%= option.label %>
             </vscode-option>

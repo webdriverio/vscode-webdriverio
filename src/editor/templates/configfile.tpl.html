@@ -9,15 +9,28 @@
             content="default-src 'none'; img-src <%=it.cspSource%>; script-src <%=it.cspSource%>; nonce-<%=it.nonce%>; style-src 'unsafe-inline' <%=it.cspSource%>; style-src-elem 'unsafe-inline' <%=it.cspSource%>; font-src <%=it.cspSource%>;"
         />
         <% it.stylesheets.forEach((stylesheet) => { %>
-            <link rel="stylesheet" href="<%= stylesheet.href %>" nonce="<%= it.nonce %>" id="<%= stylesheet.id %>" />
+            <link
+                rel="stylesheet"
+                href="<%= stylesheet.href %>"
+                nonce="<%= it.nonce %>"
+                id="<%= stylesheet.id %>"
+            />
         <% }) %>
         <% it.scripts.forEach((script) => { %>
-            <script src="<%= script %>" nonce="<%=it.nonce%>" type="module"></script>
+            <script
+                src="<%= script.src %>"
+                nonce="<%= it.nonce %>"
+                type="module"
+                <%= script.defer ? 'defer' : '' %>
+            ></script>
         <% }) %>
     </head>
 <body>
-    <h1>WebdriverIO Configuration</h1>
-    <vscode-divider></vscode-divider>
+    <header>
+        <h1>WebdriverIO Configuration</h1>
+        <vscode-button id="btnEditor">View in Editor</vscode-button>
+    </header>
+    <hr />
     <vscode-form-container responsive>
         <% Object.entries(it.defaults).forEach(([property, config]) => { %>
             <vscode-form-group variant="settings-group">

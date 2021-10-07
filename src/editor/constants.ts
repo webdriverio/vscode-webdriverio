@@ -12,6 +12,8 @@ type Definition<T> = {
     }
 };
 
+const LOGLEVEL_OPTIONS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'];
+
 const AUTOMATION_PROTOCOL_OPTIONS = [{
     label: 'Detect Automatically',
     value: undefined
@@ -25,57 +27,60 @@ const AUTOMATION_PROTOCOL_OPTIONS = [{
 
 const FRAMEWORK_OPTIONS = [{
     label: 'Mocha',
-    value: '@wdio/mocha-framework'
+    value: 'mocha'
 }, {
     label: 'Jasmine',
-    value: '@wdio/jasmine-framework'
+    value: 'jasmine'
 }, {
     label: 'Cucumber',
-    value: '@wdio/cucumber-framework'
+    value: 'cucumber'
 }];
 
 const SUPPORTED_REPORTER = [{
     label: 'Allure Reporter',
-    value: '@wdio/allure-reporter'
+    value: 'allure'
 }, {
     label: 'Concise Reporter',
-    value: '@wdio/concise-reporter'
+    value: 'concise'
 }, {
     label: 'Dot Reporter',
-    value: '@wdio/dot-reporter'
+    value: 'dot'
 }, {
     label: 'Junit Reporter',
-    value: '@wdio/junit-reporter'
+    value: 'junit'
 }, {
     label: 'Spec Reporter',
-    value: '@wdio/spec-reporter'
+    value: 'spec'
 }, {
     label: 'Sumologic Reporter',
-    value: '@wdio/sumologic-reporter'
+    value: 'sumologic'
 }, {
     label: 'Report Portal Reporter',
-    value: 'wdio-reportportal-reporter'
+    value: 'reportportal'
 }, {
     label: 'Video Reporter',
-    value: 'wdio-video-reporter'
+    value: 'video'
 }, {
     label: 'HTML Reporter',
     value: '@rpii/wdio-html-reporter'
 }, {
     label: 'JSON Reporter',
-    value: 'wdio-json-reporter'
+    value: 'json'
 }, {
     label: 'Mochawesome Reporter',
-    value: 'wdio-mochawesome-reporter'
+    value: 'mochawesome'
 }, {
     label: 'Timeline Reporter',
-    value: 'wdio-timeline-reporter'
+    value: 'timeline'
 }, {
     label: 'CucumberJS JSON Reporter',
-    value: 'wdio-cucumberjs-json-reporter'
+    value: 'cucumberjs-json'
 }, {
     label: 'Markdown Reporter',
-    value: 'wdio-markdown-reporter'
+    value: 'markdown'
+}, {
+    label: 'TeamCity Reporter',
+    value: 'teamcity'
 }];
 
 const SUPPORTED_SERVICES = [{
@@ -249,6 +254,16 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
             'If you only want to run your tests until a specific amount of tests have failed use',
             'bail (default is <code>0</code> - don\'t bail, run all tests).'
         ].join('')
+    },
+    /**
+     * Level of logging verbosity.
+     */
+    logLevel: {
+        name: 'Logging Level',
+        type: 'option',
+        options: LOGLEVEL_OPTIONS,
+        description: 'Level of logging verbosity.',
+        default: 'info'
     },
     /**
      * Default interval for all waitFor* commands.
