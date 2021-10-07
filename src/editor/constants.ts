@@ -85,97 +85,97 @@ const SUPPORTED_REPORTER = [{
 
 const SUPPORTED_SERVICES = [{
     label: 'Appium Service',
-    value: '@wdio/appium-service'
+    value: 'appium'
 }, {
     label: 'Browserstack Service',
-    value: '@wdio/browserstack-service'
+    value: 'browserstack'
 }, {
     label: 'Crossbrowsertesting Service',
-    value: '@wdio/crossbrowsertesting-service'
+    value: 'crossbrowsertesting'
 }, {
     label: 'Devtools Service',
-    value: '@wdio/devtools-service'
+    value: 'devtools'
 }, {
     label: 'Firefox Profile Service',
-    value: '@wdio/firefox-profile-service'
+    value: 'firefox-profile'
 }, {
     label: 'Sauce Service',
-    value: '@wdio/sauce-service'
+    value: 'sauce'
 }, {
     label: 'Selenium Standalone Service',
-    value: '@wdio/selenium-standalone-service'
+    value: 'selenium-standalone'
 }, {
     label: 'Shared Store Service',
-    value: '@wdio/shared-store-service'
+    value: 'shared-store'
 }, {
     label: 'Static Server Service',
-    value: '@wdio/static-server-service'
+    value: 'static-server'
 }, {
     label: 'Testingbot Service',
-    value: '@wdio/testingbot-service'
+    value: 'testingbot'
 }, {
     label: 'ChromeDriver Service',
-    value: 'wdio-chromedriver-service'
+    value: 'chromedriver'
 }, {
     label: 'Intercept Service',
-    value: 'wdio-intercept-service'
+    value: 'intercept'
 }, {
     label: 'Zafira Listener Service',
-    value: 'wdio-zafira-listener-service'
+    value: 'zafira-listener'
 }, {
     label: 'Report Portal Service',
-    value: 'wdio-reportportal-service'
+    value: 'reportportal'
 }, {
     label: 'Docker Service',
-    value: 'wdio-docker-service'
+    value: 'docker'
 }, {
     label: 'UI5 Service',
-    value: 'wdio-ui5-service'
+    value: 'ui5'
 }, {
     label: 'WireMock Service',
-    value: 'wdio-wiremock-service'
+    value: 'wiremock'
 }, {
     label: 'Slack Service',
-    value: 'wdio-slack-service'
+    value: 'slack'
 }, {
     label: 'LambdaTest Service',
-    value: 'wdio-lambdatest-service'
+    value: 'lambdatest'
 }, {
     label: 'Image Comparison (Visual Regression Testing) Service',
-    value: 'wdio-image-comparison-service'
+    value: 'image-comparison'
 }, {
     label: 'Ng-apimock Service',
-    value: 'wdio-ng-apimock-service'
+    value: 'ng-apimock'
 }, {
     label: 'Novus Visual Regression Service',
-    value: 'wdio-novus-visual-regression-service'
+    value: 'novus-visual-regression'
 }, {
     label: 'Re-run Service',
-    value: 'wdio-rerun-service'
+    value: 'rerun'
 }, {
     label: 'winappdriver Service',
-    value: 'wdio-winappdriver-service'
+    value: 'winappdriver'
 }, {
     label: 'ywinappdriver Service',
-    value: 'wdio-ywinappdriver-service'
+    value: 'ywinappdriver'
 }, {
     label: 'PerformanceTotal Service',
-    value: 'wdio-performancetotal-service'
+    value: 'performancetotal'
 }, {
     label: 'CleanupTotal Service',
-    value: 'wdio-cleanuptotal-service'
+    value: 'cleanuptotal'
 }, {
     label: 'AWS Device Farm Service',
-    value: 'wdio-aws-device-farm-service'
+    value: 'aws-device-farm'
 }, {
     label: 'OCR service for Appium Native Apps Service',
-    value: 'wdio-ocr-service'
+    value: 'ocr'
 }, {
     label: 'Auto-detect missing imports w/eslint Service',
-    value: 'wdio-eslinter-service'
+    value: 'eslinter'
 }, {
     label: 'Microsoft Teams Service',
-    value: 'wdio-ms-teams-service'
+    value: 'ms-teams'
 }];
 
 export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
