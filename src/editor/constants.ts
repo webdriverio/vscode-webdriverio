@@ -7,208 +7,171 @@ type Definition<T> = {
         default?: any
         required?: boolean
         description: string,
-        options?: string[] | { name: string, description: string }[],
-        multiselect?: boolean
+        options?: string[] | { label: string, value?: string }[],
+        multi?: boolean
     }
 };
 
-const AUTOMATION_PROTOCOL_OPTIONS = [
-    'Detect Automatically',
-    'WebDriver',
-    'DevTools (powered by Puppeteer)'
-];
+const AUTOMATION_PROTOCOL_OPTIONS = [{
+    label: 'Detect Automatically',
+    value: undefined
+}, {
+    label: 'WebDriver',
+    value: 'webdriver'
+}, {
+    label: 'DevTools (powered by Puppeteer)',
+    value: 'devtools'
+}];
 
-const FRAMEWORK_OPTIONS = [
-    'Mocha',
-    'Jasmine',
-    'Cucumber'
-];
+const FRAMEWORK_OPTIONS = [{
+    label: 'Mocha',
+    value: '@wdio/mocha-framework'
+}, {
+    label: 'Jasmine',
+    value: '@wdio/jasmine-framework'
+}, {
+    label: 'Cucumber',
+    value: '@wdio/cucumber-framework'
+}];
 
-const SUPPORTED_REPORTER = [
-    {
-        name: 'Allure Reporter',
-        description: '@wdio/allure-reporter on NPM'
-    },
-    {
-        name: 'Concise Reporter',
-        description: '@wdio/concise-reporter on NPM'
-    },
-    {
-        name: 'Dot Reporter',
-        description: '@wdio/dot-reporter on NPM'
-    },
-    {
-        name: 'Junit Reporter',
-        description: '@wdio/junit-reporter on NPM'
-    },
-    {
-        name: 'Spec Reporter',
-        description: '@wdio/spec-reporter on NPM'
-    },
-    {
-        name: 'Sumologic Reporter',
-        description: '@wdio/sumologic-reporter on NPM'
-    },
-    {
-        name: 'Report Portal Reporter',
-        description: 'wdio-reportportal-reporter'
-    },
-    {
-        name: 'Video Reporter',
-        description: 'wdio-video-reporter on NPM'
-    },
-    {
-        name: 'HTML Reporter',
-        description: '@rpii/wdio-html-reporter'
-    },
-    {
-        name: 'JSON Reporter',
-        description: 'wdio-json-reporter on NPM'
-    },
-    {
-        name: 'Mochawesome Reporter',
-        description: 'wdio-mochawesome-reporter on NPM'
-    },
-    {
-        name: 'Timeline Reporter',
-        description: 'wdio-timeline-reporter on NPM'
-    },
-    {
-        name: 'CucumberJS JSON Reporter',
-        description: 'wdio-cucumberjs-json-reporter on NPM'
-    },
-    {
-        name: 'Markdown Reporter',
-        description: 'wdio-markdown-reporter on NPM'
-    }
-];
+const SUPPORTED_REPORTER = [{
+    label: 'Allure Reporter',
+    value: '@wdio/allure-reporter'
+}, {
+    label: 'Concise Reporter',
+    value: '@wdio/concise-reporter'
+}, {
+    label: 'Dot Reporter',
+    value: '@wdio/dot-reporter'
+}, {
+    label: 'Junit Reporter',
+    value: '@wdio/junit-reporter'
+}, {
+    label: 'Spec Reporter',
+    value: '@wdio/spec-reporter'
+}, {
+    label: 'Sumologic Reporter',
+    value: '@wdio/sumologic-reporter'
+}, {
+    label: 'Report Portal Reporter',
+    value: 'wdio-reportportal-reporter'
+}, {
+    label: 'Video Reporter',
+    value: 'wdio-video-reporter'
+}, {
+    label: 'HTML Reporter',
+    value: '@rpii/wdio-html-reporter'
+}, {
+    label: 'JSON Reporter',
+    value: 'wdio-json-reporter'
+}, {
+    label: 'Mochawesome Reporter',
+    value: 'wdio-mochawesome-reporter'
+}, {
+    label: 'Timeline Reporter',
+    value: 'wdio-timeline-reporter'
+}, {
+    label: 'CucumberJS JSON Reporter',
+    value: 'wdio-cucumberjs-json-reporter'
+}, {
+    label: 'Markdown Reporter',
+    value: 'wdio-markdown-reporter'
+}];
 
-const SUPPORTED_SERVICES = [
-    {
-        name: 'Appium Service',
-        description: '@wdio/appium-service on NPM'
-    },
-    {
-        name: 'Browserstack Service',
-        description: '@wdio/browserstack-service on NPM'
-    },
-    {
-        name: 'Crossbrowsertesting Service',
-        description: '@wdio/crossbrowsertesting-service NPM'
-    },
-    {
-        name: 'Devtools Service',
-        description: '@wdio/devtools-service on NPM'
-    },
-    {
-        name: 'Firefox Profile Service',
-        description: '@wdio/firefox-profile-service on NPM'
-    },
-    {
-        name: 'Sauce Service',
-        description: '@wdio/sauce-service on NPM'
-    },
-    {
-        name: 'Selenium Standalone Service',
-        description: '@wdio/selenium-standalone-service on NPM'
-    },
-    {
-        name: 'Shared Store Service',
-        description: '@wdio/shared-store-service on NPM'
-    },
-    {
-        name: 'Static Server Service',
-        description: '@wdio/static-server-service on NPM'
-    },
-    {
-        name: 'Testingbot Service',
-        description: '@wdio/testingbot-service on NPM'
-    },
-    {
-        name: 'ChromeDriver Service',
-        description: 'wdio-chromedriver-service on NPM'
-    },
-    {
-        name: 'Intercept Service',
-        description: 'wdio-intercept-service on NPM'
-    },
-    {
-        name: 'Zafira Listener Service',
-        description: 'wdio-zafira-listener-service on NPM'
-    },
-    {
-        name: 'Report Portal Service',
-        description: 'wdio-reportportal-service on NPM'
-    },
-    {
-        name: 'Docker Service',
-        description: 'wdio-docker-service on NPM'
-    },
-    {
-        name: 'UI5 Service',
-        description: 'wdio-ui5-service on NPM'
-    },
-    {
-        name: 'WireMock Service',
-        description: 'wdio-wiremock-service on NPM'
-    },
-    {
-        name: 'Slack Service',
-        description: 'wdio-slack-service on NPM'
-    },
-    {
-        name: 'LambdaTest Service',
-        description: 'wdio-lambdatest-service on NPM'
-    },
-    {
-        name: 'Image Comparison (Visual Regression Testing) Service',
-        description: 'wdio-image-comparison-service on NPM'
-    },
-    {
-        name: 'Ng-apimock Service',
-        description: 'wdio-ng-apimock-service on NPM'
-    },
-    {
-        name: 'Novus Visual Regression Service',
-        description: 'wdio-novus-visual-regression-service on NPM'
-    },
-    {
-        name: 'Re-run Service',
-        description: 'wdio-rerun-service on NPM'
-    },
-    {
-        name: 'winappdriver Service',
-        description: 'wdio-winappdriver-service on NPM'
-    },
-    {
-        name: 'ywinappdriver Service',
-        description: 'wdio-ywinappdriver-service on NPM'
-    },
-    {
-        name: 'PerformanceTotal Service',
-        description: 'wdio-performancetotal-service on NPM'
-    },
-    {
-        name: 'CleanupTotal Service',
-        description: 'wdio-cleanuptotal-service on NPM'
-    },
-    {
-        name: 'AWS Device Farm Service',
-        description: 'wdio-aws-device-farm-service on NPM'
-    },
-    {
-        name: 'OCR service for Appium Native Apps Service',
-        description: 'wdio-ocr-service on NPM'
-    },
-    {
-        name: 'Auto-detect missing imports w/eslint Service',
-        description: 'wdio-eslinter-service on NPM'
-    },
-    {
-        name: 'Microsoft Teams Service',
-        description: 'wdio-ms-teams-service on NPM'
-    }
-];
+const SUPPORTED_SERVICES = [{
+    label: 'Appium Service',
+    value: '@wdio/appium-service'
+}, {
+    label: 'Browserstack Service',
+    value: '@wdio/browserstack-service'
+}, {
+    label: 'Crossbrowsertesting Service',
+    value: '@wdio/crossbrowsertesting-service'
+}, {
+    label: 'Devtools Service',
+    value: '@wdio/devtools-service'
+}, {
+    label: 'Firefox Profile Service',
+    value: '@wdio/firefox-profile-service'
+}, {
+    label: 'Sauce Service',
+    value: '@wdio/sauce-service'
+}, {
+    label: 'Selenium Standalone Service',
+    value: '@wdio/selenium-standalone-service'
+}, {
+    label: 'Shared Store Service',
+    value: '@wdio/shared-store-service'
+}, {
+    label: 'Static Server Service',
+    value: '@wdio/static-server-service'
+}, {
+    label: 'Testingbot Service',
+    value: '@wdio/testingbot-service'
+}, {
+    label: 'ChromeDriver Service',
+    value: 'wdio-chromedriver-service'
+}, {
+    label: 'Intercept Service',
+    value: 'wdio-intercept-service'
+}, {
+    label: 'Zafira Listener Service',
+    value: 'wdio-zafira-listener-service'
+}, {
+    label: 'Report Portal Service',
+    value: 'wdio-reportportal-service'
+}, {
+    label: 'Docker Service',
+    value: 'wdio-docker-service'
+}, {
+    label: 'UI5 Service',
+    value: 'wdio-ui5-service'
+}, {
+    label: 'WireMock Service',
+    value: 'wdio-wiremock-service'
+}, {
+    label: 'Slack Service',
+    value: 'wdio-slack-service'
+}, {
+    label: 'LambdaTest Service',
+    value: 'wdio-lambdatest-service'
+}, {
+    label: 'Image Comparison (Visual Regression Testing) Service',
+    value: 'wdio-image-comparison-service'
+}, {
+    label: 'Ng-apimock Service',
+    value: 'wdio-ng-apimock-service'
+}, {
+    label: 'Novus Visual Regression Service',
+    value: 'wdio-novus-visual-regression-service'
+}, {
+    label: 'Re-run Service',
+    value: 'wdio-rerun-service'
+}, {
+    label: 'winappdriver Service',
+    value: 'wdio-winappdriver-service'
+}, {
+    label: 'ywinappdriver Service',
+    value: 'wdio-ywinappdriver-service'
+}, {
+    label: 'PerformanceTotal Service',
+    value: 'wdio-performancetotal-service'
+}, {
+    label: 'CleanupTotal Service',
+    value: 'wdio-cleanuptotal-service'
+}, {
+    label: 'AWS Device Farm Service',
+    value: 'wdio-aws-device-farm-service'
+}, {
+    label: 'OCR service for Appium Native Apps Service',
+    value: 'wdio-ocr-service'
+}, {
+    label: 'Auto-detect missing imports w/eslint Service',
+    value: 'wdio-eslinter-service'
+}, {
+    label: 'Microsoft Teams Service',
+    value: 'wdio-ms-teams-service'
+}];
 
 export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
     /**
@@ -228,20 +191,22 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     specs: {
         name: 'Spec Files',
-        type: 'object',
+        type: 'string',
         description: [
             'Define specs for test execution. You can either specify a glob ',
             'pattern to match multiple files at once or wrap a glob or set of ',
             'paths into an array to run them within a single worker process.'
-        ].join('')
+        ].join(''),
+        multi: true
     },
     /**
      * Exclude specs from test execution.
      */
     exclude: {
         name: 'Files to Exclude',
-        type: 'object',
-        description: 'Exclude specs from test execution.'
+        type: 'string',
+        description: 'Exclude specs from test execution.',
+        multi: true
     },
     /**
      * Definition of suites (named by key) and a list of specs as value
@@ -282,7 +247,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         default: 0,
         description: [
             'If you only want to run your tests until a specific amount of tests have failed use',
-            'bail (default is 0 - don\'t bail, run all tests).'
+            'bail (default is <code>0</code> - don\'t bail, run all tests).'
         ].join('')
     },
     /**
@@ -292,7 +257,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         name: 'WaitFor Interval',
         type: 'number',
         default: 500,
-        description: 'Default interval for all waitFor* commands.'
+        description: 'Default interval for all <code>waitFor*</code> commands.'
     },
     /**
      * Default timeout for all waitFor* commands.
@@ -301,7 +266,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         name: 'WaitFor Timeout',
         type: 'number',
         default: 3000,
-        description: 'Default timeout for all waitFor* commands.'
+        description: 'Default timeout for all <code>waitFor*</code> commands.'
     },
     /**
      * Supported test framework by wdio testrunner.
@@ -328,7 +293,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         type: 'option',
         description: 'List of reporters to use, a reporter can be either a string or an object with reporter options.',
         options: SUPPORTED_REPORTER,
-        multiselect: true
+        multi: true
     },
     /**
      * Set of WDIO services to use.
@@ -338,16 +303,16 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         type: 'option',
         description: 'Set of WDIO services to use.',
         options: SUPPORTED_SERVICES,
-        multiselect: true
+        multi: true
     },
     /**
      * Node arguments to specify when launching child processes
      */
     execArgv: {
         name: 'Worker Arguments',
-        type: 'object',
+        type: 'string',
         description: 'Node arguments to specify when launching child processes',
-        default: []
+        multi: true
     },
     /**
      * amount of instances to be allowed to run in total
@@ -370,8 +335,9 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     filesToWatch: {
         name: 'Files to Watch',
-        type: 'object',
-        description: 'list of strings to watch of `wdio` command is called with `--watch` flag'
+        type: 'string',
+        description: 'list of strings to watch of <code>wdio</code> command is called with <code>--watch</code> flag',
+        multi: true
     },
 
     /**

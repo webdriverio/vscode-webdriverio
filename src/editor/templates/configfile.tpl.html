@@ -19,15 +19,15 @@
     <h1>WebdriverIO Configuration</h1>
     <vscode-divider></vscode-divider>
     <vscode-form-container responsive>
-        <% Object.entries(it.defaults).forEach(([name, config]) => { %>
+        <% Object.entries(it.defaults).forEach(([property, config]) => { %>
             <vscode-form-group variant="settings-group">
-                <vscode-label for="<%= name %>">
+                <vscode-label for="<%= property %>">
                     <%= config.name %>:
                 </vscode-label>
                 <vscode-form-helper>
-                    <p><%= config.description %></p>
+                    <p><%~ config.description %></p>
                 </vscode-form-helper>
-                <%~ include(config.type, { name, ...config, global: it }) %>
+                <%~ include(config.type, { property, ...config, global: it }) %>
             </vscode-form-group>
         <% }) %>
         <vscode-form-group>

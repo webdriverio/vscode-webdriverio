@@ -23,10 +23,16 @@ import { plugin } from '../constants';
 const ROOT = path.join(__dirname, '..', '..');
 const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
 const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'configfile.tpl.html')).toString();
-templates.define('string', compile(fs.readFileSync(path.join(TPL_ROOT, 'string.tpl.html')).toString()));
-templates.define('number', compile(fs.readFileSync(path.join(TPL_ROOT, 'number.tpl.html')).toString()));
-templates.define('object', compile(fs.readFileSync(path.join(TPL_ROOT, 'object.tpl.html')).toString()));
-templates.define('option', compile(fs.readFileSync(path.join(TPL_ROOT, 'option.tpl.html')).toString()));
+
+/**
+ * load partials
+ */
+fs.readdirSync(path.join(TPL_ROOT, 'partials'), { withFileTypes: true })
+    .filter((file) => file.isFile())
+    .forEach((file) => templates.define(
+        file.name.replace('.tpl.html', ''),
+        compile(fs.readFileSync(path.join(TPL_ROOT, 'partials', file.name)).toString())
+    ));
 
 export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
     private disposables: Disposable[] = [];
@@ -96,7 +102,7 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
                 register({ transpileOnly: true });
             }
 
-            const config: Options.Testrunner = await import(document.uri.path);
+            const { config }: { config: Options.Testrunner } = await import(document.uri.path);
             return config;
         } catch (e: any) {
             this.log.error(e.message);

@@ -1,0 +1,6 @@
+<vscode-inputbox
+    name="<%= it.property %>"
+    value="<%= typeof it.global.config[it.property] !== 'undefined' ? it.global.config[it.property] : '' %>"
+    placeholder="<%= it.default || '' %>"
+    <%= it.multi ? 'multiline' : ''%>
+></vscode-inputbox>

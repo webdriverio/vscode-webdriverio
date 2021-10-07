@@ -1,0 +1,30 @@
+<vscode-<%= it.multi ? 'multi' : 'single' %>-select name="<%= it.property %>">
+    <% it.options.forEach((option) => {
+        const val = it.global.config[it.property]
+        if (typeof option === 'string') {
+            %>
+            <vscode-option
+                <%= (
+                    (typeof val === 'undefined' && it.default === option) ||
+                    val === option
+                 ) ? ' selected' : '' %>
+            >
+                <%= option %>
+            </vscode-option>
+            <%
+        } else {
+            %>
+            <vscode-option
+                description="<%= option.value %> on NPM"
+                <%= (
+                    (typeof val === 'undefined' && it.default === option.value) ||
+                    val === option.value
+                ) ? ' selected' : '' %>
+            >
+                <%= option.label %>
+            </vscode-option>
+            <%
+        }
+    %>
+    <% }) %>
+</vscode-single-select>
