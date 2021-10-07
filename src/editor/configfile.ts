@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { render } from 'eta';
+import { render, templates, compile } from 'eta';
 import {
   CancellationToken,
   CustomTextEditorProvider,
@@ -21,8 +21,12 @@ import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 
 const ROOT = path.join(__dirname, '..', '..');
-const TEMPLATE = fs.readFileSync(path.join(ROOT, 'src', 'editor', 'templates', 'configfile.tpl.html')).toString();
-
+const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
+const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'configfile.tpl.html')).toString();
+templates.define('string', compile(fs.readFileSync(path.join(TPL_ROOT, 'string.tpl.html')).toString()));
+templates.define('number', compile(fs.readFileSync(path.join(TPL_ROOT, 'number.tpl.html')).toString()));
+templates.define('object', compile(fs.readFileSync(path.join(TPL_ROOT, 'object.tpl.html')).toString()));
+templates.define('option', compile(fs.readFileSync(path.join(TPL_ROOT, 'option.tpl.html')).toString()));
 
 export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
     private disposables: Disposable[] = [];
@@ -68,7 +72,10 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         const scripts = [
             this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ])
         ];
-        const stylesheets: string[] = [];
+        const stylesheets = [{
+            id: 'vscode-codicon-stylesheet',
+            href: this._assetUri(webview, ['node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'])
+        }];
         this.log.debug(config);
         try {
             const html = await render(TEMPLATE, {

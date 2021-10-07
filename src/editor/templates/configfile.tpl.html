@@ -9,27 +9,25 @@
             content="default-src 'none'; img-src <%=it.cspSource%>; script-src <%=it.cspSource%>; nonce-<%=it.nonce%>; style-src 'unsafe-inline' <%=it.cspSource%>; style-src-elem 'unsafe-inline' <%=it.cspSource%>; font-src <%=it.cspSource%>;"
         />
         <% it.stylesheets.forEach((stylesheet) => { %>
-            <link rel="stylesheet" href="<%=stylesheet%>" nonce="<%=it.nonce%>" />
+            <link rel="stylesheet" href="<%= stylesheet.href %>" nonce="<%= it.nonce %>" id="<%= stylesheet.id %>" />
         <% }) %>
         <% it.scripts.forEach((script) => { %>
-            <script src="<%=script%>" nonce="<%=it.nonce%>" type="module"></script>
+            <script src="<%= script %>" nonce="<%=it.nonce%>" type="module"></script>
         <% }) %>
     </head>
 <body>
     <h1>WebdriverIO Configuration</h1>
     <vscode-divider></vscode-divider>
-    <vscode-form-container>
+    <vscode-form-container responsive>
         <% Object.entries(it.defaults).forEach(([name, config]) => { %>
-            <vscode-form-group>
-                <vscode-label for="<%= name %>"><%= name %>:</vscode-label>
-                <vscode-single-select id="select-example">
-                    <vscode-option description="Consectetur adipiscing elit">Lorem</vscode-option>
-                    <vscode-option selected description="Donec elit odio">Ipsum</vscode-option>
-                    <vscode-option description="Aliquam ac vulputate eros">Dolor</vscode-option>
-                </vscode-single-select>
+            <vscode-form-group variant="settings-group">
+                <vscode-label for="<%= name %>">
+                    <%= config.name %>:
+                </vscode-label>
                 <vscode-form-helper>
                     <p><%= config.description %></p>
                 </vscode-form-helper>
+                <%~ include(config.type, { name, ...config, global: it }) %>
             </vscode-form-group>
         <% }) %>
         <vscode-form-group>
