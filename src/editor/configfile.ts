@@ -1,3 +1,7 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import { render } from 'eta';
 import {
   CancellationToken,
   CustomTextEditorProvider,
@@ -6,13 +10,18 @@ import {
   TextDocument,
   WebviewPanel,
   window,
-  Webview
+  Webview,
+  Uri
 } from 'vscode';
 import { register } from 'ts-node';
 import type { Options } from '@wdio/types';
 
+import { WDIO_DEFAULTS } from './constants';
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
+
+const ROOT = path.join(__dirname, '..', '..');
+const TEMPLATE = fs.readFileSync(path.join(ROOT, 'src', 'editor', 'templates', 'configfile.tpl.html')).toString();
 
 
 export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
@@ -44,17 +53,33 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         if (token.isCancellationRequested) {
             return;
         }
+
+        webviewPanel.onDidDispose(() => this.dispose(), null, this.disposables);
         
         // Setup initial content for the webview
         const { webview } = webviewPanel;
         webview.options = { enableScripts: true };
-        webviewPanel.onDidDispose(() => this.dispose(), null, this.disposables);
-        webviewPanel.webview.html = this._getHtmlForWebview(webview, await this._getDocumentAsJson(document));
+        webview.html = await this._getHtmlForWebview(webview, await this._getDocumentAsJson(document));
     }
 
-    private _getHtmlForWebview(webview: Webview, config?: Options.Testrunner) {
+    private async _getHtmlForWebview(webview: Webview, config?: Options.Testrunner) {
+        const { cspSource } = webview;
+        const nonce = crypto.randomBytes(16).toString('base64');
+        const scripts = [
+            this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ])
+        ];
+        const stylesheets: string[] = [];
         this.log.debug(config);
-        return '<h1>Hello World</h1>';
+        try {
+            const html = await render(TEMPLATE, {
+                config, scripts, stylesheets, nonce, cspSource,
+                defaults: WDIO_DEFAULTS
+            });
+            return html!;
+        } catch (err: any) {
+            window.showErrorMessage(`Couldn't open WebdriverIO configuration file: ${err.message}`);
+            return '';
+        }
     }
 
     private async _getDocumentAsJson(document: TextDocument) {
@@ -70,5 +95,11 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
             this.log.error(e.message);
             window.showErrorMessage(`File ${document.fileName} couldn't be parsed`);
         }
+    }
+
+    private _assetUri (webview: Webview, pathSegments: string[]) {
+        return webview.asWebviewUri(
+            Uri.joinPath(this.ctx.extensionUri, ...pathSegments)
+        );
     }
 }
