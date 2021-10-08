@@ -2,7 +2,7 @@ import { Options } from '@wdio/types';
 
 type Definition<T> = {
     [k in keyof T]: {
-        type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option'
+        type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option' | 'suites'
         name: string
         default?: any
         required?: boolean
@@ -219,7 +219,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     suites: {
         name: 'Suites',
-        type: 'object',
+        type: 'suites',
         description: [
             'Definition of suites (named by key) and a list of specs as value',
             'to specify a specific set of tests to execute'

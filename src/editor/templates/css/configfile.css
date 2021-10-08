@@ -7,3 +7,21 @@ header #btnEditor {
     right: 0;
     top: 0;
 }
+
+.suitesTable {
+    width: 100%;
+}
+
+.suitesTable vscode-table-cell {
+    padding: 5px 0;
+    vertical-align: top;
+    white-space: normal;
+}
+
+.suitesTable vscode-inputbox {
+    width: 95%;
+}
+
+.suitesTable vscode-inputbox[multiline] {
+    width: 100%;
+}
