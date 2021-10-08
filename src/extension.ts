@@ -3,7 +3,7 @@ import { Disposable, ExtensionContext, workspace, window, commands } from 'vscod
 import { showOutput } from './commands/show-output';
 import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
-import { ConfigFileProvider } from './provider/config-file';
+import { ConfigFileProvider } from './provider/configfile';
 import { ConfigfileEditorProvider } from './editor/configfile';
 import { NodeDependenciesProvider } from './TreeDataProvider';
 

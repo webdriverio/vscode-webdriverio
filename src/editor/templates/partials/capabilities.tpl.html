@@ -1,0 +1,26 @@
+<br />
+<%
+const val = it.global.config[it.property] || []
+const caps = Array.isArray(val)
+    // normal set of capabilities
+    ? val.reduce((prev, curr) => {
+        let label = curr.browserName
+        if (curr.platformName) {
+            label += `on ${curr.platformName}`
+        }
+        prev[label] = curr
+        return prev
+    }, {})
+    // multiremote
+    : val
+
+Object.entries(caps).forEach(([label, cap]) => {
+%>
+
+<%~ include('collapsible', {
+    label,
+    template: 'capability',
+    templateArgs: cap
+}) %>
+
+<% }) %>

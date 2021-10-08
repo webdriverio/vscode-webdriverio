@@ -25,3 +25,8 @@ header #btnEditor {
 .suitesTable vscode-inputbox[multiline] {
     width: 100%;
 }
+
+vscode-collapsible p {
+    font-size: var(--vscode-font-size);
+    margin: 10px;
+}

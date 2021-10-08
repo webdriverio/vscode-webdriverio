@@ -2,7 +2,7 @@ import { Options } from '@wdio/types';
 
 type Definition<T> = {
     [k in keyof T]: {
-        type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option' | 'suites'
+        type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option' | 'suites' | 'capabilities'
         name: string
         default?: any
         required?: boolean
@@ -12,9 +12,11 @@ type Definition<T> = {
     }
 };
 
-const LOGLEVEL_OPTIONS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'];
+export const LOGLEVEL_OPTIONS = [
+    'trace', 'debug', 'info', 'warn', 'error', 'silent'
+];
 
-const AUTOMATION_PROTOCOL_OPTIONS = [{
+export const AUTOMATION_PROTOCOL_OPTIONS = [{
     label: 'Detect Automatically',
     value: undefined
 }, {
@@ -25,7 +27,7 @@ const AUTOMATION_PROTOCOL_OPTIONS = [{
     value: 'devtools'
 }];
 
-const FRAMEWORK_OPTIONS = [{
+export const FRAMEWORK_OPTIONS = [{
     label: 'Mocha',
     value: 'mocha'
 }, {
@@ -36,7 +38,7 @@ const FRAMEWORK_OPTIONS = [{
     value: 'cucumber'
 }];
 
-const SUPPORTED_REPORTER = [{
+export const SUPPORTED_REPORTER = [{
     label: 'Allure Reporter',
     value: 'allure'
 }, {
@@ -83,7 +85,7 @@ const SUPPORTED_REPORTER = [{
     value: 'teamcity'
 }];
 
-const SUPPORTED_SERVICES = [{
+export const SUPPORTED_SERVICES = [{
     label: 'Appium Service',
     value: 'appium'
 }, {
@@ -230,7 +232,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     capabilities: {
         name: 'Capabilities',
-        type: 'object',
+        type: 'capabilities',
         description: 'Capabilities of WebDriver sessions.',
         required: true
     },
@@ -354,24 +356,4 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         description: 'list of strings to watch of <code>wdio</code> command is called with <code>--watch</code> flag',
         multi: true
     },
-
-    /**
-     * hooks
-     */
-    // onPrepare: HOOK_DEFINITION,
-    // onWorkerStart: HOOK_DEFINITION,
-    // before: HOOK_DEFINITION,
-    // beforeSession: HOOK_DEFINITION,
-    // beforeSuite: HOOK_DEFINITION,
-    // beforeHook: HOOK_DEFINITION,
-    // beforeTest: HOOK_DEFINITION,
-    // beforeCommand: HOOK_DEFINITION,
-    // afterCommand: HOOK_DEFINITION,
-    // afterTest: HOOK_DEFINITION,
-    // afterHook: HOOK_DEFINITION,
-    // afterSuite: HOOK_DEFINITION,
-    // afterSession: HOOK_DEFINITION,
-    // after: HOOK_DEFINITION,
-    // onComplete: HOOK_DEFINITION,
-    // onReload: HOOK_DEFINITION
-};
+} as const;

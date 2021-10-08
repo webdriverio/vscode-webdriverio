@@ -10,12 +10,13 @@ if (val && Object.keys(val).length > 0) {
     </vscode-table-header>
     <vscode-table-body slot="body">
         <% Object.entries(val).forEach(([suiteName, specs], i) => {
-        const property = `suiteName[${i}]`
+        const property = `suiteName`
         %>
         <vscode-table-row>
             <vscode-table-cell>
                 <%~ include('string', {
                     property,
+                    index: i,
                     global: {
                         config: { [property]: suiteName }
                     }
@@ -24,6 +25,7 @@ if (val && Object.keys(val).length > 0) {
             <vscode-table-cell>
                 <%~ include('string', {
                     property,
+                    index: i,
                     global: {
                         config: { [property]: specs.join('\n') }
                     },
