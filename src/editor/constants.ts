@@ -1,5 +1,7 @@
 import { Options } from '@wdio/types';
 
+type Option = { label: string, value?: string };
+
 type Definition<T> = {
     [k in keyof T]: {
         type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option' | 'suites' | 'capabilities'
@@ -7,16 +9,16 @@ type Definition<T> = {
         default?: any
         required?: boolean
         description: string,
-        options?: string[] | { label: string, value?: string }[],
+        options?: string[] | Option[],
         multi?: boolean
     }
 };
 
 export const LOGLEVEL_OPTIONS = [
     'trace', 'debug', 'info', 'warn', 'error', 'silent'
-];
+] as const;
 
-export const AUTOMATION_PROTOCOL_OPTIONS = [{
+export const AUTOMATION_PROTOCOL_OPTIONS: Option[] = [{
     label: 'Detect Automatically',
     value: undefined
 }, {
@@ -263,7 +265,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
     logLevel: {
         name: 'Logging Level',
         type: 'option',
-        options: LOGLEVEL_OPTIONS,
+        options: LOGLEVEL_OPTIONS as any as string[],
         description: 'Level of logging verbosity.',
         default: 'info'
     },

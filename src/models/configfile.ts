@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import pick from 'lodash.pick';
 import pullAt from 'lodash.pullat';
 import { createSlice, configureStore, Slice, EnhancedStore } from '@reduxjs/toolkit';
@@ -8,11 +9,12 @@ import {
     AUTOMATION_PROTOCOL_OPTIONS, FRAMEWORK_OPTIONS, LOGLEVEL_OPTIONS
 } from '../editor/constants';
 
-export class ConfigFile {
+export class ConfigFile extends EventEmitter {
     private _slice: Slice;
     private _store: EnhancedStore;
 
     constructor(config: Options.Testrunner) {
+        super();
         const initialState = pick(config, Object.keys(WDIO_DEFAULTS));
         initialState.services = (initialState.services || []).filter(
             (s: any) => typeof s === 'string');
@@ -23,7 +25,7 @@ export class ConfigFile {
             name: 'config',
             initialState,
             reducers: {
-                update: (state, action) => {
+                update: (state: Partial<Options.Testrunner>, action) => {
                     const prop = action.payload.prop as keyof Options.Testrunner;
                     const val = action.payload.value;
 
@@ -31,18 +33,20 @@ export class ConfigFile {
                         ['string', 'number'].includes(WDIO_DEFAULTS[prop]?.type!) ||
                         prop === 'specs'
                     ) {
+                        // @ts-ignore
                         state[prop] = val;
                     } else if (prop === 'automationProtocol' && val) {
-                        state.automationProtocol = AUTOMATION_PROTOCOL_OPTIONS[val].value;
+                        state.automationProtocol = AUTOMATION_PROTOCOL_OPTIONS[val].value as any as Options.SupportedProtocols;
                     } else if (prop === 'framework') {
                         state.framework = FRAMEWORK_OPTIONS[val].value;
-                    } else if (prop === 'logLevel') {
+                    } else if (prop === 'logLevel' && val) {
                         state.logLevel = LOGLEVEL_OPTIONS[val];
                     } else if (prop === 'reporters') {
-                        state.automationProtocol = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
+                        state.reporters = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
                     } else if (prop === 'services') {
-                        state.automationProtocol = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
+                        state.services = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
                     }
+
                     return state;
                 }
             }
@@ -51,12 +55,12 @@ export class ConfigFile {
         this._store = configureStore({
             reducer: this._slice.reducer
         });
-        this._store.subscribe(this._updateFile.bind(this));
+        this._store.subscribe(this._update.bind(this));
     }
 
-    private _updateFile () {
+    private _update () {
         const config = this._store.getState();
-        console.log('Update', config);
+        this.emit('update', config);
     }
 
     update (prop: keyof Options.Testrunner, value: any) {

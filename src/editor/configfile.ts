@@ -17,6 +17,9 @@ import {
 import { register } from 'ts-node';
 import type { Options } from '@wdio/types';
 
+// @ts-ignore
+import Runner from 'jscodeshift/src/Runner';
+
 import { WDIO_DEFAULTS } from './constants';
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
@@ -49,6 +52,7 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
     private log: LoggerService = LoggerService.get();
     private _document?: TextDocument;
     private _model?: ConfigFile;
+    private _isUpdating = false;
 
     public static readonly viewType = `${plugin}.configFileEditor`;
 
@@ -78,6 +82,7 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
 
         this._document = document;
         this._model = await this._getDocumentAsJson(document);
+        this._model?.on('update', (config: Options.Testrunner) => this._updateFile(document, config));
 
         webviewPanel.onDidDispose(() => this.dispose(), null, this.disposables);
         
@@ -156,5 +161,32 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         return webview.asWebviewUri(
             Uri.joinPath(this.ctx.extensionUri, ...pathSegments)
         );
+    }
+
+    private async _updateFile (document: TextDocument, config: Options.Testrunner) {
+        /**
+         * if we already run a transform update, don't run again
+         */
+        if (this._isUpdating) {
+            return this.log.info('Config file is currently being updated');
+        }
+
+        this._isUpdating = true;
+        const result = await Runner.run(
+            path.resolve(path.join(__dirname, '..', 'transforms', 'configfile.js')),
+            [document.uri.path],
+            {
+                verbose: 2,
+                parser: 'ts',
+                config
+            }
+        );
+        this._isUpdating = false;
+
+        if (result.error) {
+            return this.log.error(`Couldn't transform config file: ${result.error}`);
+        }
+
+        this.log.info(`Updated config file within ${result.timeElapsed}s`);
     }
 }
