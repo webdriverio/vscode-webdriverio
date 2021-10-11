@@ -184,7 +184,8 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         this._isUpdating = false;
 
         if (result.error) {
-            return this.log.error(`Couldn't transform config file: ${result.error}`);
+            window.showErrorMessage('Failed to save updates to config file!');
+            return this.log.error(`Couldn't transform config file`);
         }
 
         this.log.info(`Updated config file within ${result.timeElapsed}s`);
