@@ -1,17 +1,24 @@
-import { EventEmitter } from 'events';
+import workerpool from 'workerpool';
 import pick from 'lodash.pick';
 import pullAt from 'lodash.pullat';
+import { EventEmitter } from 'events';
 import { createSlice, configureStore, Slice, EnhancedStore } from '@reduxjs/toolkit';
 import type { Options } from '@wdio/types';
 
+import { LoggerService } from '../services/logger';
 import {
     SUPPORTED_REPORTER, SUPPORTED_SERVICES, WDIO_DEFAULTS,
     AUTOMATION_PROTOCOL_OPTIONS, FRAMEWORK_OPTIONS, LOGLEVEL_OPTIONS
 } from '../editor/constants';
+import type { IndexedValue } from '../types';
+
+const pool = workerpool.pool(__dirname + '/../worker.js');
 
 export class ConfigFile extends EventEmitter {
     private _slice: Slice;
     private _store: EnhancedStore;
+
+    public log = LoggerService.get();
 
     constructor(config: Options.Testrunner) {
         super();
@@ -25,40 +32,82 @@ export class ConfigFile extends EventEmitter {
             name: 'config',
             initialState,
             reducers: {
-                update: (state: Partial<Options.Testrunner>, action) => {
-                    const prop = action.payload.prop as keyof Options.Testrunner;
-                    const val = action.payload.value;
-
-                    if (
-                        ['string', 'number'].includes(WDIO_DEFAULTS[prop]?.type!) ||
-                        prop === 'specs'
-                    ) {
-                        // @ts-ignore
-                        state[prop] = val;
-                    } else if (prop === 'automationProtocol' && val) {
-                        state.automationProtocol = AUTOMATION_PROTOCOL_OPTIONS[val].value as any as Options.SupportedProtocols;
-                    } else if (prop === 'framework') {
-                        state.framework = FRAMEWORK_OPTIONS[val].value;
-                    } else if (prop === 'logLevel' && val) {
-                        state.logLevel = LOGLEVEL_OPTIONS[val];
-                    } else if (prop === 'reporters') {
-                        state.reporters = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
-                    } else if (prop === 'services') {
-                        state.services = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
-                    }
-
-                    return state;
-                }
+                update: (...args) => this._update(...args)
             }
         });
 
-        this._store = configureStore({
-            reducer: this._slice.reducer
-        });
-        this._store.subscribe(this._update.bind(this));
+        this._store = configureStore({ reducer: this._slice.reducer });
+        this._store.subscribe(this._onUpdate.bind(this));
     }
 
-    private _update () {
+    static async load (modulePath: string) {
+        const content = await pool.exec('loadConfig', [modulePath]) as string;
+        const config = eval('(' + content + ')');
+        return new ConfigFile(config);
+    }
+
+    private _update (state: Partial<Options.Testrunner>, action: { payload: any, type: string }) {
+        this.log.info('Update model state', action);
+        const prop = action.payload.prop;
+        const val = action.payload.value;
+        const isSuiteProp = prop.startsWith('suiteName');
+        const isSuiteVal = prop.startsWith('suiteSpecs');
+
+        if (
+            ['string', 'number'].includes(WDIO_DEFAULTS[prop as keyof Options.Testrunner]?.type!) ||
+            prop === 'specs'
+        ) {
+            // @ts-ignore
+            state[prop] = val;
+        } else if (prop === 'automationProtocol') {
+            if (val === 0) {
+                delete state.automationProtocol;
+            } else {
+                state.automationProtocol = AUTOMATION_PROTOCOL_OPTIONS[val].value as any as Options.SupportedProtocols;
+            }
+        } else if (prop === 'framework') {
+            state.framework = FRAMEWORK_OPTIONS[val].value;
+        } else if (prop === 'logLevel' && typeof val === 'number') {
+            state.logLevel = LOGLEVEL_OPTIONS[val];
+        } else if (prop === 'reporters') {
+            state.reporters = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
+        } else if (prop === 'services') {
+            state.services = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
+        } else if ((isSuiteProp || isSuiteVal)) {
+            const suites = state.suites || {};
+
+            /**
+             * update single object values/properties, e.g. suite name or specs
+             * of a specific suite, e.g. update "suiteName[2]" or "suiteSpecs[1]"
+             * using the actual object
+             */
+            const newVal = val as IndexedValue;
+            const entries = Object.entries(suites);
+
+            /**
+             * check if new item was added
+             */
+            if (newVal.index > (entries.length - 1)) {
+                suites[isSuiteProp ? newVal.value : ''] = isSuiteVal
+                    ? newVal.value as any as string[]
+                    : [];
+            }
+
+            /**
+             * update existing items
+             */
+            state.suites = entries.reduce((prev, [key, val], i) => {
+                if (newVal.index === i) {
+                    prev[isSuiteProp ? newVal.value : key] = isSuiteVal ? newVal.value as any as string[] : val;
+                }
+                return prev;
+            }, {} as Record<string, string[]>);
+        }
+
+        return state;
+    }
+
+    private _onUpdate () {
         const config = this._store.getState();
         this.emit('update', config);
     }

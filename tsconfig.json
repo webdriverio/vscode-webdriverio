@@ -5,11 +5,13 @@
 		"outDir": "out",
 		"lib": [
 			"ES2020",
-			"DOM"
+			"DOM",
+			"DOM.Iterable"
 		],
 		"sourceMap": true,
 		"rootDir": "src",
 		"esModuleInterop": true,
+		"experimentalDecorators": true,
 		"strict": true   /* enable all strict type-checking options */
 		/* Additional Checks */
 		// "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */

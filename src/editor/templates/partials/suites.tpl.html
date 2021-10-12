@@ -1,7 +1,13 @@
 <br />
 <%
-const val = it.global.config[it.property];
-if (val && Object.keys(val).length > 0) {
+let val = it.global.config[it.property] || {};
+
+/**
+ * make sure to show at least one row
+ */
+if (Object.keys(val).length === 0) {
+    val = { '': [] }
+}
 %>
 <vscode-table class="suitesTable" min-column-width="50" columns='["50"]' vsc-cloak>
     <vscode-table-header slot="header">
@@ -9,25 +15,23 @@ if (val && Object.keys(val).length > 0) {
         <vscode-table-header-cell>Specs</vscode-table-header-cell>
     </vscode-table-header>
     <vscode-table-body slot="body">
-        <% Object.entries(val).forEach(([suiteName, specs], i) => {
-        const property = `suiteName`
-        %>
+        <% Object.entries(val).forEach(([suiteName, specs], i) => { %>
         <vscode-table-row>
             <vscode-table-cell>
                 <%~ include('string', {
-                    property,
+                    property: 'suiteName',
                     index: i,
                     global: {
-                        config: { [property]: suiteName }
+                        config: { ['suiteName']: suiteName }
                     }
                 }) %>
             </vscode-table-cell>
             <vscode-table-cell>
                 <%~ include('string', {
-                    property,
+                    property: 'suiteSpecs',
                     index: i,
                     global: {
-                        config: { [property]: specs.join('\n') }
+                        config: { ['suiteSpecs']: specs.join('\n') }
                     },
                     multi: true
                 }) %>
@@ -36,5 +40,4 @@ if (val && Object.keys(val).length > 0) {
         <% }) %>
     </vscode-table-body>
 </vscode-table>
-<% } %>
 <vscode-button id="newSuite">New Suite</vscode-button>

@@ -12,9 +12,8 @@ import {
   window,
   Webview,
   Uri,
-  commands
+  commands,
 } from 'vscode';
-import { register } from 'ts-node';
 import type { Options } from '@wdio/types';
 
 // @ts-ignore
@@ -25,6 +24,8 @@ import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 import { ConfigFile } from '../models/configfile';
 
+import type { IndexedValue } from '../types';
+
 const ROOT = path.join(__dirname, '..', '..');
 const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
 const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'configfile.tpl.html')).toString();
@@ -33,7 +34,7 @@ interface Event {
     type: 'viewInEditor',
     data?: {
         property: keyof Options.Testrunner,
-        value: number | number[] | string | string[]
+        value: number | number[] | string | string[] | IndexedValue
     }
 }
 
@@ -76,32 +77,39 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         webviewPanel: WebviewPanel,
         token: CancellationToken
     ): Promise<void> {
-        if (token.isCancellationRequested) {
-            return;
-        }
+        const { webview } = webviewPanel;
 
         this._document = document;
         this._model = await this._getDocumentAsJson(document);
-        this._model?.on('update', (config: Options.Testrunner) => this._updateFile(document, config));
-
         webviewPanel.onDidDispose(() => this.dispose(), null, this.disposables);
-        
+
+        if (!this._model || token.isCancellationRequested) {
+            commands.executeCommand(
+                'vscode.openWith',
+                Uri.parse(this._document!.uri.path),
+                'default'
+            );
+            return;
+        }
+
         // Setup initial content for the webview
-        const { webview } = webviewPanel;
+        this._model.on('update', (config: Options.Testrunner) => this._updateFile(document, config));
         webview.options = { enableScripts: true };
         webview.html = await this._getHtmlForWebview(webview, this._model);
         webview.onDidReceiveMessage(this._onMessage.bind(this));
     }
 
-    private async _getHtmlForWebview(webview: Webview, model?: ConfigFile) {
-        const config = model?.asObject;
+    private async _getHtmlForWebview(webview: Webview, model: ConfigFile) {
+        const config = model.asObject;
         const { cspSource } = webview;
         const nonce = crypto.randomBytes(16).toString('base64');
         const scripts = [{
             src: this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ]),
             defer: false
         }, {
-            src: this._assetUri(webview, ['src', 'editor', 'templates', 'js', 'configfile.js']),
+            src: this._assetUri(webview, ['src', 'editor', 'templates', 'js', 'compat.js']),
+        }, {
+            src: this._assetUri(webview, ['out', 'editor', 'templates', 'js', 'configfile.js']),
             defer: true
         }];
         const stylesheets = [{
@@ -127,6 +135,10 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
     private _onMessage(event: Event) {
         this.log.info(`Event: ${event.type}${event.data ? `, with data: ${JSON.stringify(event.data)}` : ''}`);
 
+        if (!this._model) {
+            return;
+        }
+
         if (event.type === 'viewInEditor') {
             return commands.executeCommand(
                 'vscode.openWith',
@@ -134,10 +146,11 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
                 'default'
             );
         }
-        if (event.type === 'update') {
-            return this._model?.update(
-                event.data!.property,
-                event.data!.value
+
+        if (event.type === 'update' && event.data) {
+            return this._model.update(
+                event.data.property,
+                event.data.value
             );
         }
     }
@@ -145,12 +158,7 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
     private async _getDocumentAsJson(document: TextDocument) {
         try {
             this.log.debug(`Read config file from ${document.uri.path}`);
-            if (document.uri.path.endsWith('.ts')) {
-                register({ transpileOnly: true });
-            }
-
-            const { config }: { config: Options.Testrunner } = await import(document.uri.path);
-            return new ConfigFile(config);
+            return await ConfigFile.load(document.uri.path);
         } catch (e: any) {
             this.log.error(e.message);
             window.showErrorMessage(`File ${document.fileName} couldn't be parsed`);

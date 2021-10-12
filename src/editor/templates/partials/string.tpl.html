@@ -1,6 +1,18 @@
+<% 
+const configValue = it.global.config[it.property]
+const name = typeof it.index === 'number'
+    ? `${it.property}[${it.index}]`
+    : it.property
+
+let value = typeof configValue === 'undefined'
+    ? ''
+    : Array.isArray(configValue)
+        ? configValue.join('\n')
+        : configValue
+%> 
 <vscode-inputbox
-    name="<%= it.property %>"
-    value="<%= typeof it.global.config[it.property] !== 'undefined' ? it.global.config[it.property] : '' %>"
+    name="<%= name %>"
+    value="<%= value %>"
     placeholder="<%= it.default || '' %>"
     <%= it.multi ? 'multiline' : '' %>
     <%= it.index ? `data-index=${it.index}` : '' %>
