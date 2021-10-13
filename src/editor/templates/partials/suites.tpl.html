@@ -18,26 +18,14 @@ if (Object.keys(val).length === 0) {
         <% Object.entries(val).forEach(([suiteName, specs], i) => { %>
         <vscode-table-row>
             <vscode-table-cell>
-                <%~ include('string', {
-                    property: 'suiteName',
-                    index: i,
-                    global: {
-                        config: { ['suiteName']: suiteName }
-                    }
-                }) %>
+                <%= suiteName %>
             </vscode-table-cell>
             <vscode-table-cell>
-                <%~ include('string', {
-                    property: 'suiteSpecs',
-                    index: i,
-                    global: {
-                        config: { ['suiteSpecs']: specs.join('\n') }
-                    },
-                    multi: true
-                }) %>
+                <% specs.forEach((s) => { %>
+                    <%= s %><br />
+                <% }) %>
             </vscode-table-cell>
         </vscode-table-row>
         <% }) %>
     </vscode-table-body>
 </vscode-table>
-<vscode-button id="newSuite">New Suite</vscode-button>

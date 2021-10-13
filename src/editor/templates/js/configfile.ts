@@ -24,32 +24,6 @@ if (viewInEditorBtn) {
     viewInEditorBtn.onclick = () => vscode.postMessage({ type: 'viewInEditor' });
 }
 
-/**
- * "New Site" command listener
- */
-const newSuiteBtn: HTMLElement | null = document.getElementById('newSuite');
-const suiteTableBody: HTMLElement | null = document.querySelector('.suitesTable > vscode-table-body');
-if (newSuiteBtn && suiteTableBody) {
-    newSuiteBtn.onclick = () => {
-        const newIndex = document.querySelectorAll('*[name^="suiteName"]').length;
-        const row = document.createElement('vscode-table-row');
-        row.setAttribute('role', 'row');
-        row.innerHTML = `
-            <vscode-table-cell role="cell">
-                <vscode-inputbox name="suiteName[${newIndex}]" data-index="${newIndex}"></vscode-inputbox>
-            </vscode-table-cell>
-            <vscode-table-cell role="cell">
-                <vscode-inputbox name="suiteSpecs[${newIndex}]" multiline="" data-index="${newIndex}"></vscode-inputbox>
-            </vscode-table-cell>`;
-        suiteTableBody!.innerHTML += row.outerHTML;
-        const state = vscode.getState();
-        state.suites[''] = [];
-        vscode.setState(state);
-        reininitiateState();
-        registerListener([...suiteTableBody.querySelectorAll('vscode-inputbox')]);
-    };
-}
-
 const getInputValue = (elem: LitElement) => {
     const property = elem.getAttribute('name');
 
@@ -87,12 +61,10 @@ const getInputValue = (elem: LitElement) => {
         throw new Error(`Couldn't get value for element ${elem}`);
     }
 
-    console.log('YOO', elem, property, value);
     return { property, value };
 };
 
 const setInputValue = (elem: LitElement, value: any) => {
-    console.log(`Set value`, elem, value);
     const singleSelect = elem as VscodeSingleSelect;
     const multiSelect = elem as VscodeMultiSelect;
     const inputBox = elem as VscodeInputbox;
@@ -121,52 +93,6 @@ const onChangeListener = (event: VscChangeEvent) => {
     let newProperty = property;
     let newValue: any = value;
 
-    const isSuiteProp = property.startsWith('suiteName');
-    const isSuiteVal = property.startsWith('suiteSpecs');
-    if ((isSuiteProp || isSuiteVal)) {
-        console.log('START WITH STATE', state);
-        let suites = state.suites || {};
-
-        /**
-         * update single object values/properties, e.g. suite name or specs
-         * of a specific suite, e.g. update "suiteName[2]" or "suiteSpecs[1]"
-         * using the actual object
-         */
-        const newVal = value as IndexedValue;
-        const entries = Object.entries(suites);
-
-        /**
-         * check if new item was added
-         */
-        console.info(newVal, entries);
-        if (newVal.index > (entries.length - 1)) {
-            console.info('ADDING A NEW ONE');
-            suites[isSuiteProp ? newVal.value : ''] = isSuiteVal
-                ? Array.isArray(newVal.value) ? newVal.value : [newVal.value]
-                : [];
-        } else {
-            /**
-             * update existing items
-             */
-            suites = entries.reduce((prev, [k, v], i) => {
-                if (newVal.index === i) {
-                    console.info('UPDATING WITH INDEX', i);
-                    prev[isSuiteProp ? newVal.value : k] = isSuiteVal
-                        ? Array.isArray(newVal.value)
-                            ? newVal.value
-                            : [newVal.value]
-                        : v;
-                } else {
-                    console.info('leep', k, v);
-                    prev[k] = v;
-                }
-                return prev;
-            }, {} as Record<string, string[]>);
-        }
-        newProperty = 'suites';
-        newValue = suites;
-    }
-
     // @ts-ignore
     state[newProperty as any] = newValue;
     console.log('Update property', newProperty, 'to', newValue);
@@ -189,38 +115,24 @@ const registerListener = (formFields: (VscodeInputbox | VscodeMultiSelect | Vsco
         initialJson[name] = getInputValue(input).value;
         input.addEventListener('vsc-change', onChangeListener as any);
     }
-    console.log('NEW INITIAL', initialJson);
 };
 
 const reininitiateState = () => {
     const state = vscode.getState();
-    console.log(`Reinstantiate state`, state);
     for (const [key, val] of Object.entries(state)) {
-        if (key === 'suites') {
-            let i = 0;
-            for (const [suiteName, suiteSpecs] of Object.entries(val as Record<string, string[]>)) {
-                const suiteNameElem = document.querySelector(`*[name="suiteName[${i}]"]`) as LitElement;
-                setInputValue(suiteNameElem, { index: i, value: suiteName });
-                const suiteSpecsElem = document.querySelector(`*[name="suiteSpecs[${i}]"]`) as LitElement;
-                setInputValue(suiteSpecsElem, { index: i, value: suiteSpecs.join('\n') });
-                ++i;
-            }
-        } else {
-            const formElem = document.querySelector(`*[name="${key}"]`) as LitElement;
-            if (!formElem) {
-                console.error(`Couldn't find elem with selector "*[name="${key}"]"`);
-                continue;
-            }
-            setInputValue(formElem, val);
+        const formElem = document.querySelector(`*[name="${key}"]`) as LitElement;
+        if (!formElem) {
+            console.error(`Couldn't find elem with selector "*[name="${key}"]"`);
+            continue;
         }
+        setInputValue(formElem, val);
     }
 };
 
 registerListener(formFields);
 const state = vscode.getState();
 if (!state) {
-    console.log(`Initiate state`, initialJson);
     vscode.setState(initialJson);
 } else {
-    
+    reininitiateState();
 }
