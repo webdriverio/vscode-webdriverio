@@ -94,6 +94,11 @@
           "command": "webdriverio.testrunner.run",
           "when": "viewItem == wdioConfig",
           "group": "inline"
+        },
+        {
+          "command": "webdriverio.testrunner.run",
+          "when": "viewItem == wdioSuite",
+          "group": "inline"
         }
       ]
     }

@@ -2,6 +2,8 @@ import { window, Disposable, commands } from 'vscode';
 
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
+import type { SuiteItem, ConfigFileItem } from '../provider/configfile';
+import { Options } from '@wdio/types';
 
 const serviceId = 'testrunner';
 
@@ -27,8 +29,14 @@ export class Testrunner implements Disposable {
         return disposables;
     }
 
-    run(): void {
-        window.showInformationMessage('Run config file');
+    run(srcTrigger: SuiteItem | ConfigFileItem): void {
+        const args: Partial<Options.Testrunner> = {};
+
+        if (srcTrigger.contextValue === 'wdioSuite') {
+            args.specs = (srcTrigger as SuiteItem).specs;
+        }
+
+        window.showInformationMessage(`Run config file ${srcTrigger.path} with args ${JSON.stringify(args)}`);
     }
 
     dispose(): void {

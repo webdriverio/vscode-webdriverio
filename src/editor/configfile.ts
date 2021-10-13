@@ -119,7 +119,8 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
             id: 'vscode-configfile-stylesheet',
             href: this._assetUri(webview, ['src', 'editor', 'templates', 'css', 'configfile.css'])
         }];
-        this.log.debug(config);
+
+        this.log.debug('Render config file:', config);
         try {
             const html = await render(TEMPLATE, {
                 config, scripts, stylesheets, nonce, cspSource,

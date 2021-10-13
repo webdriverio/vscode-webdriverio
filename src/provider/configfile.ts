@@ -5,9 +5,11 @@ import {
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+import { ConfigFile } from '../models/configfile';
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 import { getCurrentWorkspaceFolderUri } from '../utils';
+import { Options } from '@wdio/types';
 
 const CONFIG_REGEX = /^wdio\.(.*)\.(ts|js)$/;
 type ItemTypes = ConfigFileItem | AddNewConfigItem;
@@ -59,10 +61,27 @@ export class ConfigFileProvider implements TreeDataProvider<ItemTypes> {
         window.showInformationMessage('Add Config');
     }
 
-    async getChildren() {
+    async getChildren(element?: ConfigFileItem) {
         if (!this._workspaceRoot) {
             window.showInformationMessage('No WebdriverIO config in empty workspace');
             return Promise.resolve([]);
+        }
+
+        if (element) {
+            if (!element.suites) {
+                const config = await ConfigFile.load(element.path);
+                element.suites = config.asObject.suites;
+            }
+
+            const suites = Object.entries(element.suites || {});
+            if (suites.length === 0) {
+                element.collapsibleState = TreeItemCollapsibleState.None;
+                return [];
+            }
+
+            return suites.map(([suiteName, suiteSpecs]) => (
+                new SuiteItem(suiteName, suiteSpecs, element)
+            ));
         }
 
         const rootFiles = await fs.readdir(
@@ -92,7 +111,11 @@ export class ConfigFileProvider implements TreeDataProvider<ItemTypes> {
     }
 }
 
-class ConfigFileItem extends TreeItem {
+export class ConfigFileItem extends TreeItem {
+    public iconPath = new ThemeIcon('gear');
+    public suites?: Options.Testrunner['suites'];
+    public description: string;
+
     private _workspaceRoot = getCurrentWorkspaceFolderUri();
     private _log = LoggerService.get();
 
@@ -100,7 +123,7 @@ class ConfigFileItem extends TreeItem {
         public readonly label: string,
         private fileName: string
     ) {
-        super(label, TreeItemCollapsibleState.None);
+        super(label, TreeItemCollapsibleState.Collapsed);
         this.tooltip = `${this.label}-${this.fileName}`;
         this.description = this.fileName;
         this.contextValue = 'wdioConfig';
@@ -111,23 +134,42 @@ class ConfigFileItem extends TreeItem {
         };
     }
 
-    open () {
-        const filePath = path.join(this._workspaceRoot!.path, this.fileName);
-        this._log.info(`Open config file ${filePath}`);
-        return commands.executeCommand('vscode.open', Uri.parse(filePath));
+    get path () {
+        return path.join(this._workspaceRoot!.path, this.fileName);
     }
 
-    iconPath = new ThemeIcon('gear');
+    open () {
+        this._log.info(`Open config file ${this.path}`);
+        return commands.executeCommand('vscode.open', Uri.parse(this.path));
+    }
+}
+
+export class SuiteItem extends TreeItem {
+    public iconPath = new ThemeIcon('folder-library');
+
+    constructor(
+        public readonly label: string,
+        public readonly specs: string[],
+        private _parent: ConfigFileItem
+    ) {
+        super(label, TreeItemCollapsibleState.None);
+        this.tooltip = `${this.label}: ${this._parent.description}`;
+        this.contextValue = 'wdioSuite';
+    }
+
+    get path () {
+        return this._parent.path;
+    }
 }
 
 class AddNewConfigItem extends TreeItem {
+    public iconPath = new ThemeIcon('plus');
+
     constructor(
         public readonly label: string,
-        public readonly command: Command
+        public readonly command?: Command
     ) {
         super(label, TreeItemCollapsibleState.None);
         this.command = command;
     }
-
-    iconPath = new ThemeIcon('plus');
 }

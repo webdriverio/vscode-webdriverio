@@ -10,7 +10,6 @@ import {
     SUPPORTED_REPORTER, SUPPORTED_SERVICES, WDIO_DEFAULTS,
     AUTOMATION_PROTOCOL_OPTIONS, FRAMEWORK_OPTIONS, LOGLEVEL_OPTIONS
 } from '../editor/constants';
-import type { IndexedValue } from '../types';
 
 export class ConfigFile extends EventEmitter {
     private _slice: Slice;
