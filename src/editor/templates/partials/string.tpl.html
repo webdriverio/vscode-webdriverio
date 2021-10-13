@@ -15,5 +15,5 @@ let value = typeof configValue === 'undefined'
     value="<%= value %>"
     placeholder="<%= it.default || '' %>"
     <%= it.multi ? 'multiline' : '' %>
-    <%= it.index ? `data-index=${it.index}` : '' %>
+    <%= typeof it.index === 'number' ? `data-index=${it.index}` : '' %>
 ></vscode-inputbox>

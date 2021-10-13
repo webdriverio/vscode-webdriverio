@@ -1,20 +1,22 @@
 import { Options } from '@wdio/types';
-import { Transform, JSCodeshift, ObjectProperty } from "jscodeshift";
+import { Transform, JSCodeshift, Collection } from "jscodeshift";
 
 import { WDIO_DEFAULTS } from '../editor/constants';
 
 const getObjectProperty = (j: JSCodeshift, property: string, val: any) => {
     console.log('Update', property, 'with', val);
 
-    let newVal;
     if (typeof val === 'string') {
-        newVal = j.stringLiteral(val);
-    } else if (typeof val === 'number') {
-        newVal = j.literal(val);
-    } else if (['specs', 'exclude'].includes(property)) {
-        newVal = j.arrayExpression(val.map((v: string) => j.stringLiteral(v)));
-    } else if (property === 'suites') {
-        newVal = j.objectExpression(Object.entries(val as Record<string, string[]>).map(
+        return j.stringLiteral(val);
+    } 
+    if (typeof val === 'number') {
+        return j.literal(val);
+    }
+    if (['specs', 'exclude'].includes(property)) {
+        return j.arrayExpression(val.map((v: string) => j.stringLiteral(v)));
+    }
+    if (property === 'suites') {
+        return j.objectExpression(Object.entries(val as Record<string, string[]>).map(
             ([key, val]) => j.objectProperty(
                 key ? j.identifier(key) : j.stringLiteral(''),
                 j.arrayExpression(val.map((v) => j.stringLiteral(v)))
@@ -22,7 +24,21 @@ const getObjectProperty = (j: JSCodeshift, property: string, val: any) => {
         );
     }
 
-    return newVal;
+    console.warn(`Unknown value to transform: ${property}: ${val}`);
+};
+
+const getQuotationStyle = (j: JSCodeshift, root: Collection<any>): 'single' | 'double' => {
+    let single = 0;
+    let double = 0;
+    root.find(j.StringLiteral).forEach(({ node }) => {
+        // @ts-expect-error
+        if (node.extra && typeof node.extra.raw === 'string' && node.extra.raw.startsWith("'")) {
+            single++;
+            return;
+        }
+        double++;
+    });
+    return single > double ? 'single' : 'double';
 };
 
 /**
@@ -54,17 +70,23 @@ const transform: Transform = (file, api, options) => {
     for (const [key, val] of Object.entries(options.config as Options.Testrunner)) {
         const nodes = configNode.find(j.ObjectProperty, { key: { name: key }});
         if (nodes.length > 0) {
-            nodes.replaceWith((node) => {
-                if (node.node.key.type !== 'Identifier') {
+            nodes.replaceWith(({ node }) => {
+                const key = node.key.type === 'Identifier'
+                    ? node.key.name 
+                    : node.key.type === 'Literal'
+                        ? node.key.value 
+                        : null;
+                
+                if (!key) {
+                    console.log(`Property with unknown key: ${node.key}`);
                     return node;
                 }
 
-                const newVal = getObjectProperty(j, node.node.key.name as any as string, val);
+                const newVal = getObjectProperty(j, key.toString(), val);
                 if (!newVal) {
-                    console.log(`No replacement available for ${key}`);
-                    return node.node;
+                    return node;
                 }
-                const object = { ...node.node, key: node.node.key, value: newVal };
+                const object = { ...node, key: node.key, value: newVal };
                 return j.objectProperty.from(object);
             });
             continue;
@@ -87,7 +109,9 @@ const transform: Transform = (file, api, options) => {
         ));
     }
 
-    return root.toSource();
+    return root.toSource({
+        quote: getQuotationStyle(j, root)
+    });
 };
 
 export default transform;

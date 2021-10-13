@@ -12,8 +12,6 @@ import {
 } from '../editor/constants';
 import type { IndexedValue } from '../types';
 
-const pool = workerpool.pool(__dirname + '/../worker.js');
-
 export class ConfigFile extends EventEmitter {
     private _slice: Slice;
     private _store: EnhancedStore;
@@ -41,6 +39,7 @@ export class ConfigFile extends EventEmitter {
     }
 
     static async load (modulePath: string) {
+        const pool = workerpool.pool(__dirname + '/../worker.js');
         const content = await pool.exec('loadConfig', [modulePath]) as string;
         const config = eval('(' + content + ')');
         return new ConfigFile(config);
@@ -50,12 +49,11 @@ export class ConfigFile extends EventEmitter {
         this.log.info('Update model state', action);
         const prop = action.payload.prop;
         const val = action.payload.value;
-        const isSuiteProp = prop.startsWith('suiteName');
-        const isSuiteVal = prop.startsWith('suiteSpecs');
+        
 
         if (
             ['string', 'number'].includes(WDIO_DEFAULTS[prop as keyof Options.Testrunner]?.type!) ||
-            prop === 'specs'
+            ['specs', 'suites'].includes(prop)
         ) {
             // @ts-ignore
             state[prop] = val;
@@ -73,35 +71,6 @@ export class ConfigFile extends EventEmitter {
             state.reporters = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
         } else if (prop === 'services') {
             state.services = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
-        } else if ((isSuiteProp || isSuiteVal)) {
-            const suites = state.suites || {};
-
-            /**
-             * update single object values/properties, e.g. suite name or specs
-             * of a specific suite, e.g. update "suiteName[2]" or "suiteSpecs[1]"
-             * using the actual object
-             */
-            const newVal = val as IndexedValue;
-            const entries = Object.entries(suites);
-
-            /**
-             * check if new item was added
-             */
-            if (newVal.index > (entries.length - 1)) {
-                suites[isSuiteProp ? newVal.value : ''] = isSuiteVal
-                    ? newVal.value as any as string[]
-                    : [];
-            }
-
-            /**
-             * update existing items
-             */
-            state.suites = entries.reduce((prev, [key, val], i) => {
-                if (newVal.index === i) {
-                    prev[isSuiteProp ? newVal.value : key] = isSuiteVal ? newVal.value as any as string[] : val;
-                }
-                return prev;
-            }, {} as Record<string, string[]>);
         }
 
         return state;
