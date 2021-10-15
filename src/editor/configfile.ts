@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { render, templates, compile } from 'eta';
+import { render } from 'eta';
 import {
   CancellationToken,
   CustomTextEditorProvider,
@@ -14,6 +14,7 @@ import {
   Uri,
   commands,
 } from 'vscode';
+import serialize from 'serialize-javascript';
 import type { Options } from '@wdio/types';
 
 // @ts-ignore
@@ -28,7 +29,7 @@ import type { IndexedValue } from '../types';
 
 const ROOT = path.join(__dirname, '..', '..');
 const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
-const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'configfile.tpl.html')).toString();
+const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'main.tpl.html')).toString();
 
 interface Event {
     type: 'viewInEditor',
@@ -37,16 +38,6 @@ interface Event {
         value: number | number[] | string | string[] | IndexedValue
     }
 }
-
-/**
- * load partials
- */
-fs.readdirSync(path.join(TPL_ROOT, 'partials'), { withFileTypes: true })
-    .filter((file) => file.isFile())
-    .forEach((file) => templates.define(
-        file.name.replace('.tpl.html', ''),
-        compile(fs.readFileSync(path.join(TPL_ROOT, 'partials', file.name)).toString())
-    ));
 
 export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
     private disposables: Disposable[] = [];
@@ -104,27 +95,22 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         const { cspSource } = webview;
         const nonce = crypto.randomBytes(16).toString('base64');
         const scripts = [{
-            src: this._assetUri(webview, ['node_modules', '@bendera', 'vscode-webview-elements', 'dist', 'bundled.js' ]),
-            defer: false
-        }, {
-            src: this._assetUri(webview, ['src', 'editor', 'templates', 'js', 'compat.js']),
-        }, {
-            src: this._assetUri(webview, ['out', 'editor', 'templates', 'js', 'configfile.js']),
+            src: this._assetUri(webview, ['out', 'assets', 'webview.bundle.js']),
             defer: true
         }];
         const stylesheets = [{
             id: 'vscode-codicon-stylesheet',
             href: this._assetUri(webview, ['node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'])
-        }, {
-            id: 'vscode-configfile-stylesheet',
-            href: this._assetUri(webview, ['src', 'editor', 'templates', 'css', 'configfile.css'])
         }];
 
         this.log.debug('Render config file:', config);
         try {
             const html = await render(TEMPLATE, {
-                config, scripts, stylesheets, nonce, cspSource,
-                defaults: WDIO_DEFAULTS
+                scripts, stylesheets, nonce, cspSource,
+                initialValue: serialize(config),
+                defaults: WDIO_DEFAULTS,
+                title: 'WebdriverIO Config Editor',
+                rootElem: 'wdio-config-webview'
             });
             return html!;
         } catch (err: any) {

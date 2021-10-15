@@ -1,18 +1,5 @@
-import { Options } from '@wdio/types';
-
-type Option = { label: string, value?: string };
-
-type Definition<T> = {
-    [k in keyof T]: {
-        type: 'string' | 'number' | 'boolean' | 'object' | 'function' | 'option' | 'suites' | 'capabilities'
-        name: string
-        default?: any
-        required?: boolean
-        description: string,
-        options?: string[] | Option[],
-        multi?: boolean
-    }
-};
+import type { Options } from '@wdio/types';
+import type { Option, Definition } from '../types';
 
 export const LOGLEVEL_OPTIONS = [
     'trace', 'debug', 'info', 'warn', 'error', 'silent'
@@ -31,155 +18,155 @@ export const AUTOMATION_PROTOCOL_OPTIONS: Option[] = [{
 
 export const FRAMEWORK_OPTIONS = [{
     label: 'Mocha',
-    value: 'mocha'
+    value: '@wdio/mocha-framework'
 }, {
     label: 'Jasmine',
-    value: 'jasmine'
+    value: '@wdio/jasmine-framework'
 }, {
     label: 'Cucumber',
-    value: 'cucumber'
+    value: '@wdio/cucumber-framework'
 }];
 
 export const SUPPORTED_REPORTER = [{
     label: 'Allure Reporter',
-    value: 'allure'
+    value: '@wdio/allure-reporter'
 }, {
     label: 'Concise Reporter',
-    value: 'concise'
+    value: '@wdio/concise-reporter'
 }, {
     label: 'Dot Reporter',
-    value: 'dot'
+    value: '@wdio/dot-reporter'
 }, {
     label: 'Junit Reporter',
-    value: 'junit'
+    value: '@wdio/junit-reporter'
 }, {
     label: 'Spec Reporter',
-    value: 'spec'
+    value: '@wdio/spec-reporter'
 }, {
     label: 'Sumologic Reporter',
-    value: 'sumologic'
+    value: '@wdio/sumologic-reporter'
 }, {
     label: 'Report Portal Reporter',
-    value: 'reportportal'
+    value: 'wdio-reportportal-reporter'
 }, {
     label: 'Video Reporter',
-    value: 'video'
+    value: 'wdio-video-reporter'
 }, {
     label: 'HTML Reporter',
-    value: '@rpii/wdio-html-reporter'
+    value: '@rpii/wdio-html-reporter-reporter'
 }, {
     label: 'JSON Reporter',
-    value: 'json'
+    value: 'wdio-json-reporter'
 }, {
     label: 'Mochawesome Reporter',
-    value: 'mochawesome'
+    value: 'wdio-mochawesome-reporter'
 }, {
     label: 'Timeline Reporter',
-    value: 'timeline'
+    value: 'wdio-timeline-reporter'
 }, {
     label: 'CucumberJS JSON Reporter',
-    value: 'cucumberjs-json'
+    value: 'wdio-cucumberjs-json-reporter'
 }, {
     label: 'Markdown Reporter',
-    value: 'markdown'
+    value: 'wdio-markdown-reporter'
 }, {
     label: 'TeamCity Reporter',
-    value: 'teamcity'
+    value: 'wdio-teamcity-reporter'
 }];
 
 export const SUPPORTED_SERVICES = [{
     label: 'Appium Service',
-    value: 'appium'
+    value: '@wdio/appium-service'
 }, {
     label: 'Browserstack Service',
-    value: 'browserstack'
+    value: '@wdio/browserstack-service'
 }, {
     label: 'Crossbrowsertesting Service',
-    value: 'crossbrowsertesting'
+    value: '@wdio/crossbrowsertesting-service'
 }, {
     label: 'Devtools Service',
-    value: 'devtools'
+    value: '@wdio/devtools-service'
 }, {
     label: 'Firefox Profile Service',
-    value: 'firefox-profile'
+    value: '@wdio/firefox-profile-service'
 }, {
     label: 'Sauce Service',
-    value: 'sauce'
+    value: '@wdio/sauce-service'
 }, {
     label: 'Selenium Standalone Service',
-    value: 'selenium-standalone'
+    value: '@wdio/selenium-standalone-service'
 }, {
     label: 'Shared Store Service',
-    value: 'shared-store'
+    value: '@wdio/shared-store-service'
 }, {
     label: 'Static Server Service',
-    value: 'static-server'
+    value: '@wdio/static-server-service'
 }, {
     label: 'Testingbot Service',
-    value: 'testingbot'
+    value: '@wdio/testingbot-service'
 }, {
     label: 'ChromeDriver Service',
-    value: 'chromedriver'
+    value: 'wdio-chromedriver-service'
 }, {
     label: 'Intercept Service',
-    value: 'intercept'
+    value: 'wdio-intercept-service'
 }, {
     label: 'Zafira Listener Service',
-    value: 'zafira-listener'
+    value: 'wdio-zafira-listener-service'
 }, {
     label: 'Report Portal Service',
-    value: 'reportportal'
+    value: 'wdio-reportportal-service'
 }, {
     label: 'Docker Service',
-    value: 'docker'
+    value: 'wdio-docker-service'
 }, {
     label: 'UI5 Service',
-    value: 'ui5'
+    value: 'wdio-ui5-service'
 }, {
     label: 'WireMock Service',
-    value: 'wiremock'
+    value: 'wdio-wiremock-service'
 }, {
     label: 'Slack Service',
-    value: 'slack'
+    value: 'wdio-slack-service'
 }, {
     label: 'LambdaTest Service',
-    value: 'lambdatest'
+    value: 'wdio-lambdatest-service'
 }, {
     label: 'Image Comparison (Visual Regression Testing) Service',
-    value: 'image-comparison'
+    value: 'wdio-image-comparison-service'
 }, {
     label: 'Ng-apimock Service',
-    value: 'ng-apimock'
+    value: 'wdio-ng-apimock-service'
 }, {
     label: 'Novus Visual Regression Service',
-    value: 'novus-visual-regression'
+    value: 'wdio-novus-visual-regression-service'
 }, {
     label: 'Re-run Service',
-    value: 'rerun'
+    value: 'wdio-rerun-service'
 }, {
     label: 'winappdriver Service',
-    value: 'winappdriver'
+    value: 'wdio-winappdriver-service'
 }, {
     label: 'ywinappdriver Service',
-    value: 'ywinappdriver'
+    value: 'wdio-ywinappdriver-service'
 }, {
     label: 'PerformanceTotal Service',
-    value: 'performancetotal'
+    value: 'wdio-performancetotal-service'
 }, {
     label: 'CleanupTotal Service',
-    value: 'cleanuptotal'
+    value: 'wdio-cleanuptotal-service'
 }, {
     label: 'AWS Device Farm Service',
-    value: 'aws-device-farm'
+    value: 'wdio-aws-device-farm-service'
 }, {
     label: 'OCR service for Appium Native Apps Service',
-    value: 'ocr'
+    value: 'wdio-ocr-service'
 }, {
     label: 'Auto-detect missing imports w/eslint Service',
-    value: 'eslinter'
+    value: 'wdio-eslinter-service'
 }, {
     label: 'Microsoft Teams Service',
-    value: 'ms-teams'
+    value: 'wdio-ms-teams-service'
 }];
 
 export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
@@ -309,7 +296,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     reporters: {
         name: 'Reporters',
-        type: 'option',
+        type: 'plugin',
         description: 'List of reporters to use, a reporter can be either a string or an object with reporter options.',
         options: SUPPORTED_REPORTER,
         multi: true
@@ -319,7 +306,7 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
      */
     services: {
         name: 'Services',
-        type: 'option',
+        type: 'plugin',
         description: 'Set of WDIO services to use.',
         options: SUPPORTED_SERVICES,
         multi: true

@@ -111,7 +111,10 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "dev": "npm run watch",
+    "watch": "run-p watch:*",
+    "watch:ts": "tsc -watch -p ./",
+    "watch:rollup": "npx rollup --config rollup.config.js  --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
@@ -136,6 +139,8 @@
   "dependencies": {
     "@bendera/vscode-webview-elements": "^0.6.3",
     "@reduxjs/toolkit": "^1.6.2",
+    "@rollup/plugin-node-resolve": "^13.0.5",
+    "@rollup/plugin-typescript": "^8.2.5",
     "@types/jscodeshift": "^0.11.2",
     "@vscode/codicons": "0.0.25",
     "@wdio/types": "^7.14.1",
@@ -143,6 +148,9 @@
     "jscodeshift": "^0.13.0",
     "lodash.pick": "^4.4.0",
     "lodash.pullat": "^4.6.0",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^2.58.0",
+    "rollup-plugin-ejs": "^2.2.0",
     "serialize-javascript": "^6.0.0",
     "ts-node": "^10.2.1",
     "workerpool": "^6.1.5"
