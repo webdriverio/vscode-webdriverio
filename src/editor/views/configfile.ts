@@ -1,4 +1,3 @@
-import { Options } from '@wdio/types';
 import {
     html,
     css,
@@ -9,15 +8,20 @@ import {
 } from 'lit-element';
 import { WDIO_DEFAULTS } from '../constants';
 import type { DefinitionEntry, Option } from '../../types';
-import { ComponentEvent } from '../../types';
+import { Options } from '@wdio/types';
 
 // @ts-ignore
-const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi<Options.Testrunner>();
+const state = vscode.getState();
 
 @customElement('wdio-config-webview')
 export class WdioConfigWebView extends LitElement {
     @property({ type: Object, reflect: true })
-    value: Record<string, any> = {};
+    value: Record<string, any> = state || {};
+
+    private get _config () {
+        return state || this.value;
+    }
 
     static get styles(): CSSResult {
         return css/*css*/`
@@ -62,7 +66,7 @@ export class WdioConfigWebView extends LitElement {
 
     getInput (property: string, config: DefinitionEntry) {
         if (config.type === 'string') {
-            const configValue = this.value[property] || '';
+            const configValue = this._config[property] || '';
             const input = document.createElement('vscode-inputbox');
             input.addEventListener('vsc-change', this.updateProperty.bind(this));
             input.setAttribute('name', property);
@@ -82,7 +86,7 @@ export class WdioConfigWebView extends LitElement {
                 <vscode-inputbox
                     name=${property}
                     placeholder=${config.default || ''}
-                    value=${this.value[property] || ''}
+                    value=${this._config[property] || ''}
                     type="number"
                     @vsc-change=${this.updateProperty} 
                 ></vscode-inputbox>
@@ -94,7 +98,7 @@ export class WdioConfigWebView extends LitElement {
                 <br />
                 <wdio-suites
                     name=${property}
-                    value="${JSON.stringify(this.value.suites || {})}"
+                    value="${JSON.stringify(this._config.suites || {})}"
                     @vsc-change=${this.updateProperty}
                 />
             `;
@@ -105,7 +109,7 @@ export class WdioConfigWebView extends LitElement {
                 <br />
                 <wdio-plugin
                     name=${property}
-                    value="${JSON.stringify(this.value.services)}"
+                    value="${JSON.stringify(this._config.services)}"
                     @vsc-change=${this.updateProperty}
                     type=${property}
                 ></wdio-plugin>
@@ -117,7 +121,7 @@ export class WdioConfigWebView extends LitElement {
                 <br />
                 <wdio-plugin
                     name=${property}
-                    value="${JSON.stringify(this.value.reporters)}"
+                    value="${JSON.stringify(this._config.reporters)}"
                     @vsc-change=${this.updateProperty}
                     type=${property}
                 ></wdio-plugin>
@@ -127,7 +131,7 @@ export class WdioConfigWebView extends LitElement {
         if (config.type === 'option') {
             const isSingle = !config.multi;
             const options = config.options?.map((option) => {
-                const val = this.value[property];
+                const val = this._config[property];
                 const optionValue = typeof option === 'string'
                     ? option as string
                     : (option as Option).value || '';
@@ -178,7 +182,7 @@ export class WdioConfigWebView extends LitElement {
         }
 
         if (property === 'capabilities') {
-            const val = this.value.capabilities || [];
+            const val = this._config.capabilities || [];
             const caps = Array.isArray(val)
                 // normal set of capabilities
                 ? val.reduce((prev, curr) => {
@@ -224,10 +228,11 @@ export class WdioConfigWebView extends LitElement {
          * delete property if empty
          */
         if (!value || (Array.isArray(value) && value.filter(Boolean).length === 0)) {
-            delete this.value[property];
+            delete this._config[property];
         }
 
-        this.value[property] = value;
+        this._config[property] = value;
+        vscode.setState(this._config as any);
         vscode.postMessage({
             type: 'update',
             data: { property, value }

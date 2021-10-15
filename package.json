@@ -142,6 +142,7 @@
     "@rollup/plugin-node-resolve": "^13.0.5",
     "@rollup/plugin-typescript": "^8.2.5",
     "@types/jscodeshift": "^0.11.2",
+    "@types/vscode-webview": "^1.57.0",
     "@vscode/codicons": "0.0.25",
     "@wdio/types": "^7.14.1",
     "eta": "^1.12.3",
