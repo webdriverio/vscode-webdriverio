@@ -9,6 +9,7 @@ import {
 } from 'lit-element';
 import { WDIO_DEFAULTS } from '../constants';
 import type { DefinitionEntry, Option } from '../../types';
+import { ComponentEvent } from '../../types';
 
 // @ts-ignore
 const vscode = acquireVsCodeApi();
@@ -60,11 +61,10 @@ export class WdioConfigWebView extends LitElement {
     }
 
     getInput (property: string, config: DefinitionEntry) {
-        console.log(config);
-        
         if (config.type === 'string') {
             const configValue = this.value[property] || '';
             const input = document.createElement('vscode-inputbox');
+            input.addEventListener('vsc-change', this.updateProperty.bind(this));
             input.setAttribute('name', property);
             input.setAttribute('placeholder', config.default || '');
             input.setAttribute('value', Array.isArray(configValue)
@@ -84,6 +84,7 @@ export class WdioConfigWebView extends LitElement {
                     placeholder=${config.default || ''}
                     value=${this.value[property] || ''}
                     type="number"
+                    @vsc-change=${this.updateProperty} 
                 ></vscode-inputbox>
             `;
         }
@@ -91,7 +92,11 @@ export class WdioConfigWebView extends LitElement {
         if (config.type === 'suites') {
             return html/*html*/`
                 <br />
-                <wdio-suites value="${JSON.stringify(this.value.suites || {})}" />
+                <wdio-suites
+                    name=${property}
+                    value="${JSON.stringify(this.value.suites || {})}"
+                    @vsc-change=${this.updateProperty}
+                />
             `;
         }
 
@@ -99,7 +104,9 @@ export class WdioConfigWebView extends LitElement {
             return html/*html*/`
                 <br />
                 <wdio-plugin
+                    name=${property}
                     value="${JSON.stringify(this.value.services)}"
+                    @vsc-change=${this.updateProperty}
                     type=${property}
                 ></wdio-plugin>
             `;
@@ -109,7 +116,9 @@ export class WdioConfigWebView extends LitElement {
             return html/*html*/`
                 <br />
                 <wdio-plugin
+                    name=${property}
                     value="${JSON.stringify(this.value.reporters)}"
+                    @vsc-change=${this.updateProperty}
                     type=${property}
                 ></wdio-plugin>
             `;
@@ -127,6 +136,8 @@ export class WdioConfigWebView extends LitElement {
                     : (option as Option).label;
                 const input = document.createElement('vscode-option');
                 input.setAttribute('value', optionValue);
+                input.setAttribute('name', property);
+                input.addEventListener('vsc-change', this.updateProperty.bind(this));
                 input.innerHTML = optionLabel;
                 const isSelected = isSingle
                     ? (
@@ -147,12 +158,22 @@ export class WdioConfigWebView extends LitElement {
 
             if (isSingle) {
                 return html/*html*/`
-                    <vscode-single-select name=${property}>${options}</vscode-single-select>
+                    <vscode-single-select
+                        @vsc-change=${this.updateProperty}
+                        name=${property}
+                    >
+                        ${options}
+                    </vscode-single-select>
                 `;
             }
 
             return html/*html*/`
-                <vscode-multi-select name=${property}>${options}</vscode-multi-select>
+                <vscode-multi-select
+                    @vsc-change=${this.updateProperty}
+                    name=${property}
+                >
+                    ${options}
+                </vscode-multi-select>
             `;
         }
 
@@ -182,6 +203,35 @@ export class WdioConfigWebView extends LitElement {
 
         console.error(`No input available for type ${config.type}`);
         return html``;
+    }
+
+    updateProperty (ev: Event) {
+        const target = (ev.target as HTMLElement);
+        const property = target.getAttribute('name') as string;
+        let value = target.hasAttribute('multiline')
+            ? ((ev as CustomEvent).detail as string).split('\n')
+            : (ev as CustomEvent).detail;
+
+        /**
+         * modify result for dropdown where `ev.detail` is:
+         * {selectedIndex: number, value: string}
+         */
+        if (typeof value === 'object' && typeof value.selectedIndex === 'number') {
+            value = value.value;
+        }
+
+        /**
+         * delete property if empty
+         */
+        if (!value || (Array.isArray(value) && value.filter(Boolean).length === 0)) {
+            delete this.value[property];
+        }
+
+        this.value[property] = value;
+        vscode.postMessage({
+            type: 'update',
+            data: { property, value }
+        });
     }
 
     openEditor () {

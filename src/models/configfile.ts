@@ -44,34 +44,10 @@ export class ConfigFile extends EventEmitter {
         return new ConfigFile(config);
     }
 
-    private _update (state: Partial<Options.Testrunner>, action: { payload: any, type: string }) {
+    private _update (state: Partial<Options.Testrunner>, action: { payload: { property: string, value: any }, type: string }) {
         this.log.info('Update model state', action);
-        const prop = action.payload.prop;
-        const val = action.payload.value;
-        
-
-        if (
-            ['string', 'number'].includes(WDIO_DEFAULTS[prop as keyof Options.Testrunner]?.type!) ||
-            ['specs', 'suites'].includes(prop)
-        ) {
-            // @ts-ignore
-            state[prop] = val;
-        } else if (prop === 'automationProtocol') {
-            if (val === 0) {
-                delete state.automationProtocol;
-            } else {
-                state.automationProtocol = AUTOMATION_PROTOCOL_OPTIONS[val].value as any as Options.SupportedProtocols;
-            }
-        } else if (prop === 'framework') {
-            state.framework = FRAMEWORK_OPTIONS[val].value;
-        } else if (prop === 'logLevel' && typeof val === 'number') {
-            state.logLevel = LOGLEVEL_OPTIONS[val];
-        } else if (prop === 'reporters') {
-            state.reporters = pullAt(SUPPORTED_REPORTER, val).map((r) => r.value);
-        } else if (prop === 'services') {
-            state.services = pullAt(SUPPORTED_SERVICES, val).map((s) => s.value);
-        }
-
+        // @ts-ignore
+        state[action.payload.property] = action.payload.value;
         return state;
     }
 
@@ -80,9 +56,9 @@ export class ConfigFile extends EventEmitter {
         this.emit('update', config);
     }
 
-    update (prop: keyof Options.Testrunner, value: any) {
+    update (property: keyof Options.Testrunner, value: any) {
         this._store.dispatch(
-            this._slice.actions.update({ prop, value })
+            this._slice.actions.update({ property, value })
         );
     }
 

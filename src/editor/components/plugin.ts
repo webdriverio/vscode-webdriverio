@@ -83,8 +83,6 @@ export class WdioPlugin extends LitElement {
         )) as HTMLElement;
         const oldVal = this.valueCopy;
         const pluginToDelete = btn.getAttribute(PLUGIN_ATTRIBUTE);
-        console.log('DELETE ', btn, pluginToDelete, this.value);
-        
         this.value = this.value.filter((p) => !(
             p === pluginToDelete ||
             (p as [string, Services.ServiceOption])[0] === pluginToDelete

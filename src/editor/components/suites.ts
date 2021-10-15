@@ -1,6 +1,8 @@
 import { Options } from '@wdio/types';
 import {
     html,
+    css,
+    CSSResult,
     LitElement,
     property,
     customElement
@@ -12,6 +14,19 @@ export class WdioSuites extends LitElement {
     @property({ type: Object, reflect: true })
     value: Required<Options.Testrunner>['suites'] = {};
 
+    static get styles(): CSSResult {
+        return css/*css*/`
+        vscode-table vscode-table-body vscode-table-cell {
+            vertical-align: top;
+            padding: 10px;
+        }
+
+        :host > vscode-button {
+            margin-top: 10px;
+        }
+        `;
+    }
+
     render() {
         const suites = Object.keys(this.value);
         if (suites.length === 0) {
@@ -19,13 +34,17 @@ export class WdioSuites extends LitElement {
         }
 
         /**
-         * 30px = table header
-         * 75px = suite row
-         * 10px = padding
+         * 35px = table header
+         * 65px = suite row
          */
-        const tableHeight = (suites.length * 75) + 35 + 10;
+        const tableHeight = (suites.length * 65) + 35;
         return html/* html */`
-        <vscode-table class="suitesTable" zebra style="height: ${tableHeight}px">
+        <vscode-table
+            class="suitesTable"
+            zebra
+            style="height: ${tableHeight}px"
+            columns='["auto", "auto", "100px"]'
+        >
             <vscode-table-header slot="header">
                 <vscode-table-header-cell>Suite Name</vscode-table-header-cell>
                 <vscode-table-header-cell>Specs</vscode-table-header-cell>
@@ -43,7 +62,6 @@ export class WdioSuites extends LitElement {
                     </vscode-table-cell>
                     <vscode-table-cell>
                         <vscode-inputbox
-                            style="margin: 15px 0"
                             value=${specs.join('\n')}
                             multiline
                             data-suite=${suiteName}

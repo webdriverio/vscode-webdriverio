@@ -166,8 +166,6 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
             return this.log.info('Config file is currently being updated');
         }
 
-        this.log.info('Update File YOOOO', config);
-        
         this._isUpdating = true;
         const result = await Runner.run(
             path.resolve(path.join(__dirname, '..', 'transforms', 'configfile.js')),
