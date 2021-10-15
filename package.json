@@ -11,8 +11,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vscode-webdriverio.helloWorld",
-    "onView:webdriverio-config-treeview",
     "onCustomEditor:webdriverio.configFileEditor"
   ],
   "main": "./out/extension.js",
@@ -25,21 +23,13 @@
       },
       {
         "command": "webdriverio.config-explorer.refreshEntry",
-        "icon": "$(gear)",
+        "icon": "$(refresh)",
         "title": "WebdriverIO: Update Configuration List"
       },
       {
         "command": "webdriverio.testrunner.run",
         "icon": "$(play)",
         "title": "WebdriverIO: Run"
-      },
-      {
-        "command": "webdriverio.refreshEntry",
-        "title": "Refresh",
-        "icon": {
-          "light": "resources/light/refresh.svg",
-          "dark": "resources/dark/refresh.svg"
-        }
       }
     ],
     "views": {
@@ -50,11 +40,6 @@
           "name": "Configurations",
           "icon": "assets/logo-webdriver-io.svg",
           "contextualTitle": "WebdriverIO Testrunner"
-        },
-        {
-          "id": "webdriverio-config-treeview",
-          "name": "WebdriverIO is here",
-          "icon": "assets/logo-webdriver-io.svg"
         }
       ]
     },
@@ -82,16 +67,14 @@
       }
     ],
     "menus": {
-      "view/title": [
-        {
-          "command": "webdriverio.refreshEntry",
-          "when": "view == webdriverio",
-          "group": "navigation"
-        }
-      ],
       "view/item/context": [
         {
           "command": "webdriverio.testrunner.run",
+          "when": "viewItem == wdioConfig",
+          "group": "inline"
+        },
+        {
+          "command": "webdriverio.config-explorer.refreshEntry",
           "when": "viewItem == wdioConfig",
           "group": "inline"
         },

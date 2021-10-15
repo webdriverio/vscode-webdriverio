@@ -26,13 +26,6 @@ export function activate(ctx: ExtensionContext) {
 		...ConfigfileEditorProvider.register(ctx),
 	);
 
-	const nodeDependenciesProvider = new NodeDependenciesProvider(workspace.workspaceFolders![0].uri.path);
-	window.registerTreeDataProvider('webdriverio-config-treeview', nodeDependenciesProvider);
-	window.createTreeView('webdriverio-config-treeview', {
-		treeDataProvider: nodeDependenciesProvider
-	});
-	commands.registerCommand('webdriverio.refreshEntry', () => nodeDependenciesProvider.refresh());
-
 	ctx.subscriptions.push(...disposables);
 }
 
