@@ -6,6 +6,7 @@ import {
     CSSResult,
     customElement
 } from 'lit-element';
+import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 import { WDIO_DEFAULTS } from '../constants';
 import type { DefinitionEntry, Option } from '../../types';
 import { Options } from '@wdio/types';
@@ -51,15 +52,11 @@ export class WdioConfigWebView extends LitElement {
                         ${config.name}:
                     </vscode-label>
                     <vscode-form-helper>
-                        <p>${html`${config.description}`}</p>
+                        <p>${unsafeHTML(config.description)}</p>
                     </vscode-form-helper>
                     ${this.getInput(property, config)}
                 </vscode-form-group>
             `)}
-            <vscode-form-group>
-                <vscode-button>Save</vscode-button>
-                <vscode-button secondary>Cancel</vscode-button>
-            </vscode-form-group>
         </vscode-form-container>
         `;
     }

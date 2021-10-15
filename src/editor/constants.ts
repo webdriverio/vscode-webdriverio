@@ -337,12 +337,12 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         description: 'amount of instances to be allowed to run per capability'
     },
     /**
-     * list of strings to watch of `wdio` command is called with `--watch` flag
+     * List of strings to watch of `wdio` command is called with `--watch` flag
      */
     filesToWatch: {
         name: 'Files to Watch',
         type: 'string',
-        description: 'list of strings to watch of <code>wdio</code> command is called with <code>--watch</code> flag',
+        description: 'List of strings to watch of <code>wdio</code> command is called with <code>--watch</code> flag',
         multi: true
     },
 } as const;
