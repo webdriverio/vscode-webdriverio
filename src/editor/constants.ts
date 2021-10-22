@@ -169,6 +169,8 @@ export const SUPPORTED_SERVICES = [{
     value: 'ms-teams'
 }];
 
+const PROTOCOL_OPTIONS = ['http', 'https'];
+
 export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
     /**
      * Allows to specify automation protocol.
@@ -179,6 +181,43 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         description: 'Allows to specify automation protocol.',
         options: AUTOMATION_PROTOCOL_OPTIONS,
         default: AUTOMATION_PROTOCOL_OPTIONS[0]
+    },
+    /**
+     * protocol of automation driver
+     */
+     protocol: {
+        name: 'Protocol',
+        type: 'option',
+        description: 'Protocol to connect to the automation driver.',
+        default: PROTOCOL_OPTIONS[0],
+        options: PROTOCOL_OPTIONS
+    },
+    /**
+     * hostname of automation driver
+     */
+    hostname: {
+        name: 'Hostname',
+        type: 'string',
+        default: 'localhost',
+        description: 'The hostname to the browser driver or Selenium Grid.'
+    },
+    /**
+     * port of automation driver
+     */
+    port: {
+        name: 'Port',
+        type: 'number',
+        default: 4444,
+        description: 'The port number to the browser driver or Selenium Grid.'
+    },
+    /**
+     * path to WebDriver endpoints
+     */
+    path: {
+        name: 'Path',
+        type: 'string',
+        default: '/',
+        description: 'The WebDriver default path (usually "/" but some also support "/wd/hub").'
     },
     /**
      * Define specs for test execution. You can either specify a glob

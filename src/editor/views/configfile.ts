@@ -14,6 +14,7 @@ import { Options } from '@wdio/types';
 // @ts-ignore
 const vscode = acquireVsCodeApi<Options.Testrunner>();
 const state = vscode.getState();
+const CONNECTION_PARAMS = ['protocol', 'hostname', 'port', 'path'];
 
 @customElement('wdio-config-webview')
 export class WdioConfigWebView extends LitElement {
@@ -39,6 +40,18 @@ export class WdioConfigWebView extends LitElement {
     }
 
     render () {
+        const formEntries = Object.entries(WDIO_DEFAULTS)
+            /**
+             * don't show connection options if not needed, e.g.:
+             * - if automation protocol is devtools
+             * - if automation protocol is autodetect property has no value
+             */
+            .filter(([property]) => (
+                !CONNECTION_PARAMS.includes(property) ||
+                this._config.automationProtocol === 'webdriver' ||
+                typeof this._config[property] !== 'undefined'
+            ));
+
         return html/*html*/`
         <header>
             <h1>WebdriverIO Configuration</h1>
@@ -46,7 +59,7 @@ export class WdioConfigWebView extends LitElement {
         </header>
         <hr />
         <vscode-form-container responsive>
-            ${Object.entries(WDIO_DEFAULTS).map(([property, config]) => html/*html*/`
+            ${formEntries.map(([property, config]) => html/*html*/`
                 <vscode-form-group variant="settings-group">
                     <vscode-label for=${property}>
                         ${config.name}:
@@ -143,7 +156,8 @@ export class WdioConfigWebView extends LitElement {
                 const isSelected = isSingle
                     ? (
                         (typeof val === 'undefined' && config.default === option) ||
-                        val === option
+                        (typeof option === 'string' && val === option) ||
+                        (typeof option === 'object' && val === option.value)
                     )
                     : (
                         (typeof val === 'undefined' && config.default === (option as Option).value) ||
@@ -234,6 +248,15 @@ export class WdioConfigWebView extends LitElement {
             type: 'update',
             data: { property, value }
         });
+
+        /**
+         * Some input forms are conditional to the value of some
+         * config options, if they are changed we need to re-render
+         * the form
+         */
+        if (property === 'automationProtocol') {
+            this.requestUpdate();
+        }
     }
 
     openEditor () {
