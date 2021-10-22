@@ -1,9 +1,10 @@
 import { Options } from '@wdio/types';
-import { Transform, JSCodeshift, Collection } from "jscodeshift";
+import { Transform, JSCodeshift, Collection, Expression, ArrayExpression } from "jscodeshift";
 
 import { WDIO_DEFAULTS } from '../editor/constants';
+import { ServiceEntryStringExpression } from './constants';
 
-const getObjectProperty = (j: JSCodeshift, property: string, val: any) => {
+const getObjectProperty = (j: JSCodeshift, property: string, val: any, currentProp?: Expression) => {
     console.log('Update', property, 'with', val);
 
     if (typeof val === 'string') {
@@ -22,6 +23,54 @@ const getObjectProperty = (j: JSCodeshift, property: string, val: any) => {
                 j.arrayExpression(val.map((v) => j.stringLiteral(v)))
             ))
         );
+    }
+    if ((property === 'reporters' || property === 'services') && Array.isArray(val)) {
+        const prop = (currentProp as ArrayExpression) || j.arrayExpression([]);
+        prop.elements = val.map((v: string, i) => {
+            /**
+             * if currentProp is empty we are adding a new plugin
+             * which can only be a string allowed by the webView
+             */
+            if (!currentProp || currentProp.type !== 'ArrayExpression') {
+                return j.stringLiteral(v);
+            }
+            const foundElem = (currentProp as ArrayExpression).elements.find((elem, j) => (
+                /**
+                 * plugin is represented by a string
+                 */
+                (elem?.type ===  'StringLiteral' && v === elem.value) ||
+                /**
+                 * plugin is represented by a class
+                 */
+                (elem?.type === 'Identifier' && v === elem.name) ||
+                /**
+                 * plugin is an object, e.g. inline services: { onPrepare: ... }
+                 * Given we can't represent whats in the object we check if the list
+                 * index is the same.
+                 */
+                (elem?.type === 'ObjectExpression' && v === ServiceEntryStringExpression && i === j) ||
+                /**
+                 * plugin is [PluginEntry, PluginOptions]
+                 */
+                (
+                    elem?.type === 'ArrayExpression' &&
+                    (
+                        elem.elements[0]?.type === 'StringLiteral' && v.startsWith(elem.elements[0].value) ||
+                        elem.elements[0]?.type === 'Identifier' && v.startsWith(elem.elements[0].name)
+                    )
+                )
+            ));
+
+            /**
+             * if element can't be found a new was added
+             */
+            if (!foundElem) {
+                return j.stringLiteral(v);
+            }
+
+            return foundElem;
+        });
+        return prop;
     }
 
     console.warn(`Unknown value to transform: ${property}: ${val}`);
@@ -82,7 +131,7 @@ const transform: Transform = (file, api, options) => {
                     return node;
                 }
 
-                const newVal = getObjectProperty(j, key.toString(), val);
+                const newVal = getObjectProperty(j, key.toString(), val, node.value);
                 if (!newVal) {
                     return node;
                 }

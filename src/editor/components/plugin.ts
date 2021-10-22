@@ -9,6 +9,7 @@ import {
 } from 'lit-element';
 import { SUPPORTED_REPORTER, SUPPORTED_SERVICES } from '../constants';
 import { ComponentEvent } from '../../types';
+import { ServiceEntryStringExpression } from '../../transforms/constants';
 
 const OPTIONS = {
     services: SUPPORTED_SERVICES,
@@ -53,17 +54,34 @@ export class WdioPlugin extends LitElement {
             let [label] = (Array.isArray(p) ? p : [p, {}]) as any as [string, any];
             return { icons: { leaf: this.icon }, label };
         });
+
+        /**
+         * if we have objects in the service list, e.g.:
+         * ```
+         * services: [
+         *     'devtools',
+         *     { ... },
+         *     { ... },
+         *     ...
+         * ]
+         * ```
+         * we won't be able to differentiate between these. In these
+         * cases we can't allow to remove elements as we can't recreate
+         * the service list
+         */
+        const hasUnindentifiableEntries = this.value.includes(ServiceEntryStringExpression);
         
         return html/* html */`
         <div class="wrapper">${tree}</div>
         <hr />
         ${this.addPluginBtn}
-        <vscode-button
-            @click="${this.removePlugin}"
-            class="removeBtn"
-            disabled
-        >Remove</vscode-button>
-        `;
+        ${!hasUnindentifiableEntries ? html/*html*/`
+            <vscode-button
+                @click="${this.removePlugin}"
+                class="removeBtn"
+                disabled
+            >Remove</vscode-button>
+        ` : ''}`;
     }
 
     addNewPlugin (ev: ComponentEvent) {
