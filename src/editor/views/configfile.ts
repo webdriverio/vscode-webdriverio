@@ -42,7 +42,7 @@ export class WdioConfigWebView extends LitElement {
         return html/*html*/`
         <header>
             <h1>WebdriverIO Configuration</h1>
-            <vscode-button click=${this.openEditor}>View in Editor</vscode-button>
+            <vscode-button @click=${this.openEditor}>View in Editor</vscode-button>
         </header>
         <hr />
         <vscode-form-container responsive>

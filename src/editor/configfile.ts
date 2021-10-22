@@ -32,7 +32,7 @@ const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
 const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'main.tpl.html')).toString();
 
 interface Event {
-    type: 'viewInEditor',
+    type: 'viewInEditor' | 'update',
     data?: {
         property: keyof Options.Testrunner,
         value: number | number[] | string | string[] | IndexedValue
