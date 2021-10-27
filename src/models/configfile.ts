@@ -1,15 +1,11 @@
 import workerpool from 'workerpool';
 import pick from 'lodash.pick';
-import pullAt from 'lodash.pullat';
 import { EventEmitter } from 'events';
 import { createSlice, configureStore, Slice, EnhancedStore } from '@reduxjs/toolkit';
 import type { Options } from '@wdio/types';
 
 import { LoggerService } from '../services/logger';
-import {
-    SUPPORTED_REPORTER, SUPPORTED_SERVICES, WDIO_DEFAULTS,
-    AUTOMATION_PROTOCOL_OPTIONS, FRAMEWORK_OPTIONS, LOGLEVEL_OPTIONS
-} from '../editor/constants';
+import { WDIO_DEFAULTS } from '../editor/constants';
 
 export class ConfigFile extends EventEmitter {
     private _slice: Slice;
@@ -46,6 +42,25 @@ export class ConfigFile extends EventEmitter {
 
     private _update (state: Partial<Options.Testrunner>, action: { payload: { property: string, value: any }, type: string }) {
         this.log.info('Update model state', action);
+
+        /**
+         * delete if
+         */
+        if (
+            /**
+             * value is empty string
+             */
+            (typeof action.payload.value === 'string' && action.payload.value.length === 0) ||
+            /**
+             * or value is the default value
+             */
+            (action.payload.value === WDIO_DEFAULTS[action.payload.property as keyof typeof WDIO_DEFAULTS]?.default)
+        ) {
+            // @ts-ignore
+            delete state[action.payload.property];
+            return state;
+        }
+
         // @ts-ignore
         state[action.payload.property] = action.payload.value;
         return state;
