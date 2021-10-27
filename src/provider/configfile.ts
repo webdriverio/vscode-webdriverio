@@ -150,15 +150,15 @@ export class SuiteItem extends TreeItem {
     constructor(
         public readonly label: string,
         public readonly specs: string[],
-        private _parent: ConfigFileItem
+        public readonly parent: ConfigFileItem
     ) {
         super(label, TreeItemCollapsibleState.None);
-        this.tooltip = `${this.label}: ${this._parent.description}`;
+        this.tooltip = `${this.label}: ${this.parent.description}`;
         this.contextValue = 'wdioSuite';
     }
 
     get path () {
-        return this._parent.path;
+        return this.parent.path;
     }
 }
 

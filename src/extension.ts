@@ -1,4 +1,4 @@
-import { Disposable, ExtensionContext, workspace, window, commands } from 'vscode';
+import { Disposable, ExtensionContext, commands } from 'vscode';
 
 import { showOutput } from './commands/show-output';
 import { LoggerService } from './services/logger';

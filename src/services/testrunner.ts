@@ -1,9 +1,12 @@
-import { window, Disposable, commands } from 'vscode';
+import path from 'path';
+import { Disposable, commands } from 'vscode';
+import { Options } from '@wdio/types';
+import type Launcher from '@wdio/cli';
 
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
+import { getWDIOPackage } from '../utils';
 import type { SuiteItem, ConfigFileItem } from '../provider/configfile';
-import { Options } from '@wdio/types';
 
 const serviceId = 'testrunner';
 
@@ -29,14 +32,26 @@ export class Testrunner implements Disposable {
         return disposables;
     }
 
-    run(srcTrigger: SuiteItem | ConfigFileItem): void {
+    async run(srcTrigger: SuiteItem | ConfigFileItem) {
         const args: Partial<Options.Testrunner> = {};
 
         if (srcTrigger.contextValue === 'wdioSuite') {
             args.specs = (srcTrigger as SuiteItem).specs;
         }
 
-        window.showInformationMessage(`Run config file ${srcTrigger.path} with args ${JSON.stringify(args)}`);
+        const configFileItem = (srcTrigger as SuiteItem).parent || (srcTrigger as ConfigFileItem);
+        const LauncherPackage = await getWDIOPackage(configFileItem.path);
+
+        this.log.info(`Run config ${configFileItem.path} with args ${JSON.stringify(args)}`);
+        process.chdir(path.dirname(configFileItem.path));
+        const runner: Launcher = new LauncherPackage(configFileItem.path, args);
+        return runner.run().then(
+            () => this.log.info('Testrun successful'),
+            (err) => {
+                this.log.error(err);
+                this.log.info(`Testrun failed`);
+            }
+        );
     }
 
     dispose(): void {
