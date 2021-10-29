@@ -323,6 +323,18 @@ export const WDIO_DEFAULTS: Definition<Options.Testrunner> = {
         options: FRAMEWORK_OPTIONS
     },
     /**
+     * Directory to store all testrunner log files (including reporter logs and
+     * `wdio` logs). If not set, all logs are streamed to `stdout`. Since most
+     * reporters are made to log to `stdout`, it is recommended to only use this
+     * option for specific reporters where it makes more sense to push report
+     * into a file (like the `junit` reporter, for example).
+     */
+    outputDir: {
+        name: 'Log Directory',
+        type: 'string',
+        description: 'Set directory to store all logs into.'
+    },
+    /**
      * List of reporters to use, a reporter can be either a string or an object with
      * reporter options, e.g.:
      * [

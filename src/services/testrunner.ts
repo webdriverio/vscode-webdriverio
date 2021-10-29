@@ -1,4 +1,5 @@
 import path from 'path';
+import ipc from 'node-ipc';
 import { Disposable, commands } from 'vscode';
 import { Options } from '@wdio/types';
 import type Launcher from '@wdio/cli';
@@ -9,12 +10,15 @@ import { getWDIOPackage } from '../utils';
 import type { SuiteItem, ConfigFileItem } from '../provider/configfile';
 
 const serviceId = 'testrunner';
+ipc.config.id = 'TestrunnerService';
+ipc.config.retry = 1000;
 
 export class Testrunner implements Disposable {
     private log = LoggerService.get();
     
     private constructor() {
         this.log.info('Testrunner created');
+        ipc.connectTo('vscodeWebdriverIO');
     }
 
     static register (): Disposable[] {
@@ -33,7 +37,9 @@ export class Testrunner implements Disposable {
     }
 
     async run(srcTrigger: SuiteItem | ConfigFileItem) {
-        const args: Partial<Options.Testrunner> = {};
+        const args: Partial<Options.Testrunner> = {
+            reporters: [`${__dirname}/plugins/reporter.js`]
+        };
 
         if (srcTrigger.contextValue === 'wdioSuite') {
             args.specs = (srcTrigger as SuiteItem).specs;
@@ -44,6 +50,8 @@ export class Testrunner implements Disposable {
 
         this.log.info(`Run config ${configFileItem.path} with args ${JSON.stringify(args)}`);
         process.chdir(path.dirname(configFileItem.path));
+
+        ipc.of.vscodeWebdriverIO.emit('start');
         const runner: Launcher = new LauncherPackage(configFileItem.path, args);
         return runner.run().then(
             () => this.log.info('Testrun successful'),
