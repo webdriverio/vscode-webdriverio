@@ -47,7 +47,7 @@ export class Testrunner implements Disposable {
         const runner: Launcher = new LauncherPackage(configFileItem.path, args);
         return runner.run().then(
             () => this.log.info('Testrun successful'),
-            (err) => {
+            (err: any) => {
                 this.log.error(err);
                 this.log.info(`Testrun failed`);
             }

@@ -4,15 +4,16 @@ import {
 } from 'vscode';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { Options } from '@wdio/types';
 
+import { InfoEntry } from './utils';
 import { ConfigFile } from '../models/configfile';
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 import { getCurrentWorkspaceFolderUri } from '../utils';
-import { Options } from '@wdio/types';
 
 const CONFIG_REGEX = /^wdio\.(.*)\.(ts|js)$/;
-type ItemTypes = ConfigFileItem | AddNewConfigItem;
+type ItemTypes = ConfigFileItem | AddNewConfigItem | InfoEntry;
 
 export class ConfigFileProvider implements TreeDataProvider<ItemTypes> {
     static viewId = 'config-explorer';
@@ -76,7 +77,7 @@ export class ConfigFileProvider implements TreeDataProvider<ItemTypes> {
             const suites = Object.entries(element.suites || {});
             if (suites.length === 0) {
                 element.collapsibleState = TreeItemCollapsibleState.None;
-                return [];
+                return [new InfoEntry('No suites defined')];
             }
 
             return suites.map(([suiteName, suiteSpecs]) => (

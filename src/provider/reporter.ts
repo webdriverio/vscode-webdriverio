@@ -4,15 +4,18 @@ import {
 } from 'vscode';
 import * as path from 'path';
 
+import { InfoEntry } from './utils';
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 
-export class ReporterProvider implements TreeDataProvider<SessionLogs> {
+type ItemTypes = SessionLogs | TestItem | InfoEntry;
+
+export class ReporterProvider implements TreeDataProvider<ItemTypes> {
     static viewId = 'testrun-explorer';
 
     private _workers: Map<string, any> = new Map();
-    private _onDidChangeTreeData: EventEmitter<SessionLogs | undefined | null | void> = new EventEmitter<SessionLogs | undefined | null | void>();
-    readonly onDidChangeTreeData: Event<SessionLogs | undefined | null | void> = this._onDidChangeTreeData.event;
+    private _onDidChangeTreeData: EventEmitter<ItemTypes | undefined | null | void> = new EventEmitter<ItemTypes | undefined | null | void>();
+    readonly onDidChangeTreeData: Event<ItemTypes | undefined | null | void> = this._onDidChangeTreeData.event;
 
     private log = LoggerService.get();
 
@@ -34,7 +37,7 @@ export class ReporterProvider implements TreeDataProvider<SessionLogs> {
         return disposables;
     }
 
-    getTreeItem(element: SessionLogs): TreeItem {
+    getTreeItem(element: ItemTypes): TreeItem {
         return element;
     }
 
@@ -42,9 +45,15 @@ export class ReporterProvider implements TreeDataProvider<SessionLogs> {
         this._onDidChangeTreeData.fire();
     }
 
-    getChildren(element?: SessionLogs) {
+    getChildren(element?: ItemTypes) {
+        console.log('#GET ME');
+        
         if (element) {
             return [new TestItem('Given this I should do that')];
+        }
+
+        if (this._workers.size === 0) {
+            return [new InfoEntry('No testrun started')];
         }
 
         return [...this._workers.entries()]

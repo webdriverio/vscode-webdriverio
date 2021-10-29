@@ -40,6 +40,12 @@
           "name": "Configurations",
           "icon": "assets/logo-webdriver-io.svg",
           "contextualTitle": "WebdriverIO Testrunner"
+        },
+        {
+          "id": "webdriverio.testrun-explorer",
+          "name": "Testrunner",
+          "icon": "assets/logo-webdriver-io.svg",
+          "contextualTitle": "WebdriverIO Testrunner"
         }
       ]
     },
@@ -126,6 +132,7 @@
     "@types/jscodeshift": "^0.11.2",
     "@types/vscode-webview": "^1.57.0",
     "@vscode/codicons": "0.0.25",
+    "@wdio/cli": "^7.16.3",
     "@wdio/types": "^7.14.1",
     "eta": "^1.12.3",
     "jscodeshift": "^0.13.0",

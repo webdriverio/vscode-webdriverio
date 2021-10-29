@@ -4,6 +4,7 @@ import { showOutput } from './commands/show-output';
 import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
 import { ConfigFileProvider } from './provider/configfile';
+import { ReporterProvider } from './provider/reporter';
 import { ConfigfileEditorProvider } from './editor/configfile';
 import { NodeDependenciesProvider } from './TreeDataProvider';
 
@@ -20,6 +21,7 @@ export function activate(ctx: ExtensionContext) {
 		commands.registerCommand(showOutput.command, () => showOutput()),
 		// views
 		...ConfigFileProvider.register(),
+		...ReporterProvider.register(),
 		// services
 		...Testrunner.register(),
 		// editors
