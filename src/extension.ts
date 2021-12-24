@@ -1,38 +1,17 @@
-import { Disposable, ExtensionContext, commands } from 'vscode';
+import { ExtensionContext } from 'vscode';
+import { ExtensionManager } from './manager';
 
-import { showOutput } from './commands/show-output';
-import { LoggerService } from './services/logger';
-import { Testrunner } from './services/testrunner';
-import { ConfigFileProvider } from './provider/configfile';
-import { ReporterProvider } from './provider/reporter';
-import { ConfigfileEditorProvider } from './editor/configfile';
-import { NodeDependenciesProvider } from './TreeDataProvider';
-
-const disposables: Disposable[] = [];
-let log: LoggerService;
+let manager: ExtensionManager;
 
 export function activate(ctx: ExtensionContext) {
-	log = LoggerService.get(ctx);
-	log.info('Activated %s from %s', ctx.extension.id, ctx.extensionPath);
-
-	disposables.push(
-		log,
-		// general plugin commands
-		commands.registerCommand(showOutput.command, () => showOutput()),
-		// views
-		...ConfigFileProvider.register(),
-		...ReporterProvider.register(),
-		// services
-		...Testrunner.register(),
-		// editors
-		...ConfigfileEditorProvider.register(ctx),
-	);
-
-	ctx.subscriptions.push(...disposables);
+	manager = new ExtensionManager(ctx);
+	manager.activate();
 }
 
 // this method is called when your extension is deactivated
 export function deactivate() {
-	log.info('Disposing Appium extension. Bye!');
-  	disposables.forEach((disposable) => disposable.dispose());
+	if (!manager) {
+		return;
+	}
+	return manager.deactivate();
 }
