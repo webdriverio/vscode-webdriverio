@@ -5,7 +5,8 @@ import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
 import { ConfigFileProvider } from './provider/configfile';
 import { ReporterProvider } from './provider/reporter';
-import { ConfigfileEditorProvider } from './webviews/configfile';
+import ConfigfileEditorProvider from './webviews/configfile';
+import ReporterPanel from './webviews/reporter';
 
 export class ExtensionManager implements Disposable {
     private _disposables: Disposable[] = [];
@@ -25,11 +26,12 @@ export class ExtensionManager implements Disposable {
             commands.registerCommand(showOutput.command, () => showOutput()),
             // views
             ...ConfigFileProvider.register(),
-            ...ReporterProvider.register(),
+            // ...ReporterProvider.register(),
             // services
             ...Testrunner.register(),
-            // editors
+            // webviews
             ...ConfigfileEditorProvider.register(this._ctx),
+            ...ReporterPanel.register(this._ctx)
         );
         this._log.info('Activated %s from %s', this._ctx.extension.id, this._ctx.extensionPath);
     }

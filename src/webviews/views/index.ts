@@ -1,1 +1,2 @@
-export { WdioConfigWebView } from './configfile';
+export { WdioConfigWebview } from './configfile';
+export { WdioReporterWebview } from './reporter';

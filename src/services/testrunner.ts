@@ -18,7 +18,6 @@ export class Testrunner implements Disposable {
     
     private constructor() {
         this.log.info('Testrunner created');
-        ipc.connectTo('vscodeWebdriverIO');
     }
 
     static register (): Disposable[] {
@@ -37,6 +36,8 @@ export class Testrunner implements Disposable {
     }
 
     async run(srcTrigger: SuiteItem | ConfigFileItem) {
+        ipc.connectTo('vscodeWebdriverIO');
+
         const args: Partial<Options.Testrunner> = {
             reporters: [`${__dirname}/plugins/reporter.js`]
         };

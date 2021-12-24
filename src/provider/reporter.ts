@@ -79,8 +79,10 @@ export class ReporterProvider implements TreeDataProvider<ItemTypes> {
     }
 
     private _onCommandStart (args: BeforeCommandArgs) {
+        // @ts-expect-error
         const testId = this._currentTestByWorker.get(args.cid);
         if (!testId) {
+            // @ts-expect-error
             return this.log.info(`No current test defined for ${args.cid}`);
         }
         const commands = this._commands.get(testId) || [];
@@ -90,8 +92,10 @@ export class ReporterProvider implements TreeDataProvider<ItemTypes> {
     }
 
     private _onCommandEnd (args: AfterCommandArgs) {
+        // @ts-expect-error
         const testId = this._currentTestByWorker.get(args.cid);
         if (!testId) {
+            // @ts-expect-error
             return this.log.info(`No current test defined for ${args.cid}`);
         }
         const commands = this._commands.get(testId) || [];

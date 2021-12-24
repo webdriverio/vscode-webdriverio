@@ -1,7 +1,4 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { render } from 'eta';
+import path from 'path';
 import {
   CancellationToken,
   CustomTextEditorProvider,
@@ -10,7 +7,6 @@ import {
   TextDocument,
   WebviewPanel,
   window,
-  Webview,
   Uri,
   commands,
 } from 'vscode';
@@ -20,16 +16,12 @@ import type { Options } from '@wdio/types';
 // @ts-ignore
 import Runner from 'jscodeshift/src/Runner';
 
+import MainWebview from './main';
 import { WDIO_DEFAULTS } from './constants';
-import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
 import { ConfigFile } from '../models/configfile';
 
 import type { IndexedValue } from '../types';
-
-const ROOT = path.join(__dirname, '..', '..');
-const TPL_ROOT = path.join(ROOT, 'src', 'editor', 'templates');
-const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'main.tpl.html')).toString();
 
 interface Event {
     type: 'viewInEditor' | 'update',
@@ -39,16 +31,12 @@ interface Event {
     }
 }
 
-export class ConfigfileEditorProvider implements CustomTextEditorProvider, Disposable {
-    private disposables: Disposable[] = [];
-    private log: LoggerService = LoggerService.get();
+export default class ConfigfileEditorProvider extends MainWebview implements CustomTextEditorProvider {
     private _document?: TextDocument;
     private _model?: ConfigFile;
     private _isUpdating = false;
 
     public static readonly viewType = `${plugin}.configFileEditor`;
-
-    private constructor(private ctx: ExtensionContext) {}
 
     public static register(ctx: ExtensionContext): Disposable[] {
         const provider = new ConfigfileEditorProvider(ctx);
@@ -57,10 +45,6 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
             provider
         );
         return [providerRegistration];
-    }
-
-    public dispose() {
-        this.disposables.forEach((d) => d.dispose());
     }
 
     public async resolveCustomTextEditor(
@@ -86,37 +70,14 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
         // Setup initial content for the webview
         this._model.on('update', (config: Options.Testrunner) => this._updateFile(document, config));
         webview.options = { enableScripts: true };
-        webview.html = await this._getHtmlForWebview(webview, this._model);
+        webview.html = await this._getHtmlForWebview(webview, {
+            config: this._model.asObject,
+            initialValue: serialize(this._model.asObject),
+            defaults: WDIO_DEFAULTS,
+            title: 'WebdriverIO Config Editor',
+            rootElem: 'wdio-config-webview'
+        });
         webview.onDidReceiveMessage(this._onMessage.bind(this));
-    }
-
-    private async _getHtmlForWebview(webview: Webview, model: ConfigFile) {
-        const config = model.asObject;
-        const { cspSource } = webview;
-        const nonce = crypto.randomBytes(16).toString('base64');
-        const scripts = [{
-            src: this._assetUri(webview, ['out', 'assets', 'webview.bundle.js']),
-            defer: true
-        }];
-        const stylesheets = [{
-            id: 'vscode-codicon-stylesheet',
-            href: this._assetUri(webview, ['node_modules', '@vscode', 'codicons', 'dist', 'codicon.css'])
-        }];
-
-        this.log.debug('Render config file:', config);
-        try {
-            const html = await render(TEMPLATE, {
-                scripts, stylesheets, nonce, cspSource,
-                initialValue: serialize(config),
-                defaults: WDIO_DEFAULTS,
-                title: 'WebdriverIO Config Editor',
-                rootElem: 'wdio-config-webview'
-            });
-            return html!;
-        } catch (err: any) {
-            window.showErrorMessage(`Couldn't open WebdriverIO configuration file: ${err.message}`);
-            return '';
-        }
     }
 
     private _onMessage(event: Event) {
@@ -150,12 +111,6 @@ export class ConfigfileEditorProvider implements CustomTextEditorProvider, Dispo
             this.log.error(e.message);
             window.showErrorMessage(`File ${document.fileName} couldn't be parsed`);
         }
-    }
-
-    private _assetUri (webview: Webview, pathSegments: string[]) {
-        return webview.asWebviewUri(
-            Uri.joinPath(this.ctx.extensionUri, ...pathSegments)
-        );
     }
 
     private async _updateFile (document: TextDocument, config: Options.Testrunner) {

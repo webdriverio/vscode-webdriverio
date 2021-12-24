@@ -42,8 +42,10 @@
           "contextualTitle": "WebdriverIO Testrunner"
         },
         {
-          "id": "webdriverio.testrun-explorer",
+          "id": "webdriverio.reporter-panel",
           "name": "Testrunner",
+          "type": "webview",
+          "visibility": "visible",
           "icon": "assets/logo-webdriver-io.svg",
           "contextualTitle": "WebdriverIO Testrunner"
         }
@@ -103,7 +105,7 @@
     "dev": "npm run watch",
     "watch": "run-p watch:*",
     "watch:ts": "tsc -watch -p ./",
-    "watch:rollup": "npx rollup --config rollup.config.js  --watch",
+    "watch:rollup": "npx rollup --config rollup.config.mjs  --watch",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
@@ -112,7 +114,7 @@
     "@types/glob": "^7.1.4",
     "@types/lodash.pick": "^4.4.6",
     "@types/mocha": "^9.0.0",
-    "@types/node": "14.x",
+    "@types/node": "^17.0.4",
     "@types/serialize-javascript": "^5.0.1",
     "@types/vscode": "^1.60.0",
     "@types/workerpool": "^6.1.0",
@@ -142,7 +144,6 @@
     "node-ipc": "^10.1.0",
     "npm-run-all": "^4.1.5",
     "rollup": "^2.58.0",
-    "rollup-plugin-ejs": "^2.2.0",
     "serialize-javascript": "^6.0.0",
     "ts-node": "^10.2.1",
     "workerpool": "^6.1.5"

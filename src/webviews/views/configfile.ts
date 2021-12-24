@@ -7,17 +7,17 @@ import {
     customElement
 } from 'lit-element';
 import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
+import { acquireVsCodeApi } from '../components';
 import { WDIO_DEFAULTS } from '../constants';
 import type { DefinitionEntry, Option } from '../../types';
 import { Options } from '@wdio/types';
 
-// @ts-ignore
 const vscode = acquireVsCodeApi<Options.Testrunner>();
 const state = vscode.getState();
 const CONNECTION_PARAMS = ['protocol', 'hostname', 'port', 'path'];
 
 @customElement('wdio-config-webview')
-export class WdioConfigWebView extends LitElement {
+export class WdioConfigWebview extends LitElement {
     @property({ type: Object, reflect: true })
     value: Record<string, any> = state || {};
 
