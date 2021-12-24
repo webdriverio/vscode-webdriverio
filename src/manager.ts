@@ -5,7 +5,7 @@ import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
 import { ConfigFileProvider } from './provider/configfile';
 import { ReporterProvider } from './provider/reporter';
-import { ConfigfileEditorProvider } from './editor/configfile';
+import { ConfigfileEditorProvider } from './webviews/configfile';
 
 export class ExtensionManager implements Disposable {
     private _disposables: Disposable[] = [];

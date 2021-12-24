@@ -1,7 +1,7 @@
 import { Options } from '@wdio/types';
 import { Transform, JSCodeshift, Collection, Expression, ArrayExpression } from "jscodeshift";
 
-import { WDIO_DEFAULTS } from '../editor/constants';
+import { WDIO_DEFAULTS } from '../webviews/constants';
 import { ServiceEntryStringExpression } from './constants';
 
 const getObjectProperty = (j: JSCodeshift, property: string, val: any, currentProp?: Expression) => {

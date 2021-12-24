@@ -5,7 +5,7 @@ import { createSlice, configureStore, Slice, EnhancedStore } from '@reduxjs/tool
 import type { Options } from '@wdio/types';
 
 import { LoggerService } from '../services/logger';
-import { WDIO_DEFAULTS } from '../editor/constants';
+import { WDIO_DEFAULTS } from '../webviews/constants';
 
 export class ConfigFile extends EventEmitter {
     private _slice: Slice;
