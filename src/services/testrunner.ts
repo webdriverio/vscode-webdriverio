@@ -52,15 +52,17 @@ export class Testrunner implements Disposable {
         this.log.info(`Run config ${configFileItem.path} with args ${JSON.stringify(args)}`);
         process.chdir(path.dirname(configFileItem.path));
 
+        console.log('START IT!!!');
         ipc.of.vscodeWebdriverIO.emit('start');
         const runner: Launcher = new LauncherPackage(configFileItem.path, args);
-        return runner.run().then(
+        await runner.run().then(
             () => this.log.info('Testrun successful'),
             (err: any) => {
                 this.log.error(err);
                 this.log.info(`Testrun failed`);
             }
         );
+        ipc.of.vscodeWebdriverIO.emit('end');
     }
 
     dispose(): void {
