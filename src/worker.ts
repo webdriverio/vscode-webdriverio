@@ -38,6 +38,9 @@ async function loadConfig (modulePath: string) {
         register({ transpileOnly: true });
     }
 
+    /**
+     * importing doesn't work anymore given that VS Code runs in a CJS environment
+     */    
     const { config }: { config: Options.Testrunner } = await import(modulePath);
     config.reporters = config.reporters?.map(serializePlugin);
     config.services = config.services?.map(serializePlugin);

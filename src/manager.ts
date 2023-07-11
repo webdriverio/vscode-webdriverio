@@ -5,6 +5,7 @@ import { LoggerService } from './services/logger';
 import { Testrunner } from './services/testrunner';
 import { ConfigFileProvider } from './provider/configfile';
 import { ReporterProvider } from './provider/reporter';
+import { WebdriverIOTestController } from './controller/TestController';
 import ConfigfileEditorProvider from './webviews/configfile';
 import ReporterPanel from './webviews/reporter';
 
@@ -24,6 +25,8 @@ export class ExtensionManager implements Disposable {
             this._log,
             // general plugin commands
             commands.registerCommand(showOutput.command, () => showOutput()),
+            // controller
+            WebdriverIOTestController.create(),
             // views
             ...ConfigFileProvider.register(),
             // ...ReporterProvider.register(),
