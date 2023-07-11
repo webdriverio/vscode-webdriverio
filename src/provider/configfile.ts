@@ -150,7 +150,7 @@ export class SuiteItem extends TreeItem {
 
     constructor(
         public readonly label: string,
-        public readonly specs: string[],
+        public readonly specs: string[] | string[][],
         public readonly parent: ConfigFileItem
     ) {
         super(label, TreeItemCollapsibleState.None);

@@ -2,7 +2,6 @@ import path from 'path';
 import ipc from 'node-ipc';
 import { Disposable, commands } from 'vscode';
 import { Options } from '@wdio/types';
-import type Launcher from '@wdio/cli';
 
 import { LoggerService } from '../services/logger';
 import { plugin } from '../constants';
@@ -54,7 +53,7 @@ export class Testrunner implements Disposable {
 
         console.log('START IT!!!');
         ipc.of.vscodeWebdriverIO.emit('start');
-        const runner: Launcher = new LauncherPackage(configFileItem.path, args);
+        const runner = new LauncherPackage(configFileItem.path, args);
         await runner.run().then(
             () => this.log.info('Testrun successful'),
             (err: any) => {

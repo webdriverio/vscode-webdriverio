@@ -10,7 +10,7 @@ import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
 import { acquireVsCodeApi } from '../components';
 import { WDIO_DEFAULTS } from '../constants';
 import type { DefinitionEntry, Option } from '../../types';
-import { Options } from '@wdio/types';
+import type { Options } from '@wdio/types';
 
 const vscode = acquireVsCodeApi<Options.Testrunner>();
 const state = vscode.getState();
@@ -49,7 +49,7 @@ export class WdioConfigWebview extends LitElement {
             .filter(([property]) => (
                 !CONNECTION_PARAMS.includes(property) ||
                 this._config.automationProtocol === 'webdriver' ||
-                typeof this._config[property] !== 'undefined'
+                typeof this._config[property as keyof Options.Testrunner] !== 'undefined'
             ));
 
         return html/*html*/`
@@ -67,14 +67,14 @@ export class WdioConfigWebview extends LitElement {
                     <vscode-form-helper>
                         <p>${unsafeHTML(config.description)}</p>
                     </vscode-form-helper>
-                    ${this.getInput(property, config)}
+                    ${this.getInput(property as keyof Options.Testrunner, config)}
                 </vscode-form-group>
             `)}
         </vscode-form-container>
         `;
     }
 
-    getInput (property: string, config: DefinitionEntry) {
+    getInput (property: keyof Options.Testrunner, config: DefinitionEntry) {
         if (config.type === 'string') {
             const configValue = this._config[property] || '';
             const input = document.createElement('vscode-inputbox');
@@ -239,10 +239,10 @@ export class WdioConfigWebview extends LitElement {
          * delete property if empty
          */
         if (!value || (Array.isArray(value) && value.filter(Boolean).length === 0)) {
-            delete this._config[property];
+            delete this._config[property as keyof Options.Testrunner];
         }
 
-        this._config[property] = value;
+        this._config[property as keyof Options.Testrunner] = value;
         vscode.setState(this._config as any);
         vscode.postMessage({
             type: 'update',

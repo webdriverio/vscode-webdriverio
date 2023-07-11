@@ -5,7 +5,7 @@ let manager: ExtensionManager;
 
 export function activate(ctx: ExtensionContext) {
 	manager = new ExtensionManager(ctx);
-	manager.activate();
+	return manager.activate();
 }
 
 // this method is called when your extension is deactivated

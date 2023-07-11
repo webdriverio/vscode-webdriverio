@@ -2,11 +2,12 @@ import fs from 'fs';
 import path from 'path';
 
 import crypto from 'crypto';
-import { render } from 'eta';
+import { Eta } from 'eta';
 import { Disposable, ExtensionContext, Uri, Webview, window } from "vscode";
 
 import { LoggerService } from '../services/logger';
 
+const eta = new Eta();
 const ROOT = path.join(__dirname, '..', '..');
 const TPL_ROOT = path.join(ROOT, 'src', 'webviews', 'templates');
 const TEMPLATE = fs.readFileSync(path.join(TPL_ROOT, 'main.tpl.html')).toString();
@@ -36,7 +37,7 @@ export default class MainWebview implements Disposable {
         }];
 
         try {
-            const html = await render(TEMPLATE, {
+            const html = await eta.render(TEMPLATE, {
                 scripts, stylesheets, nonce, cspSource,
                 title: 'WebdriverIO Webview',
                 ...opts

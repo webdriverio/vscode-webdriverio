@@ -22,7 +22,7 @@ export class WdioReporterWebview extends LitElement {
         super();
 
         const ch = new Channel('reporter-panel');
-        this._client = ch.attach(vscode);
+        this._client = ch.attach(vscode as any);
         this._client.on('start', () => {
             this._hasStarted = true;
             this.requestUpdate();
