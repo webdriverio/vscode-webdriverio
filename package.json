@@ -100,13 +100,15 @@
     "theme": "light"
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run build",
+    "build": "run-s build:*",
+    "build:ts": "tsc -p ./",
+    "build:rollup": "npx rollup --config rollup.config.mjs",
     "dev": "npm run watch",
     "watch": "run-p watch:*",
-    "watch:ts": "tsc -watch -p ./",
-    "watch:rollup": "npx rollup --config rollup.config.mjs  --watch",
-    "pretest": "npm run compile && npm run lint",
+    "watch:ts": "npm run build:ts -- --watch",
+    "watch:rollup": "npm run build:rollup -- --watch",
+    "pretest": "npm run build && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
