@@ -1,6 +1,9 @@
 import * as path from 'node:path'
 import * as cp from 'node:child_process'
 import * as fs from 'node:fs'
+import type * as vscode from 'vscode'
+
+import log from './logger.js'
 import which from 'which'
 
 export interface WdioRunOptions {
@@ -8,6 +11,7 @@ export interface WdioRunOptions {
     configPath: string
     specs?: string[]
     grep?: string
+    range?: vscode.Range
 }
 
 export interface WdioRunResult {
@@ -37,16 +41,16 @@ export async function runWdio(options: WdioRunOptions): Promise<WdioRunResult> {
         const args = ['wdio', 'run', options.configPath]
 
         // Add specs if provided
-        if (options.specs && options.specs.length > 0) {
+        if (options.specs) {
             options.specs.forEach((spec) => {
                 args.push('--spec', spec)
             })
         }
 
-        // // Add grep pattern if provided
-        // if (options.grep) {
-        //     args.push('--mochaOpts.grep', `"${options.grep}"`);
-        // }
+        // Add grep pattern if provided
+        if (options.grep) {
+            args.push('--mochaOpts.grep', `'${options.grep}'`) //'--jasmineOpts.grep', `"${options.grep}"`
+        }
 
         // Get WebDriverIO path
         const result = require.resolve('@wdio/cli', {
@@ -56,18 +60,20 @@ export async function runWdio(options: WdioRunOptions): Promise<WdioRunResult> {
         const wdioBin = path.resolve(path.join(path.dirname(result), '..', 'bin', 'wdio.js'))
 
         // Determine command
-        // const cmd = process.platform === 'win32' ? 'node.exe' : 'node';
         process.chdir(options.rootDir)
         const cmdArgs = [wdioBin, ...args.slice(1)]
         const env = { ...process.env, FORCE_COLOR: '0' }
         // @ts-expect-error
         delete env.ELECTRON_RUN_AS_NODE
 
+        log.appendLine(`command: ${node}`)
+        log.appendLine(`args   : ${cmdArgs.join(' ')}`)
         // Run command
         let output = ''
         const proc = cp.spawn(node!, cmdArgs, {
             cwd: options.rootDir,
             env,
+            shell: true,
         })
 
         // Collect output
@@ -85,6 +91,8 @@ export async function runWdio(options: WdioRunOptions): Promise<WdioRunResult> {
         proc.on('close', (code) => {
             // Parse results from output
             const stats = parseResults(output)
+            log.appendLine('==== result ====')
+            log.appendLine(output)
 
             resolve({
                 success: code === 0,

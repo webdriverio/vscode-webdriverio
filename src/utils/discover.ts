@@ -4,42 +4,6 @@ import * as vscode from 'vscode'
 import * as glob from 'glob'
 import { parseTestCases, type TestCaseInfo } from './parser.js'
 
-/**
- * Tree item representing a test or spec file
- */
-export class TestItem extends vscode.TreeItem {
-    constructor(
-        public readonly resourceUri: vscode.Uri,
-        public readonly label: string,
-        public readonly description: string,
-        public readonly type: 'test' | 'spec',
-        public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly command?: vscode.Command
-    ) {
-        super(label, collapsibleState)
-
-        this.tooltip = `${this.label} (${this.description})`
-
-        // Set icon based on item type
-        this.iconPath = {
-            // * const good = URI.file('/coding/c#/project1');
-            light: vscode.Uri.file(path.join(__filename, '..', '..', '..', 'media', `${type}-light.svg`)),
-            dark: vscode.Uri.file(path.join(__filename, '..', '..', '..', 'media', `${type}-dark.svg`)),
-        }
-
-        // Make spec files runnable
-        if (type === 'spec') {
-            this.command = {
-                command: 'webdriverio-runner.runSpec',
-                title: 'Run Spec',
-                arguments: [this],
-            }
-        }
-
-        this.contextValue = type
-    }
-}
-
 export const discoverTests = async (testController: vscode.TestController) => {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {

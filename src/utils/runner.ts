@@ -1,6 +1,8 @@
+import * as path from 'node:path'
 import * as vscode from 'vscode'
+
 import { runWdio } from './wdioRunner.js'
-import path from 'node:path'
+import logger from './logger.js'
 
 export function createRunHandler(testController: vscode.TestController) {
     const workspaceFolders = vscode.workspace.workspaceFolders
@@ -28,13 +30,25 @@ export function createRunHandler(testController: vscode.TestController) {
                 break
             }
 
+            const testStatusController = (
+                controlFn: (test: vscode.TestItem, duration?: number) => void,
+                test: vscode.TestItem
+            ) => {
+                test.children.forEach((childTest) => {
+                    controlFn(childTest)
+                    testStatusController(controlFn, childTest)
+                })
+            }
+
             run.started(test)
+            testStatusController(run.started, test)
 
             try {
                 const result = await runWebdriverIOTest(rootDir, test)
 
                 if (result.success) {
                     run.passed(test, result.duration)
+                    testStatusController(run.passed, test)
                 } else {
                     run.failed(test, new vscode.TestMessage(result.errorMessage || 'Run failed'), result.duration)
                 }
@@ -55,14 +69,23 @@ async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem) {
 
     const testPath = test.uri?.fsPath
     const specs = testPath ? [testPath] : undefined
-    const testName = test.id.includes('#') ? test.id.split('#')[1] : undefined
+    const testNames = test.id.split('#')
+    const grep = test.id.includes('#') ? testNames[testNames.length - 1] : undefined
+
+    logger.appendLine(JSON.stringify(test, null, 2))
+
+    const isRoot = test.id === test.uri?.fsPath
+    const isEmptyRange = !test.range || test.range.isEmpty
+
+    const range = isRoot || isEmptyRange ? undefined : test.range
 
     try {
         const result = await runWdio({
             rootDir,
             configPath: fullConfigPath,
             specs,
-            grep: testName,
+            grep,
+            range,
         })
 
         return {
