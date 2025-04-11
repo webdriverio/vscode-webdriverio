@@ -1,28 +1,29 @@
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import tsParser from "@typescript-eslint/parser";
+import wdioEslint from '@wdio/eslint'
 
-export default [{
-    files: ["**/*.ts"],
-}, {
-    plugins: {
-        "@typescript-eslint": typescriptEslint,
+export default wdioEslint.config([
+    {
+        /**
+         * Eslint ignore patterns for the whole project
+         */
+        ignores: ['dist', 'node_modules', 'coverage', '**/*.d.ts'],
     },
-
-    languageOptions: {
-        parser: tsParser,
-        ecmaVersion: 2022,
-        sourceType: "module",
+    {
+        files: ['**/*.ts'],
     },
-
-    rules: {
-        "@typescript-eslint/naming-convention": ["warn", {
-            selector: "import",
-            format: ["camelCase", "PascalCase"],
-        }],
-
-        curly: "warn",
-        eqeqeq: "warn",
-        "no-throw-literal": "warn",
-        semi: "warn",
+    {
+        rules: {
+            '@typescript-eslint/naming-convention': [
+                'warn',
+                {
+                    selector: 'import',
+                    format: ['camelCase', 'PascalCase'],
+                },
+            ],
+            '@stylistic/indent': ['error', 4, { SwitchCase: 1 }],
+            curly: 'warn',
+            eqeqeq: 'warn',
+            'no-throw-literal': 'warn',
+            semi: 'off',
+        },
     },
-}];
+])
