@@ -1,26 +1,66 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from 'vscode'
+import { runTest } from './commands/runTest.js'
+import { configureTests } from './commands/configureTests.js'
+import { TestExplorerProvider } from './views/testExplorer.js'
+import { ResultViewProvider } from './views/resultView.js'
+import { testControllerId } from './utils/config.js'
+import { discoverTests } from './utils/discover.js'
+import { createRunHandler } from './utils/runner.js'
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
-
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "wdio-vscode" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('wdio-vscode.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from WebDriverIO!');
-	});
-
-	context.subscriptions.push(disposable);
+export async function activate(context: vscode.ExtensionContext) {
+    const extension = new WdioExtension(context)
+    context.subscriptions.push(extension)
+    await extension.activate()
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+    // Clean up resources when extension is deactivated
+}
+
+class WdioExtension {
+    #testController: vscode.TestController
+
+    private disposables: vscode.Disposable[] = []
+    private extensionUri: vscode.Uri
+    private loadingTestItem: vscode.TestItem
+
+    constructor(context: vscode.ExtensionContext) {
+        this.#testController = vscode.tests.createTestController(testControllerId, 'WebdriverIO')
+        this.extensionUri = context.extensionUri
+        this.loadingTestItem = this.#testController.createTestItem('_resolving', 'Resolving Vitest...')
+    }
+
+    async activate() {
+        console.log('WebDriverIO Runner extension is now active')
+        // Register TestExplorer view
+        const testExplorerProvider = new TestExplorerProvider()
+        // Register ResultView
+        const resultViewProvider = new ResultViewProvider(this.extensionUri)
+        const runHandler = createRunHandler(this.#testController)
+
+        this.#testController.createRunProfile('Run Tests', vscode.TestRunProfileKind.Run, runHandler, true)
+        const watcher = vscode.workspace.createFileSystemWatcher('**/*.spec.{js,ts}')
+
+        this.disposables = [
+            vscode.window.registerTreeDataProvider('webdriverio-tests', testExplorerProvider),
+            vscode.window.registerWebviewViewProvider('webdriverio-results', resultViewProvider),
+
+            vscode.commands.registerCommand('webdriverio-runner.runTest', async () => {
+                await runTest('test', resultViewProvider)
+            }),
+            vscode.commands.registerCommand('webdriverio-runner.runSpec', async () => {
+                await runTest('spec', resultViewProvider)
+            }),
+            vscode.commands.registerCommand('webdriverio-runner.runAllTests', async () => {
+                await runTest('all', resultViewProvider)
+            }),
+            vscode.commands.registerCommand('webdriverio-runner.configureTests', configureTests),
+            watcher,
+        ]
+        discoverTests(this.#testController)
+    }
+    async dispose() {
+        this.disposables.forEach((d) => d.dispose())
+        this.disposables = []
+    }
+}
