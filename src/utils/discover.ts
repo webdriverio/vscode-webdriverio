@@ -49,7 +49,6 @@ export const discoverTests = async (testController: vscode.TestController) => {
     for (const workspaceFolder of workspaceFolders) {
         const wdioConfigPath = path.join(workspaceFolder.uri.fsPath, 'wdio.conf.js')
         if (fs.existsSync(wdioConfigPath)) {
-            // WebDriverIOプロジェクトと判断し、テスト探索を実行
             await findWebdriverIOTests(workspaceFolder.uri, testController)
         }
     }
@@ -71,10 +70,10 @@ async function findWebdriverIOTests(workspaceUri: vscode.Uri, controller: vscode
     }
 
     for (const testFile of testFiles) {
-        // テストファイルごとにTestItemを作成
+        // Create TestItem testFile by testFile
         const fileTestItem = controller.createTestItem(testFile.fsPath, path.basename(testFile.fsPath), testFile)
 
-        // ファイル内のテストケースを解析
+        // analyze the test file contests
         const fileContent = fs.readFileSync(testFile.fsPath, 'utf-8')
         const document = await vscode.workspace.openTextDocument(testFile)
         const testCases = parseTestCases(fileContent, document)
@@ -89,14 +88,8 @@ async function findWebdriverIOTests(workspaceUri: vscode.Uri, controller: vscode
             return testCaseItem
         }
 
-        // テストケースごとにTestItemを作成
+        // Create TestItem testCase by testCase
         for (const testCase of testCases) {
-            // const testCaseItem = controller.createTestItem(
-            //     `${testFile.fsPath}#${testCase.name}`,
-            //     testCase.name,
-            //     testFile
-            // )
-            // testCaseItem.range = testCase.range // テストケースの位置情報
             fileTestItem.children.add(testTreeCreator(testFile.fsPath, testCase))
         }
 

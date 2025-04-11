@@ -72,18 +72,6 @@
                 }
             ]
         },
-        "views": {
-            "webdriverio-explorer": [
-                {
-                    "id": "webdriverio-tests",
-                    "name": "Tests"
-                },
-                {
-                    "id": "webdriverio-results",
-                    "name": "Results"
-                }
-            ]
-        },
         "configuration": {
             "title": "WebDriverIO Runner",
             "properties": {

@@ -2,14 +2,12 @@ import * as vscode from 'vscode'
 import * as path from 'node:path'
 import logger from '../utils/logger.js'
 import { runWdio } from '../utils/wdioRunner.js'
-import type { ResultViewProvider } from '../views/resultView.js'
 
 /**
  * Run WebDriverIO tests
  * @param mode 'test' for current test, 'spec' for current file, 'all' for all tests
- * @param resultViewProvider Result view provider to display results
  */
-export async function runTest(mode: 'test' | 'spec' | 'all', resultViewProvider: ResultViewProvider): Promise<void> {
+export async function runTest(mode: 'test' | 'spec' | 'all'): Promise<void> {
     // Get active text editor
     const editor = vscode.window.activeTextEditor
 
@@ -74,9 +72,6 @@ export async function runTest(mode: 'test' | 'spec' | 'all', resultViewProvider:
 
         // Display output
         logger.appendLine(result.output)
-
-        // Update results view
-        resultViewProvider.updateResults(result)
 
         if (result.success) {
             vscode.window.showInformationMessage('WebDriverIO tests completed successfully')

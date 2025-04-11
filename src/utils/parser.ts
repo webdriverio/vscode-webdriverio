@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { parse } from 'recast'
 import * as babelParser from '@babel/parser'
 import * as t from '@babel/types'
-import logger from './logger.js'
 
 /**
  * TestCase information interface - Keeping the same structure as original
@@ -64,9 +63,6 @@ export function parseTestCases(fileContent: string, document: vscode.TextDocumen
         // Fallback to simple regex-based extraction if parsing fails
         return fallbackParseTestCases(fileContent, document)
     }
-    logger.appendLine('===> parseTestCases')
-    logger.appendLine(JSON.stringify(testCases, null, 2))
-
     return testCases
 }
 
@@ -100,7 +96,6 @@ function processAst(
                 if (blockType) {
                     // Extract the test name from the first argument
                     const testName = extractTestName(node.arguments[0])
-                    logger.appendLine(`===> ${testName}`)
 
                     if (testName) {
                         // Create range in the document

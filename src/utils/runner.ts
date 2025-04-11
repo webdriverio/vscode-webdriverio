@@ -15,14 +15,14 @@ export function createRunHandler(testController: vscode.TestController) {
 
         const queue: vscode.TestItem[] = []
 
-        // 実行対象のテストを収集
+        // Collect the tests
         if (request.include) {
             request.include.forEach((test) => queue.push(test))
         } else {
             testController.items.forEach((test) => queue.push(test))
         }
 
-        // テストの実行
+        // Run tests
         for (const test of queue) {
             if (token.isCancellationRequested) {
                 break
@@ -31,8 +31,6 @@ export function createRunHandler(testController: vscode.TestController) {
             run.started(test)
 
             try {
-                // WebDriverIOのテスト実行
-                // childProcessを使ってwdio commandを実行する
                 const result = await runWebdriverIOTest(rootDir, test)
 
                 if (result.success) {
@@ -55,15 +53,11 @@ async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem) {
     const configPath = config.get<string>('configPath') || 'wdio.conf.js'
     const fullConfigPath = path.resolve(rootDir, configPath)
 
-    // テストファイルまたは特定のテストケースのみを実行
     const testPath = test.uri?.fsPath
     const specs = testPath ? [testPath] : undefined
     const testName = test.id.includes('#') ? test.id.split('#')[1] : undefined
 
     try {
-        // wdio コマンドでテストを実行
-        // --spec でファイルを指定
-        // testNameがある場合はgrepで絞り込み
         const result = await runWdio({
             rootDir,
             configPath: fullConfigPath,
