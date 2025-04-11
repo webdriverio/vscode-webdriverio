@@ -2,7 +2,7 @@ import path from 'node:path'
 import * as fs from 'node:fs'
 import * as vscode from 'vscode'
 import * as glob from 'glob'
-import { parseTestCases } from './parser.js'
+import { parseTestCases, type TestCaseInfo } from './parser.js'
 
 /**
  * Tree item representing a test or spec file
@@ -79,15 +79,25 @@ async function findWebdriverIOTests(workspaceUri: vscode.Uri, controller: vscode
         const document = await vscode.workspace.openTextDocument(testFile)
         const testCases = parseTestCases(fileContent, document)
 
+        const testTreeCreator = (parentId: string, testCase: TestCaseInfo) => {
+            const testCaseId = `${parentId}#${testCase.name}`
+            const testCaseItem = controller.createTestItem(testCaseId, testCase.name, testFile)
+            testCaseItem.range = testCase.range
+            for (const childTestCase of testCase.children) {
+                testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
+            }
+            return testCaseItem
+        }
+
         // テストケースごとにTestItemを作成
         for (const testCase of testCases) {
-            const testCaseItem = controller.createTestItem(
-                `${testFile.fsPath}#${testCase.name}`,
-                testCase.name,
-                testFile
-            )
-            testCaseItem.range = testCase.range // テストケースの位置情報
-            fileTestItem.children.add(testCaseItem)
+            // const testCaseItem = controller.createTestItem(
+            //     `${testFile.fsPath}#${testCase.name}`,
+            //     testCase.name,
+            //     testFile
+            // )
+            // testCaseItem.range = testCase.range // テストケースの位置情報
+            fileTestItem.children.add(testTreeCreator(testFile.fsPath, testCase))
         }
 
         controller.items.add(fileTestItem)
