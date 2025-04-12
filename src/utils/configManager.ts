@@ -2,11 +2,7 @@ import * as vscode from 'vscode'
 import * as path from 'node:path'
 import * as fs from 'node:fs'
 
-export interface WebDriverIOConfig {
-    configPath: string
-    testFilePattern: string
-    showOutput: boolean
-}
+import type { WebDriverIOConfig } from '../types.js'
 
 /**
  * Load WebDriverIO configuration settings

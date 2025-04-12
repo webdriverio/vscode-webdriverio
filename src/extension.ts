@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { runTest } from './commands/runTest.js'
 import { configureTests } from './commands/configureTests.js'
-import { testControllerId } from './utils/config.js'
+import { config, testControllerId } from './utils/config.js'
 import { discoverTests } from './utils/discover.js'
 import { createRunHandler } from './utils/runner.js'
 
@@ -44,6 +44,7 @@ class WdioExtension {
                 await runTest('all')
             }),
             vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
+            vscode.workspace.onDidChangeConfiguration(config.listener),
             watcher,
         ]
         discoverTests(this.#testController)
