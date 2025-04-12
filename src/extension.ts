@@ -4,6 +4,7 @@ import { configureTests } from './commands/configureTests.js'
 import { config, testControllerId } from './utils/config.js'
 import { discoverTests } from './utils/discover.js'
 import { createRunHandler } from './utils/runner.js'
+import { log } from './utils/logger.js'
 
 export async function activate(context: vscode.ExtensionContext) {
     const extension = new WdioExtension()
@@ -27,7 +28,7 @@ class WdioExtension {
     }
 
     async activate() {
-        console.log('WebDriverIO Runner extension is now active')
+        log.info('WebDriverIO Runner extension is now active')
         const runHandler = createRunHandler(this.#testController)
 
         this.#testController.createRunProfile('Run Tests', vscode.TestRunProfileKind.Run, runHandler, true)
