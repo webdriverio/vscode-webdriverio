@@ -145,6 +145,7 @@
     "dependencies": {
         "@babel/parser": "^7.27.0",
         "@wdio/cli": "^9.12.4",
+        "@wdio/config": "^9.12.5",
         "recast": "^0.23.11",
         "which": "^5.0.0"
     },
