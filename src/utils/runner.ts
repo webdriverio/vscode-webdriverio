@@ -63,7 +63,7 @@ export function createRunHandler(testController: vscode.TestController) {
 
 async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem) {
     // Get config path from settings
-    const config = vscode.workspace.getConfiguration('webdriverio-runner')
+    const config = vscode.workspace.getConfiguration('webdriverio')
     const configPath = config.get<string>('configPath') || 'wdio.conf.js'
     const fullConfigPath = path.resolve(rootDir, configPath)
 

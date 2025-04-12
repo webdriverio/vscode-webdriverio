@@ -12,7 +12,7 @@ export interface WebDriverIOConfig {
  * Load WebDriverIO configuration settings
  */
 export function loadConfig(): WebDriverIOConfig {
-    const config = vscode.workspace.getConfiguration('webdriverio-runner')
+    const config = vscode.workspace.getConfiguration('webdriverio')
 
     return {
         configPath: config.get<string>('configPath') || 'wdio.conf.js',

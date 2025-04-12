@@ -23,7 +23,7 @@ class WdioExtension {
 
     constructor() {
         this.#testController = vscode.tests.createTestController(testControllerId, 'WebdriverIO')
-        this.loadingTestItem = this.#testController.createTestItem('_resolving', 'Resolving Vitest...')
+        this.loadingTestItem = this.#testController.createTestItem('_resolving', 'Resolving WebdriverIO...')
     }
 
     async activate() {
@@ -34,16 +34,16 @@ class WdioExtension {
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.spec.{js,ts}')
 
         this.disposables = [
-            vscode.commands.registerCommand('webdriverio-runner.runTest', async () => {
+            vscode.commands.registerCommand('webdriverio.runTest', async () => {
                 await runTest('test')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.runSpec', async () => {
+            vscode.commands.registerCommand('webdriverio.runSpec', async () => {
                 await runTest('spec')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.runAllTests', async () => {
+            vscode.commands.registerCommand('webdriverio.runAllTests', async () => {
                 await runTest('all')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.configureTests', configureTests),
+            vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
             watcher,
         ]
         discoverTests(this.#testController)

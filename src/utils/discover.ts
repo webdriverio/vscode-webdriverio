@@ -19,7 +19,7 @@ export const discoverTests = async (testController: vscode.TestController) => {
 }
 
 async function findWebdriverIOTests(workspaceUri: vscode.Uri, controller: vscode.TestController) {
-    const config = vscode.workspace.getConfiguration('webdriverio-runner')
+    const config = vscode.workspace.getConfiguration('webdriverio')
     const testPattern = config.get<string>('testFilePattern') || '**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts'
 
     // Split patterns and find files
