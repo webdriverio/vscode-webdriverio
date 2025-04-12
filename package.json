@@ -3,6 +3,26 @@
     "displayName": "WebDriverIO",
     "description": "wdio for vscode",
     "version": "0.0.1",
+    "type": "module",
+    "author": "WebdriverIO Team",
+    "packageManager": "pnpm@10.8.0",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/webdriverio/vscode-webdriverio.git"
+    },
+    "bugs": {
+        "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
+    },
+    "keywords": [
+        "WebDriverIO",
+        "test",
+        "typescript",
+        "javascript"
+    ],
+    "categories": [
+        "Testing"
+    ],
     "engines": {
         "vscode": "^1.98.0"
     },
@@ -16,7 +36,7 @@
         "workspaceContains:**/wdio.conf.js",
         "workspaceContains:**/wdio.conf.ts"
     ],
-    "main": "./dist/extension.js",
+    "main": "./dist/extension.cjs",
     "contributes": {
         "commands": [
             {
