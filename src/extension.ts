@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 import { runTest } from './commands/runTest.js'
 import { configureTests } from './commands/configureTests.js'
-import { testControllerId } from './utils/config.js'
+import { configManager, testControllerId } from './config/config.js'
 import { discoverTests } from './utils/discover.js'
 import { createRunHandler } from './utils/runner.js'
+import { log } from './utils/logger.js'
 
 export async function activate(context: vscode.ExtensionContext) {
     const extension = new WdioExtension()
@@ -23,27 +24,28 @@ class WdioExtension {
 
     constructor() {
         this.#testController = vscode.tests.createTestController(testControllerId, 'WebdriverIO')
-        this.loadingTestItem = this.#testController.createTestItem('_resolving', 'Resolving Vitest...')
+        this.loadingTestItem = this.#testController.createTestItem('_resolving', 'Resolving WebdriverIO...')
     }
 
     async activate() {
-        console.log('WebDriverIO Runner extension is now active')
+        log.info('WebDriverIO Runner extension is now active')
         const runHandler = createRunHandler(this.#testController)
 
         this.#testController.createRunProfile('Run Tests', vscode.TestRunProfileKind.Run, runHandler, true)
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.spec.{js,ts}')
 
         this.disposables = [
-            vscode.commands.registerCommand('webdriverio-runner.runTest', async () => {
+            vscode.commands.registerCommand('webdriverio.runTest', async () => {
                 await runTest('test')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.runSpec', async () => {
+            vscode.commands.registerCommand('webdriverio.runSpec', async () => {
                 await runTest('spec')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.runAllTests', async () => {
+            vscode.commands.registerCommand('webdriverio.runAllTests', async () => {
                 await runTest('all')
             }),
-            vscode.commands.registerCommand('webdriverio-runner.configureTests', configureTests),
+            vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
+            vscode.workspace.onDidChangeConfiguration(configManager.listener),
             watcher,
         ]
         discoverTests(this.#testController)

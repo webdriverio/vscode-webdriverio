@@ -5,7 +5,7 @@ export default wdioEslint.config([
         /**
          * Eslint ignore patterns for the whole project
          */
-        ignores: ['dist', 'node_modules', 'coverage', '**/*.d.ts'],
+        ignores: ['.vscode-test', 'dist', 'out', 'node_modules', 'coverage', '**/*.d.ts'],
     },
     {
         files: ['**/*.ts'],

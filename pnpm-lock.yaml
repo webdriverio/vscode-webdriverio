@@ -14,6 +14,9 @@ importers:
       '@wdio/cli':
         specifier: ^9.12.4
         version: 9.12.4
+      '@wdio/config':
+        specifier: ^9.12.5
+        version: 9.12.5
       recast:
         specifier: ^0.23.11
         version: 0.23.11
@@ -69,6 +72,9 @@ importers:
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
@@ -592,6 +598,10 @@ packages:
     resolution: {integrity: sha512-xPLrwIm043OQkWZSlErR0e4LNYPMaLFAyDEtVEcbXgRhOH/Nl91kCUPiJMQSXJIoQ+qRxoMQzDvv01mQrcVwCA==}
     engines: {node: '>=18.20.0'}
 
+  '@wdio/config@9.12.5':
+    resolution: {integrity: sha512-T4pOgY7FLj0+SBc58n81JZidCJKfqaSb9Ql9lOd38tmorEwTKjcPAzQQY1Ftzqv49kjBHvXdlupy685VVKNepA==}
+    engines: {node: '>=18.20.0'}
+
   '@wdio/eslint@0.1.1':
     resolution: {integrity: sha512-ZL774/0QCwnUWFgIY6vlSBH6ZVBoMYS+GIl5VMjiTO0ayp6OfN2yVkWUTmqv7gPhjJlR3zI335ho8d6J5VMF2g==}
 
@@ -616,6 +626,10 @@ packages:
 
   '@wdio/utils@9.12.3':
     resolution: {integrity: sha512-G7qpiLux89jqhzz33TvIIWaMIKIUUmmBaBH8ylCu3W/7h8i1/jPrYryOvWw75yVWl1ch4NYEo4uJey1NsJnkAQ==}
+    engines: {node: '>=18.20.0'}
+
+  '@wdio/utils@9.12.5':
+    resolution: {integrity: sha512-yddJj7VyA3kGuAuDU63ZdRBK4D1jwSU+52KwlZtOeqDdT/i6KAwRVYNYMwwmsGuM4GpY3q5h944YylBQNkKkjQ==}
     engines: {node: '>=18.20.0'}
 
   '@zip.js/zip.js@2.7.60':
@@ -3571,6 +3585,18 @@ snapshots:
       - bare-buffer
       - supports-color
 
+  '@wdio/config@9.12.5':
+    dependencies:
+      '@wdio/logger': 9.4.4
+      '@wdio/types': 9.12.3
+      '@wdio/utils': 9.12.5
+      deepmerge-ts: 7.1.5
+      glob: 10.4.5
+      import-meta-resolve: 4.1.0
+    transitivePeerDependencies:
+      - bare-buffer
+      - supports-color
+
   '@wdio/eslint@0.1.1(@typescript-eslint/eslint-plugin@8.29.1(@typescript-eslint/parser@8.29.1(eslint@9.23.0)(typescript@5.8.2))(eslint@9.23.0)(typescript@5.8.2))(eslint@9.23.0)(typescript@5.8.2)':
     dependencies:
       '@eslint/js': 9.23.0
@@ -3617,6 +3643,25 @@ snapshots:
       '@types/node': 20.17.28
 
   '@wdio/utils@9.12.3':
+    dependencies:
+      '@puppeteer/browsers': 2.10.0
+      '@wdio/logger': 9.4.4
+      '@wdio/types': 9.12.3
+      decamelize: 6.0.0
+      deepmerge-ts: 7.1.5
+      edgedriver: 6.1.1
+      geckodriver: 5.0.0
+      get-port: 7.1.0
+      import-meta-resolve: 4.1.0
+      locate-app: 2.5.0
+      safaridriver: 1.0.0
+      split2: 4.2.0
+      wait-port: 1.1.0
+    transitivePeerDependencies:
+      - bare-buffer
+      - supports-color
+
+  '@wdio/utils@9.12.5':
     dependencies:
       '@puppeteer/browsers': 2.10.0
       '@wdio/logger': 9.4.4

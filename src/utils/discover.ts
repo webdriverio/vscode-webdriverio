@@ -1,62 +1,76 @@
 import path from 'node:path'
-import * as fs from 'node:fs'
-import * as vscode from 'vscode'
-import * as glob from 'glob'
+import fs from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+import vscode from 'vscode'
+
 import { parseTestCases, type TestCaseInfo } from './parser.js'
+import { configManager } from '../config/index.js'
+import { log } from './logger.js'
+
+type Spec = string | string[]
 
 export const discoverTests = async (testController: vscode.TestController) => {
     const workspaceFolders = vscode.workspace.workspaceFolders
-    if (!workspaceFolders) {
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        log.debug('No workspace is detected.')
         return
     }
+    try {
+        if (workspaceFolders.length === 1) {
+            const workspaceFolder = workspaceFolders[0]
+            log.debug(`Detected workspace path: ${workspaceFolder.uri.fsPath}`)
 
-    for (const workspaceFolder of workspaceFolders) {
-        const wdioConfigPath = path.join(workspaceFolder.uri.fsPath, 'wdio.conf.js')
-        if (fs.existsSync(wdioConfigPath)) {
-            await findWebdriverIOTests(workspaceFolder.uri, testController)
+            const config = await configManager.getWdioConfig(workspaceFolder.uri.fsPath)
+            if (!config) {
+                throw new Error('Failed to load the configuration.')
+            }
+
+            log.debug('Loaded configuration successfully.')
+            const specs = convertUri(config.getSpecs())
+
+            log.debug(`Detected spec files: ${specs.length}`)
+            await loadWdioSpecs(testController, specs)
+        } else {
+            //TODO: support multiple workspace
+            log.debug(`Detected ${workspaceFolders.length} workspaces.`)
+            log.warn('Not support the multiple workspaces')
         }
+    } catch (error) {
+        log.error(`Failed to load specs: ${(error as Error).message}`)
     }
 }
 
-async function findWebdriverIOTests(workspaceUri: vscode.Uri, controller: vscode.TestController) {
-    const config = vscode.workspace.getConfiguration('webdriverio-runner')
-    const testPattern = config.get<string>('testFilePattern') || '**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts'
+function convertUri(specs: Spec[]) {
+    return specs.flatMap((spec) =>
+        Array.isArray(spec)
+            ? spec.map((path) => vscode.Uri.file(fileURLToPath(path)))
+            : [vscode.Uri.file(fileURLToPath(spec))]
+    )
+}
 
-    // Split patterns and find files
-    const patterns = testPattern.split(',')
-    const testFiles: vscode.Uri[] = []
-
-    for (const pattern of patterns) {
-        const matches = glob.sync(pattern, { cwd: workspaceUri.fsPath })
-        matches.forEach((match) => {
-            testFiles.push(vscode.Uri.file(path.resolve(workspaceUri.fsPath, match)))
-        })
-    }
-
-    for (const testFile of testFiles) {
-        // Create TestItem testFile by testFile
-        const fileTestItem = controller.createTestItem(testFile.fsPath, path.basename(testFile.fsPath), testFile)
-
-        // analyze the test file contests
-        const fileContent = fs.readFileSync(testFile.fsPath, 'utf-8')
-        const document = await vscode.workspace.openTextDocument(testFile)
-        const testCases = parseTestCases(fileContent, document)
-
-        const testTreeCreator = (parentId: string, testCase: TestCaseInfo) => {
-            const testCaseId = `${parentId}#${testCase.name}`
-            const testCaseItem = controller.createTestItem(testCaseId, testCase.name, testFile)
-            testCaseItem.range = testCase.range
-            for (const childTestCase of testCase.children) {
-                testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
+async function loadWdioSpecs(controller: vscode.TestController, specs: vscode.Uri[]) {
+    await Promise.all(
+        specs.map(async (spec) => {
+            // Create TestItem testFile by testFile
+            log.debug(`Parse spec files: ${spec.fsPath}`)
+            const fileTestItem = controller.createTestItem(spec.fsPath, path.basename(spec.fsPath), spec)
+            const fileContent = await fs.readFile(spec.fsPath, { encoding: 'utf8' })
+            const document = await vscode.workspace.openTextDocument(spec)
+            const testCases = parseTestCases(fileContent, document)
+            const testTreeCreator = (parentId: string, testCase: TestCaseInfo) => {
+                const testCaseId = `${parentId}#${testCase.name}`
+                const testCaseItem = controller.createTestItem(testCaseId, testCase.name, spec)
+                testCaseItem.range = testCase.range
+                for (const childTestCase of testCase.children) {
+                    testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
+                }
+                return testCaseItem
             }
-            return testCaseItem
-        }
-
-        // Create TestItem testCase by testCase
-        for (const testCase of testCases) {
-            fileTestItem.children.add(testTreeCreator(testFile.fsPath, testCase))
-        }
-
-        controller.items.add(fileTestItem)
-    }
+            // Create TestItem testCase by testCase
+            for (const testCase of testCases) {
+                fileTestItem.children.add(testTreeCreator(spec.fsPath, testCase))
+            }
+            controller.items.add(fileTestItem)
+        })
+    )
 }

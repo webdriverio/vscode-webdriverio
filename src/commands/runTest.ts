@@ -20,7 +20,7 @@ export async function runTest(mode: 'test' | 'spec' | 'all'): Promise<void> {
     const workspaceRoot = workspaceFolders[0].uri.fsPath
 
     // Get config path from settings
-    const config = vscode.workspace.getConfiguration('webdriverio-runner')
+    const config = vscode.workspace.getConfiguration('webdriverio')
     const configPath = config.get<string>('configPath') || 'wdio.conf.js'
     const fullConfigPath = path.resolve(workspaceRoot, configPath)
 

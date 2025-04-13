@@ -1,7 +1,7 @@
 {
     "name": "wdio-vscode",
     "displayName": "WebDriverIO",
-    "description": "wdio for vscode",
+    "description": "WebDriverIO for the vscode",
     "version": "0.0.1",
     "type": "module",
     "author": "WebdriverIO Team",
@@ -26,10 +26,6 @@
     "engines": {
         "vscode": "^1.98.0"
     },
-    "categories": [
-        "Testing",
-        "Other"
-    ],
     "activationEvents": [
         "onLanguage:javascript",
         "onLanguage:typescript",
@@ -40,19 +36,19 @@
     "contributes": {
         "commands": [
             {
-                "command": "webdriverio-runner.runTest",
+                "command": "webdriverio.runTest",
                 "title": "WebDriverIO: Run Test"
             },
             {
-                "command": "webdriverio-runner.runSpec",
+                "command": "webdriverio.runSpec",
                 "title": "WebDriverIO: Run Spec File"
             },
             {
-                "command": "webdriverio-runner.runAllTests",
+                "command": "webdriverio.runAllTests",
                 "title": "WebDriverIO: Run All Tests"
             },
             {
-                "command": "webdriverio-runner.configureTests",
+                "command": "webdriverio.configureTests",
                 "title": "WebDriverIO: Configure Tests"
             }
         ],
@@ -60,26 +56,26 @@
             "editor/context": [
                 {
                     "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio-runner.runTest",
+                    "command": "webdriverio.runTest",
                     "group": "webdriverio"
                 },
                 {
                     "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio-runner.runSpec",
+                    "command": "webdriverio.runSpec",
                     "group": "webdriverio"
                 }
             ],
             "explorer/context": [
                 {
                     "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio-runner.runSpec",
+                    "command": "webdriverio.runSpec",
                     "group": "webdriverio"
                 }
             ],
             "testing/item/context": [
                 {
-                    "command": "webdriverio-runner.runAllTests",
-                    "when": "controllerId == 'vitest'"
+                    "command": "webdriverio.runAllTests",
+                    "when": "controllerId == 'webdriverio'"
                 }
             ]
         },
@@ -93,19 +89,19 @@
             ]
         },
         "configuration": {
-            "title": "WebDriverIO Runner",
+            "title": "WebDriverIO",
             "properties": {
-                "webdriverio-runner.configPath": {
+                "webdriverio.configPath": {
                     "type": "string",
                     "default": "wdio.conf.js",
                     "description": "Path to WebDriverIO configuration file"
                 },
-                "webdriverio-runner.showOutput": {
+                "webdriverio.showOutput": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show WebDriverIO output in terminal"
                 },
-                "webdriverio-runner.testFilePattern": {
+                "webdriverio.testFilePattern": {
                     "type": "string",
                     "default": "**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts",
                     "description": "Glob pattern for test files"
@@ -122,7 +118,6 @@
         "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
         "compile-tests": "tsc -p . --outDir out",
         "watch-tests": "tsc -p . -w --outDir out",
-        "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
         "check-types": "tsc --noEmit",
         "lint": "eslint src",
         "test": "vscode-test"
@@ -144,11 +139,13 @@
         "mocha": "^11.1.0",
         "npm-run-all": "^4.1.5",
         "prettier": "^3.5.3",
+        "tsx": "^4.19.3",
         "typescript": "^5.8.2"
     },
     "dependencies": {
         "@babel/parser": "^7.27.0",
         "@wdio/cli": "^9.12.4",
+        "@wdio/config": "^9.12.5",
         "recast": "^0.23.11",
         "which": "^5.0.0"
     },
