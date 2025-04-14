@@ -12,6 +12,7 @@ export default wdioEslint.config([
     },
     {
         rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/naming-convention': [
                 'warn',
                 {
@@ -20,10 +21,7 @@ export default wdioEslint.config([
                 },
             ],
             '@stylistic/indent': ['error', 4, { SwitchCase: 1 }],
-            curly: 'warn',
-            eqeqeq: 'warn',
             'no-throw-literal': 'warn',
-            semi: 'off',
         },
     },
 ])

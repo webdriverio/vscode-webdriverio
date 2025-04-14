@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode'
 import { parse } from 'recast'
 import * as babelParser from '@babel/parser'

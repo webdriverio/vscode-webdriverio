@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import vscode from 'vscode'
 
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
