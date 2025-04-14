@@ -2,9 +2,11 @@ import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import { runWdio } from './wdioRunner.js'
-import logger from './logger.js'
+import logger, { log } from './logger.js'
+import type { WorkerManager } from '../manager.js'
+import type { RunTestOptions } from '../api/types.js'
 
-export function createRunHandler(testController: vscode.TestController) {
+export function createRunHandler(testController: vscode.TestController, workerManager: WorkerManager | null) {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
         vscode.window.showErrorMessage('No workspace folder open')
@@ -44,7 +46,7 @@ export function createRunHandler(testController: vscode.TestController) {
             testStatusController(run.started, test)
 
             try {
-                const result = await runWebdriverIOTest(rootDir, test)
+                const result = await runWebdriverIOTest(rootDir, test, workerManager)
 
                 if (result.success) {
                     run.passed(test, result.duration)
@@ -61,10 +63,10 @@ export function createRunHandler(testController: vscode.TestController) {
     }
 }
 
-async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem) {
+async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem, workerManager: WorkerManager | null) {
     // Get config path from settings
-    const config = vscode.workspace.getConfiguration('webdriverio')
-    const configPath = config.get<string>('configPath') || 'wdio.conf.js'
+    // const config = vscode.workspace.getConfiguration('webdriverio')
+    const configPath = 'wdio.conf.js'
     const fullConfigPath = path.resolve(rootDir, configPath)
 
     const testPath = test.uri?.fsPath
@@ -78,6 +80,20 @@ async function runWebdriverIOTest(rootDir: string, test: vscode.TestItem) {
     const isEmptyRange = !test.range || test.range.isEmpty
 
     const range = isRoot || isEmptyRange ? undefined : test.range
+
+    if (workerManager) {
+        const testOptions: RunTestOptions = {
+            rootDir: rootDir,
+            configPath: fullConfigPath,
+            specs,
+            grep,
+        }
+        await workerManager.ensureConnected()
+        const result = await workerManager.getWorkerRpc().runTest(testOptions)
+        log.debug('==========RPC')
+        log.debug(result)
+        log.debug('==========RPC')
+    }
 
     try {
         const result = await runWdio({

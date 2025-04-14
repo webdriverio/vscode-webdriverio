@@ -51,6 +51,7 @@ export async function runWdio(options: WdioRunOptions): Promise<WdioRunResult> {
         if (options.grep) {
             args.push('--mochaOpts.grep', `'${options.grep}'`) //'--jasmineOpts.grep', `"${options.grep}"`
         }
+        // args.push('--reporters', 'json, { stdout: true }')
 
         // Get WebDriverIO path
         const result = require.resolve('@wdio/cli', {

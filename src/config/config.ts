@@ -66,6 +66,23 @@ class WdioConfig {
         this.#configParser.set(workSpaceRoot, config)
         return config
     }
+
+    public getWorkspaceFolderPath() {
+        const workspaceFolders = vscode.workspace.workspaceFolders
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            log.debug('No workspace is detected.')
+            return []
+        }
+        if (workspaceFolders.length === 1) {
+            const workspaceFolder = workspaceFolders[0]
+            log.debug(`Detected workspace path: ${workspaceFolder.uri.fsPath}`)
+            return [workspaceFolder.uri.fsPath]
+        }
+        //TODO: support multiple workspace
+        log.debug(`Detected ${workspaceFolders.length} workspaces.`)
+        log.warn('Not support the multiple workspaces')
+        return []
+    }
 }
 
 export const configManager = new WdioConfig()
