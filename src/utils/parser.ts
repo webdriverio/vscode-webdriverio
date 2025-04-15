@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as vscode from 'vscode'
-import { parse } from 'recast'
+import { parse, types } from 'recast'
 import * as babelParser from '@babel/parser'
 import * as t from '@babel/types'
 
@@ -82,9 +81,10 @@ function processAst(
 ): void {
     // Stack to track current describe block context
     const blockStack: TestCaseInfo[] = []
+    const brockIdSet = new Set<string>()
 
     // Traverse the AST
-    recast.types.visit(ast, {
+    types.visit(ast, {
         // Visit call expressions to find describe, it, and test blocks
         visitCallExpression(path) {
             const node = path.node
@@ -111,16 +111,19 @@ function processAst(
 
                         // Generate a unique ID for this test block
                         const blockId = `${blockType}:${range.start.line}:${range.start.character}`
-                        testBlocksMap.set(blockId, testCase)
+                        if (!brockIdSet.has(blockId)) {
+                            brockIdSet.add(blockId)
+                            testBlocksMap.set(blockId, testCase)
 
-                        // Add the test case to the current parent or to the top level
-                        if (blockStack.length > 0) {
-                            // Add to current parent in the stack
-                            const parent = blockStack[blockStack.length - 1]
-                            parent.children.push(testCase)
-                        } else {
-                            // Add to top level
-                            testCases.push(testCase)
+                            // Add the test case to the current parent or to the top level
+                            if (blockStack.length > 0) {
+                                // Add to current parent in the stack
+                                const parent = blockStack[blockStack.length - 1]
+                                parent.children.push(testCase)
+                            } else {
+                                // Add to top level
+                                testCases.push(testCase)
+                            }
                         }
 
                         if (blockType === 'describe') {
@@ -378,6 +381,3 @@ function findClosingBracket(content: string, startPos: number): number {
 
     return -1
 }
-
-// Import recast types for traversal
-import * as recast from 'recast'

@@ -36,18 +36,6 @@
     "contributes": {
         "commands": [
             {
-                "command": "webdriverio.runTest",
-                "title": "WebDriverIO: Run Test"
-            },
-            {
-                "command": "webdriverio.runSpec",
-                "title": "WebDriverIO: Run Spec File"
-            },
-            {
-                "command": "webdriverio.runAllTests",
-                "title": "WebDriverIO: Run All Tests"
-            },
-            {
                 "command": "webdriverio.configureTests",
                 "title": "WebDriverIO: Configure Tests"
             }
@@ -128,8 +116,10 @@
         "@types/node": "20.x",
         "@types/vscode": "^1.98.0",
         "@types/which": "^3.0.4",
+        "@types/ws": "^8.18.1",
         "@vscode/test-cli": "^0.0.10",
         "@vscode/test-electron": "^2.4.1",
+        "@wdio/cli": "^9.12.4",
         "@wdio/eslint": "^0.1.1",
         "esbuild": "^0.25.1",
         "eslint": "^9.23.0",
@@ -144,10 +134,12 @@
     },
     "dependencies": {
         "@babel/parser": "^7.27.0",
-        "@wdio/cli": "^9.12.4",
         "@wdio/config": "^9.12.5",
+        "birpc": "^2.3.0",
+        "get-port": "^7.1.0",
         "recast": "^0.23.11",
-        "which": "^5.0.0"
+        "which": "^5.0.0",
+        "ws": "^8.18.1"
     },
     "pnpm": {
         "onlyBuiltDependencies": [

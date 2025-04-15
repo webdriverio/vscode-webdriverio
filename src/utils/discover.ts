@@ -10,17 +10,12 @@ import { log } from './logger.js'
 type Spec = string | string[]
 
 export const discoverTests = async (testController: vscode.TestController) => {
-    const workspaceFolders = vscode.workspace.workspaceFolders
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-        log.debug('No workspace is detected.')
-        return
-    }
+    const workspaceFolders = configManager.getWorkspaceFolderPath()
     try {
         if (workspaceFolders.length === 1) {
             const workspaceFolder = workspaceFolders[0]
-            log.debug(`Detected workspace path: ${workspaceFolder.uri.fsPath}`)
 
-            const config = await configManager.getWdioConfig(workspaceFolder.uri.fsPath)
+            const config = await configManager.getWdioConfig(workspaceFolder)
             if (!config) {
                 throw new Error('Failed to load the configuration.')
             }

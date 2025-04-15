@@ -10,6 +10,13 @@
 - WebdriverIO version >= v9.0.0
 - Node.js version >= 18.0.0 (follows WebdriverIO)
 
+- `@wdio/json-reporter` should be installed and configured at `wdio.config.js` as follows
+    ```
+    reporters: [
+      ['json', { stdout: true }]
+    ],
+    ```
+
 ## 🚧🚧　Extension Settings 🚧🚧
 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.

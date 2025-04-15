@@ -11,18 +11,24 @@ importers:
       '@babel/parser':
         specifier: ^7.27.0
         version: 7.27.0
-      '@wdio/cli':
-        specifier: ^9.12.4
-        version: 9.12.4
       '@wdio/config':
         specifier: ^9.12.5
         version: 9.12.5
+      birpc:
+        specifier: ^2.3.0
+        version: 2.3.0
+      get-port:
+        specifier: ^7.1.0
+        version: 7.1.0
       recast:
         specifier: ^0.23.11
         version: 0.23.11
       which:
         specifier: ^5.0.0
         version: 5.0.0
+      ws:
+        specifier: ^8.18.1
+        version: 8.18.1
     devDependencies:
       '@babel/types':
         specifier: ^7.27.0
@@ -39,12 +45,18 @@ importers:
       '@types/which':
         specifier: ^3.0.4
         version: 3.0.4
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       '@vscode/test-cli':
         specifier: ^0.0.10
         version: 0.0.10
       '@vscode/test-electron':
         specifier: ^2.4.1
         version: 2.4.1
+      '@wdio/cli':
+        specifier: ^9.12.4
+        version: 9.12.4
       '@wdio/eslint':
         specifier: ^0.1.1
         version: 0.1.1(@typescript-eslint/eslint-plugin@8.29.1(@typescript-eslint/parser@8.29.1(eslint@9.23.0)(typescript@5.8.2))(eslint@9.23.0)(typescript@5.8.2))(eslint@9.23.0)(typescript@5.8.2)
@@ -789,6 +801,9 @@ packages:
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
+
+  birpc@2.3.0:
+    resolution: {integrity: sha512-ijbtkn/F3Pvzb6jHypHRyve2QApOCZDR25D/VnkY2G/lBNcXCTsnsCxgY4k4PkVB7zfwzYbY3O9Lcqe3xufS5g==}
 
   bl@5.1.0:
     resolution: {integrity: sha512-tv1ZJHLfTDnXE6tMHv73YgSJaWR2AFuPwMntBe7XL/GBFHnT0CLnsHMogfk5+GzCDC5ZWarSCYaIGATZt9dNsQ==}
@@ -3824,6 +3839,8 @@ snapshots:
   basic-ftp@5.0.5: {}
 
   binary-extensions@2.3.0: {}
+
+  birpc@2.3.0: {}
 
   bl@5.1.0:
     dependencies:
