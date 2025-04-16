@@ -10,7 +10,7 @@ export function createRpcClient(url: string) {
     const pendingCalls: Array<() => void> = []
     let isConnected = false
 
-    // 関数オブジェクト
+    // Api caller for the extension side
     const client: ExtensionApi = {
         log(message: string): Promise<void> {
             return callServerMethod(async (r) => r.log(`[WORKER] ${message}`))
@@ -19,7 +19,7 @@ export function createRpcClient(url: string) {
             throw new Error('Function not implemented.')
         },
     }
-    // プライベート関数
+
     function callServerMethod<T>(method: (rpc: ExtensionApi) => Promise<T>): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             if (isConnected && rpc) {
@@ -36,11 +36,11 @@ export function createRpcClient(url: string) {
         })
     }
 
-    // 接続時の処理
+    // Execute when ws was connected
     ws.on('open', () => {
         isConnected = true
 
-        // RPCの初期化
+        // Initialize the RPC
         rpc = createBirpc<ExtensionApi, WorkerApi>(createHandler(client), {
             post: (data) => ws.send(data),
             on: (data) => ws.on('message', data),
@@ -48,7 +48,7 @@ export function createRpcClient(url: string) {
             deserialize: (v) => v8.deserialize(Buffer.from(v) as any),
         })
 
-        // 保留中の呼び出しを実行
+        // Execute pending calls
         while (pendingCalls.length > 0) {
             const call = pendingCalls.shift()
             call?.()

@@ -1,15 +1,18 @@
-import type * as vscode from 'vscode'
+import * as v8 from 'node:v8'
+import { resolve } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createServer } from 'node:http'
+
 import getPort from 'get-port'
 import { createBirpc } from 'birpc'
 import { WebSocketServer } from 'ws'
-import type { ExtensionApi, WorkerApi } from './api/types.js'
 import { log } from './utils/logger.js'
-import { workerPath } from './constants.js'
 import { configManager } from './config/config.js'
-import v8 from 'node:v8'
 
+import type * as vscode from 'vscode'
+import type { ExtensionApi, WorkerApi } from './api/types.js'
+
+const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
 /**
  * Manages the WebDriverIO worker process
  */
@@ -55,14 +58,14 @@ export class WorkerManager {
 
             // Get path to worker script
 
-            log.debug(`Worker path: ${workerPath}`)
+            log.debug(`Worker path: ${WORKER_PATH}`)
 
             const env = { ...process.env, WDIO_WORKER_WS_URL: wsUrl, FORCE_COLOR: '0' }
             // @ts-expect-error
             delete env.ELECTRON_RUN_AS_NODE
 
             // Start worker process
-            this.workerProcess = spawn('node', [workerPath], {
+            this.workerProcess = spawn('node', [WORKER_PATH], {
                 cwd: workspaceFolders[0],
                 env,
                 stdio: 'pipe',

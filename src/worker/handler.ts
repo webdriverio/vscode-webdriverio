@@ -1,5 +1,8 @@
 import type { RunCommandArguments } from '@wdio/cli'
 import type { ExtensionApi, RunTestOptions, TestResult } from '../api/types.js'
+import { resolve } from 'node:path'
+
+const VSCODE_REPORTER_PATH = resolve(__dirname, '../reporter/index.cjs')
 
 export function createHandler(client: ExtensionApi) {
     return {
@@ -25,6 +28,8 @@ export function createHandler(client: ExtensionApi) {
                 if (options.grep) {
                     wdioArgs.mochaOpts = { grep: options.grep }
                 }
+
+                wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true }]]
 
                 client.log(`Launching WebDriverIO with configuration: ${JSON.stringify(wdioArgs)}`)
 

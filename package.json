@@ -40,33 +40,6 @@
                 "title": "WebDriverIO: Configure Tests"
             }
         ],
-        "menus": {
-            "editor/context": [
-                {
-                    "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio.runTest",
-                    "group": "webdriverio"
-                },
-                {
-                    "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio.runSpec",
-                    "group": "webdriverio"
-                }
-            ],
-            "explorer/context": [
-                {
-                    "when": "resourceExtname == .js || resourceExtname == .ts",
-                    "command": "webdriverio.runSpec",
-                    "group": "webdriverio"
-                }
-            ],
-            "testing/item/context": [
-                {
-                    "command": "webdriverio.runAllTests",
-                    "when": "controllerId == 'webdriverio'"
-                }
-            ]
-        },
         "viewsContainers": {
             "activitybar": [
                 {
@@ -121,6 +94,7 @@
         "@vscode/test-electron": "^2.4.1",
         "@wdio/cli": "^9.12.4",
         "@wdio/eslint": "^0.1.1",
+        "@wdio/types": "^9.12.3",
         "esbuild": "^0.25.1",
         "eslint": "^9.23.0",
         "glob": "^11.0.1",
@@ -135,6 +109,7 @@
     "dependencies": {
         "@babel/parser": "^7.27.0",
         "@wdio/config": "^9.12.5",
+        "@wdio/reporter": "^9.12.3",
         "birpc": "^2.3.0",
         "get-port": "^7.1.0",
         "recast": "^0.23.11",

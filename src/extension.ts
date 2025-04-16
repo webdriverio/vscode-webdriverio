@@ -5,6 +5,7 @@ import { discoverTests } from './utils/discover.js'
 import { createRunHandler } from './utils/runner.js'
 import { log } from './utils/logger.js'
 import { WorkerManager } from './manager.js'
+import { TestRegistry } from './test/registry.js'
 
 export async function activate(context: vscode.ExtensionContext) {
     const extension = new WdioExtension()
@@ -36,11 +37,14 @@ class WdioExtension {
             this.workerManager = new WorkerManager()
             await this.workerManager.start()
         } catch (error) {
-            log.info(`Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`)
+            const errorMessage = `Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`
+            log.error(errorMessage)
             vscode.window.showErrorMessage('Failed to start WebDriverIO worker process')
+            throw new Error(errorMessage)
         }
+        const testRegistry = new TestRegistry(this.#testController)
 
-        const runHandler = createRunHandler(this.#testController, this.workerManager)
+        const runHandler = createRunHandler(testRegistry, this.workerManager)
 
         this.#testController.createRunProfile('Run Tests', vscode.TestRunProfileKind.Run, runHandler, true)
         const watcher = vscode.workspace.createFileSystemWatcher('**/*.spec.{js,ts}')
@@ -48,9 +52,11 @@ class WdioExtension {
         this.disposables = [
             vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
             vscode.workspace.onDidChangeConfiguration(configManager.listener),
+            this.#testController,
             watcher,
+            testRegistry,
         ]
-        discoverTests(this.#testController)
+        discoverTests(testRegistry)
     }
     async dispose() {
         if (this.workerManager) {

@@ -2,11 +2,16 @@ import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import { log } from './logger.js'
+import { TEST_ID_SEPARATOR } from '../constants.js'
+import { configManager } from '../config/config.js'
+import { TestReporter } from '../test/reporter.js'
+
 import type { WorkerManager } from '../manager.js'
 import type { RunTestOptions } from '../api/types.js'
-import { configManager } from '../config/config.js'
+import type { ResultSet } from '../reporter/types.js'
+import type { TestRegistry } from '../test/registry.js'
 
-export function createRunHandler(testController: vscode.TestController, workerManager: WorkerManager | null) {
+export function createRunHandler(testRegistry: TestRegistry, workerManager: WorkerManager | null) {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (!workspaceFolders) {
         vscode.window.showErrorMessage('No workspace folder open')
@@ -15,7 +20,7 @@ export function createRunHandler(testController: vscode.TestController, workerMa
     const rootDir = workspaceFolders[0].uri.fsPath
 
     return async function runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
-        const run = testController.createTestRun(request)
+        const run = testRegistry.controller.createTestRun(request)
 
         const queue: (vscode.TestItem | vscode.TestItem[])[] = []
 
@@ -26,9 +31,12 @@ export function createRunHandler(testController: vscode.TestController, workerMa
         } else {
             log.debug('Test is requested ALL')
             const tests: vscode.TestItem[] = []
-            testController.items.forEach((test) => tests.push(test))
+            testRegistry.controller.items.forEach((test) => tests.push(test))
             queue.push(tests)
         }
+
+        // Create test reporter
+        const reporter = new TestReporter(testRegistry, run)
 
         // Run tests
         for (const test of queue) {
@@ -36,38 +44,40 @@ export function createRunHandler(testController: vscode.TestController, workerMa
                 break
             }
 
-            const testStatusController = (
-                controlFn: (test: vscode.TestItem, duration?: number) => void,
-                test: vscode.TestItem
-            ) => {
-                controlFn(test)
-                test.children.forEach((childTest) => {
-                    testStatusController(controlFn, childTest)
-                })
-            }
             const _test = Array.isArray(test) ? test : [test]
 
-            _test.forEach((test) => testStatusController(run.started, test))
+            // Mark all tests as running
+            for (const t of _test) {
+                markTestsAsRunning(run, t)
+            }
 
             try {
                 const result = await runWebdriverIOTest(rootDir, _test, workerManager)
 
-                if (result.success) {
-                    _test.forEach((test) => testStatusController(run.started, test))
-                } else {
-                    _test.forEach((test) =>
-                        run.failed(test, new vscode.TestMessage(result.errorMessage || 'Run failed'), result.duration)
-                    )
+                if (result.detail && result.detail.length > 0) {
+                    // Update test status based on actual test results
+                    reporter.updateTestStatus(result.detail)
                 }
             } catch (e) {
-                _test.forEach((test) =>
-                    run.failed(test, new vscode.TestMessage(`Runtime error: ${(e as Error).message}`))
-                )
+                // Runtime error handling
+                for (const t of _test) {
+                    run.failed(t, new vscode.TestMessage(`Runtime error: ${(e as Error).message}`))
+                }
             }
         }
 
         run.end()
     }
+}
+
+/**
+ * Mark a test and all its children as running
+ * @param run The current test run
+ * @param test The test item to mark as running
+ */
+function markTestsAsRunning(run: vscode.TestRun, test: vscode.TestItem): void {
+    run.started(test)
+    test.children.forEach((child) => markTestsAsRunning(run, child))
 }
 
 function getSpec(tests: vscode.TestItem[]) {
@@ -113,27 +123,41 @@ async function runWebdriverIOTest(
         }
         await workerManager.ensureConnected()
         const result = await workerManager.getWorkerRpc().runTest(testOptions)
+
+        const resultData = parseJson<ResultSet[]>(result.stdout)
         log.debug(`RESULT: ${result.success}`)
-        log.debug(`DETAIL: ${JSON.stringify(JSON.parse(result.stdout), null, 2)}`)
+        log.debug(`DETAIL: ${JSON.stringify(resultData, null, 2)}`)
 
         return {
             success: result.success,
             duration: 0,
-            output: JSON.parse(result.stdout),
+            detail: resultData,
+            errorMessage: result.error,
         }
     } catch (error) {
         const _error = error as Error
         return {
             success: false,
             errorMessage: _error.message,
-            output: _error.message,
+            detail: [],
         }
     }
 }
 
+function parseJson<T>(strJson: string): T {
+    try {
+        return JSON.parse(strJson)
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        log.error(`Failed to parse JSON of the wdio result: ${errorMessage}`)
+        log.debug(strJson)
+        throw new Error(errorMessage)
+    }
+}
+
 function getGrep(test: vscode.TestItem) {
-    const testNames = test.id.split('#')
-    return test.id.includes('#') ? testNames[testNames.length - 1] : undefined
+    const testNames = test.id.split(TEST_ID_SEPARATOR)
+    return test.id.includes(TEST_ID_SEPARATOR) ? testNames[testNames.length - 1] : undefined
 }
 
 function getRange(test: vscode.TestItem) {

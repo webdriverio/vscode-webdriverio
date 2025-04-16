@@ -1,15 +1,13 @@
-import path from 'node:path'
-import fs from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import vscode from 'vscode'
 
-import { parseTestCases, type TestCaseInfo } from './parser.js'
 import { configManager } from '../config/index.js'
 import { log } from './logger.js'
+import type { TestRegistry } from '../test/registry.js'
 
 type Spec = string | string[]
 
-export const discoverTests = async (testController: vscode.TestController) => {
+export const discoverTests = async (testRegistry: TestRegistry) => {
     const workspaceFolders = configManager.getWorkspaceFolderPath()
     try {
         if (workspaceFolders.length === 1) {
@@ -24,7 +22,7 @@ export const discoverTests = async (testController: vscode.TestController) => {
             const specs = convertUri(config.getSpecs())
 
             log.debug(`Detected spec files: ${specs.length}`)
-            await loadWdioSpecs(testController, specs)
+            await testRegistry.resisterSpecs(specs)
         } else {
             //TODO: support multiple workspace
             log.debug(`Detected ${workspaceFolders.length} workspaces.`)
@@ -40,32 +38,5 @@ function convertUri(specs: Spec[]) {
         Array.isArray(spec)
             ? spec.map((path) => vscode.Uri.file(fileURLToPath(path)))
             : [vscode.Uri.file(fileURLToPath(spec))]
-    )
-}
-
-async function loadWdioSpecs(controller: vscode.TestController, specs: vscode.Uri[]) {
-    await Promise.all(
-        specs.map(async (spec) => {
-            // Create TestItem testFile by testFile
-            log.debug(`Parse spec files: ${spec.fsPath}`)
-            const fileTestItem = controller.createTestItem(spec.fsPath, path.basename(spec.fsPath), spec)
-            const fileContent = await fs.readFile(spec.fsPath, { encoding: 'utf8' })
-            const document = await vscode.workspace.openTextDocument(spec)
-            const testCases = parseTestCases(fileContent, document)
-            const testTreeCreator = (parentId: string, testCase: TestCaseInfo) => {
-                const testCaseId = `${parentId}#${testCase.name}`
-                const testCaseItem = controller.createTestItem(testCaseId, testCase.name, spec)
-                testCaseItem.range = testCase.range
-                for (const childTestCase of testCase.children) {
-                    testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
-                }
-                return testCaseItem
-            }
-            // Create TestItem testCase by testCase
-            for (const testCase of testCases) {
-                fileTestItem.children.add(testTreeCreator(spec.fsPath, testCase))
-            }
-            controller.items.add(fileTestItem)
-        })
     )
 }

@@ -1,5 +1,3 @@
-import { resolve } from 'node:path'
-
 export const EXTENSION_ID = 'webdriverio'
 
 export const DEFAULT_CONFIG_VALUES = {
@@ -8,4 +6,4 @@ export const DEFAULT_CONFIG_VALUES = {
     showOutput: true,
 } as const
 
-export const workerPath = resolve(__dirname, 'worker/index.cjs')
+export const TEST_ID_SEPARATOR = '#WDIO_SEP#'

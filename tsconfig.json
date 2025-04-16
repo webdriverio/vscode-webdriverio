@@ -15,5 +15,15 @@
         // "noUnusedParameters": true,  /* Report errors on unused parameters. */
     },
 
-    "exclude": ["node_modules", "**/node_modules/*", "__mocks__", "**/*.spec.ts", "coverage", "examples", "/*.js"]
+    "exclude": [
+        "node_modules",
+        "**/node_modules/*",
+        "__mocks__",
+        "**/*.spec.ts",
+        "coverage",
+        "examples",
+        "/*.js",
+        "/*.cjs",
+        "/*.mjs"
+    ]
 }
