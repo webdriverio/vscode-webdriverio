@@ -1,9 +1,10 @@
 import { fileURLToPath } from 'node:url'
-import vscode from 'vscode'
+import * as vscode from 'vscode'
 
+import { log } from '../utils/logger.js'
 import { configManager } from '../config/index.js'
-import { log } from './logger.js'
-import type { TestRegistry } from '../test/registry.js'
+
+import type { TestRegistry } from './registry.js'
 
 type Spec = string | string[]
 

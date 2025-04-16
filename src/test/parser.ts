@@ -1,17 +1,9 @@
 import * as vscode from 'vscode'
-import { parse, types } from 'recast'
 import * as babelParser from '@babel/parser'
 import * as t from '@babel/types'
+import { parse, types } from 'recast'
 
-/**
- * TestCase information interface - Keeping the same structure as original
- */
-export interface TestCaseInfo {
-    type: 'describe' | 'it' | 'test'
-    name: string
-    range: vscode.Range
-    children: TestCaseInfo[]
-}
+import type { TestCaseInfo } from './types.js'
 
 /**
  * Parse WebDriverIO test files and extract test cases using Recast and Babel parser

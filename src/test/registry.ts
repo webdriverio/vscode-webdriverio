@@ -4,9 +4,11 @@ import { fileURLToPath } from 'node:url'
 
 import * as vscode from 'vscode'
 
-import { parseTestCases, type TestCaseInfo } from '../utils/parser.js'
 import { log } from '../utils/logger.js'
+import { parseTestCases } from './parser.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
+
+import type { TestCaseInfo } from './types.js'
 /**
  * test.spec.js            <-- spec
  *   ├─describe('xxx'...)  <-- suite
@@ -16,15 +18,15 @@ import { TEST_ID_SEPARATOR } from '../constants.js'
  */
 
 export class TestRegistry implements vscode.Disposable {
+    // Mapping for the id and TestItem
+    private _suiteMap = new Map<string, vscode.TestItem>()
+    private _fileMap = new Map<string, vscode.TestItem>()
+
     constructor(public readonly controller: vscode.TestController) {}
 
-    // id TestItem
-    private suiteMap = new Map<string, vscode.TestItem>()
-    private fileMap = new Map<string, vscode.TestItem>()
-
     public async resisterSpecs(specs: vscode.Uri[]) {
-        this.suiteMap.clear()
-        this.fileMap.clear()
+        this._suiteMap.clear()
+        this._fileMap.clear()
 
         await Promise.all(
             specs.map(async (spec) => {
@@ -43,7 +45,7 @@ export class TestRegistry implements vscode.Disposable {
                     const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, spec)
                     testCaseItem.range = testCase.range
                     if (testCase.type === 'describe') {
-                        this.suiteMap.set(testCaseId, testCaseItem)
+                        this._suiteMap.set(testCaseId, testCaseItem)
                     }
                     for (const childTestCase of testCase.children) {
                         testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
@@ -62,7 +64,7 @@ export class TestRegistry implements vscode.Disposable {
 
     private resisterSpecFile(id: string, spec: vscode.Uri) {
         const fileTestItem = this.controller.createTestItem(id, path.basename(spec.fsPath), spec)
-        this.fileMap.set(id, fileTestItem)
+        this._fileMap.set(id, fileTestItem)
         return fileTestItem
     }
 
@@ -72,7 +74,7 @@ export class TestRegistry implements vscode.Disposable {
 
     public searchSuite(suiteName: string, parent: vscode.TestItem): vscode.TestItem | undefined {
         const id = `${parent.id}${TEST_ID_SEPARATOR}${suiteName}`
-        const suiteItem = this.suiteMap.get(id)
+        const suiteItem = this._suiteMap.get(id)
         if (suiteItem) {
             return suiteItem
         }
@@ -88,10 +90,10 @@ export class TestRegistry implements vscode.Disposable {
         const _specPath = specPath.startsWith('file://') ? fileURLToPath(specPath) : specPath
 
         const id = this.convertPathToId(_specPath)
-        return this.fileMap.get(id)
+        return this._fileMap.get(id)
     }
     public dispose() {
-        this.suiteMap.clear()
-        this.fileMap.clear()
+        this._suiteMap.clear()
+        this._fileMap.clear()
     }
 }

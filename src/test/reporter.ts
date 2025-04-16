@@ -10,12 +10,12 @@ import type { ResultSet, TestSuite, Test } from '../reporter/types.js'
 export class TestReporter {
     /**
      * Creates a new instance of TestReporter
-     * @param registry The test registry containing all TestItems
-     * @param run The current test run
+     * @param _registry The test registry containing all TestItems
+     * @param _run The current test run
      */
     constructor(
-        private readonly registry: TestRegistry,
-        private readonly run: vscode.TestRun
+        private readonly _registry: TestRegistry,
+        private readonly _run: vscode.TestRun
     ) {}
 
     /**
@@ -38,7 +38,7 @@ export class TestReporter {
 
                 for (const specPath of specPaths) {
                     // Get the spec file TestItem
-                    const specTestItem = this.registry.getSpecById(specPath)
+                    const specTestItem = this._registry.getSpecById(specPath)
 
                     if (!specTestItem) {
                         log.debug(`Spec file TestItem not found for path: ${specPath}`)
@@ -75,7 +75,7 @@ export class TestReporter {
      */
     private processHierarchicalSuite(suite: TestSuite, parentItem: vscode.TestItem): void {
         // Find the suite TestItem in the registry
-        const suiteItem = this.registry.searchSuite(suite.name, parentItem)
+        const suiteItem = this._registry.searchSuite(suite.name, parentItem)
 
         if (!suiteItem) {
             log.debug(`Suite TestItem not found for suite: ${suite.name}`)
@@ -123,16 +123,16 @@ export class TestReporter {
 
         // Update the test status
         if (test.state === 'passed') {
-            this.run.passed(testItem, duration)
+            this._run.passed(testItem, duration)
         } else if (test.state === 'failed') {
             // Create an error message from the test result
             const message = new vscode.TestMessage(
                 test.error ? `Test failed: ${test.error.message}` : `Test failed: ${test.name}`
             )
-            this.run.failed(testItem, message, duration)
+            this._run.failed(testItem, message, duration)
         } else if (test.state === 'skipped' || test.state === 'pending') {
             // Skipped or pending status
-            this.run.skipped(testItem)
+            this._run.skipped(testItem)
         }
     }
 
@@ -152,7 +152,7 @@ export class TestReporter {
             // const message = new vscode.TestMessage('')
             // this.run.failed(suiteItem, message, suiteResult.duration)
             // Only mark as passed if there are actual tests
-            this.run.passed(suiteItem, suiteResult.duration)
+            this._run.passed(suiteItem, suiteResult.duration)
         }
     }
 
@@ -166,11 +166,11 @@ export class TestReporter {
             const message = new vscode.TestMessage(
                 `${result.state.failed} tests failed out of ${result.state.passed + result.state.failed + result.state.skipped}`
             )
-            this.run.failed(specItem, message)
+            this._run.failed(specItem, message)
         } else if (result.state.passed > 0) {
-            this.run.passed(specItem)
+            this._run.passed(specItem)
         } else if (result.state.skipped > 0) {
-            this.run.skipped(specItem)
+            this._run.skipped(specItem)
         }
     }
 }
