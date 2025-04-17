@@ -1,5 +1,4 @@
 import { fileURLToPath } from 'node:url'
-import * as vscode from 'vscode'
 
 import { log } from '../utils/logger.js'
 import { configManager } from '../config/index.js'
@@ -20,7 +19,7 @@ export const discoverTests = async (testRegistry: TestRegistry) => {
             }
 
             log.debug('Loaded configuration successfully.')
-            const specs = convertUri(config.getSpecs())
+            const specs = convertPathString(config.getSpecs())
 
             log.debug(`Detected spec files: ${specs.length}`)
             await testRegistry.resisterSpecs(specs)
@@ -34,10 +33,8 @@ export const discoverTests = async (testRegistry: TestRegistry) => {
     }
 }
 
-function convertUri(specs: Spec[]) {
+function convertPathString(specs: Spec[]) {
     return specs.flatMap((spec) =>
-        Array.isArray(spec)
-            ? spec.map((path) => vscode.Uri.file(fileURLToPath(path)))
-            : [vscode.Uri.file(fileURLToPath(spec))]
+        Array.isArray(spec) ? spec.map((path) => fileURLToPath(path)) : [fileURLToPath(spec)]
     )
 }

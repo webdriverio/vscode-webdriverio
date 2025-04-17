@@ -10,12 +10,30 @@ export type TestResult = {
 
 export type TestResults = TestResult[]
 
-/**
- * TestCase information interface - Keeping the same structure as original
- */
-export interface TestCaseInfo {
-    type: 'describe' | 'it' | 'test'
-    name: string
-    range: vscode.Range
-    children: TestCaseInfo[]
+export interface SourcePosition {
+    offset: number
 }
+
+export interface SourceRange {
+    start: SourcePosition
+    end: SourcePosition
+}
+
+/**
+/**
+ * TestCase information interface
+ */
+export interface TestData {
+    type: 'describe' | 'it' | 'test' | 'before' | 'after' | 'beforeEach' | 'afterEach'
+    name: string
+    range: SourceRange
+    children: TestData[]
+}
+
+export type VscodeTestData = Omit<TestData, 'range' | 'children'> & {
+    uri: vscode.Uri
+    range: vscode.Range
+    children: VscodeTestData[]
+}
+
+export type TestCodeParser = (fileContent: string, uri: string) => TestData[]

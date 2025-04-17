@@ -7,7 +7,7 @@ export async function findWdioConfig(workSpaceRoot: string) {
     log.debug(`Target workspace path: ${workSpaceRoot}`)
     log.debug('Detecting the configuration file for WebdriverIO...')
 
-    const wdioConfigPaths = [path.join(workSpaceRoot, 'wdio.conf.js')]
+    const wdioConfigPaths = [path.join(workSpaceRoot, 'wdio.conf.js'), path.join(workSpaceRoot, 'wdio.conf.ts')]
     const configs = (
         await Promise.all(
             wdioConfigPaths.map(async (wdioConfigPath) => {
@@ -24,9 +24,8 @@ export async function findWdioConfig(workSpaceRoot: string) {
 
     if (configs.length === 0) {
         log.debug('There is no configuration file.')
-    }
-
-    if (configs.length > 1) {
+        return
+    } else if (configs.length > 1) {
         log.debug(`Detected files: \n${configs.join('\n')}`)
         log.debug(`${configs.length} configuration files were detected. Use first one. `)
     }

@@ -1,4 +1,4 @@
-import vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 
@@ -21,8 +21,13 @@ class WdioConfig {
         this._globalConfig = {
             configPath: config.get<string>('configPath') || DEFAULT_CONFIG_VALUES.configPath,
             testFilePattern: config.get<string>('testFilePattern') || DEFAULT_CONFIG_VALUES.testFilePattern,
-            showOutput: config.get<boolean>('showOutput') || DEFAULT_CONFIG_VALUES.showOutput,
+            showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
         }
+    }
+
+    private resolveBooleanConfig(config: vscode.WorkspaceConfiguration, key: string, defaultValue: boolean) {
+        const value = config.get<boolean>('showOutput')
+        return typeof value === 'boolean' ? value : defaultValue
     }
 
     public get globalConfig() {
@@ -67,8 +72,7 @@ class WdioConfig {
         return config
     }
 
-    public getWorkspaceFolderPath() {
-        const workspaceFolders = vscode.workspace.workspaceFolders
+    public getWorkspaceFolderPath(workspaceFolders = vscode.workspace.workspaceFolders) {
         if (!workspaceFolders || workspaceFolders.length === 0) {
             log.debug('No workspace is detected.')
             return []

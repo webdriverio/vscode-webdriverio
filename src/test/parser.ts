@@ -1,58 +1,61 @@
-import * as vscode from 'vscode'
+// src/test/parser.ts
 import * as babelParser from '@babel/parser'
 import * as t from '@babel/types'
 import { parse, types } from 'recast'
 
-import type { TestCaseInfo } from './types.js'
+import type { TestData, SourceRange, TestCodeParser } from './types.js'
 
 /**
  * Parse WebDriverIO test files and extract test cases using Recast and Babel parser
- * This version maintains the same interface as the original parseTestCases function
- * but implements the parser using Recast and Babel for TypeScript support
  *
  * @param fileContent Content of the test file
- * @param document VSCode TextDocument object
+ * @param uri File URI for error reporting
  * @returns Array of test case information
+ * @throws Error if parsing fails
  */
-export function parseTestCases(fileContent: string, document: vscode.TextDocument): TestCaseInfo[] {
+export const parseTestCases: TestCodeParser = (fileContent, uri) => {
     // Set up a list to store all test cases
-    const testCases: TestCaseInfo[] = []
+    const testCases: TestData[] = []
 
     // Track each test block for building the hierarchy
-    const testBlocksMap = new Map<string, TestCaseInfo>()
+    const testBlocksMap = new Map<string, TestData>()
 
     try {
         // Parse the file content with Recast and Babel parser to handle TypeScript
         const ast = parse(fileContent, {
             parser: {
                 parse: (source: string) => {
-                    return babelParser.parse(source, {
-                        sourceType: 'module',
-                        plugins: [
-                            'typescript',
-                            'jsx',
-                            'decorators-legacy',
-                            'classProperties',
-                            'exportDefaultFrom',
-                            'exportNamespaceFrom',
-                            'dynamicImport',
-                            'objectRestSpread',
-                            'optionalChaining',
-                            'nullishCoalescingOperator',
-                        ],
-                        tokens: true,
-                        ranges: true,
-                    })
+                    try {
+                        return babelParser.parse(source, {
+                            sourceType: 'module',
+                            plugins: [
+                                'typescript',
+                                'jsx',
+                                'decorators-legacy',
+                                'classProperties',
+                                'exportDefaultFrom',
+                                'exportNamespaceFrom',
+                                'dynamicImport',
+                                'objectRestSpread',
+                                'optionalChaining',
+                                'nullishCoalescingOperator',
+                            ],
+                            tokens: true,
+                            ranges: true,
+                        })
+                    } catch (parseError) {
+                        // Provide more detailed error information
+                        const errorMessage = (parseError as Error).message
+                        throw new Error(`Babel parser error: ${errorMessage}`)
+                    }
                 },
             },
         })
 
         // Process the AST to extract test blocks
-        processAst(ast, document, testCases, testBlocksMap)
+        processAst(ast, testCases, testBlocksMap)
     } catch (error) {
-        console.error('Failed to parse test file:', error)
-        // Fallback to simple regex-based extraction if parsing fails
-        return fallbackParseTestCases(fileContent, document)
+        throw new Error(`Failed to parse test file ${uri}: ${(error as Error).message}`)
     }
     return testCases
 }
@@ -61,19 +64,13 @@ export function parseTestCases(fileContent: string, document: vscode.TextDocumen
  * Process the AST to find and extract test blocks
  *
  * @param ast The parsed AST
- * @param document VSCode document for position conversion
  * @param testCases Array to store top-level test cases
  * @param testBlocksMap Map to track all test blocks for hierarchy building
  */
-function processAst(
-    ast: any,
-    document: vscode.TextDocument,
-    testCases: TestCaseInfo[],
-    testBlocksMap: Map<string, TestCaseInfo>
-): void {
+function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, TestData>): void {
     // Stack to track current describe block context
-    const blockStack: TestCaseInfo[] = []
-    const brockIdSet = new Set<string>()
+    const blockStack: TestData[] = []
+    const blockIdSet = new Set<string>()
 
     // Traverse the AST
     types.visit(ast, {
@@ -90,11 +87,11 @@ function processAst(
                     const testName = extractTestName(node.arguments[0])
 
                     if (testName) {
-                        // Create range in the document
-                        const range = nodeToRange(node, document)
+                        // Create source range using node offsets
+                        const range = createSourceRange(node)
 
                         // Create test case info
-                        const testCase: TestCaseInfo = {
+                        const testCase: TestData = {
                             type: blockType,
                             name: testName,
                             range,
@@ -102,9 +99,10 @@ function processAst(
                         }
 
                         // Generate a unique ID for this test block
-                        const blockId = `${blockType}:${range.start.line}:${range.start.character}`
-                        if (!brockIdSet.has(blockId)) {
-                            brockIdSet.add(blockId)
+                        // @ts-ignore
+                        const blockId = `${blockType}:${node.start}:${node.end}`
+                        if (!blockIdSet.has(blockId)) {
+                            blockIdSet.add(blockId)
                             testBlocksMap.set(blockId, testCase)
 
                             // Add the test case to the current parent or to the top level
@@ -122,18 +120,20 @@ function processAst(
                             // Push this describe block to the stack before processing its children
                             blockStack.push(testCase)
 
+                            // Process the describe block's children
                             // Find the function body in the second argument
-                            const callbackArg = node.arguments[1] as t.Node
-                            if (
-                                !!callbackArg &&
-                                (t.isArrowFunctionExpression(callbackArg) || t.isFunctionExpression(callbackArg))
-                            ) {
-                                const body = callbackArg.body
+                            const callbackArg = node.arguments[1]
+                            if (callbackArg) {
+                                // Handle both regular and async functions
+                                // @ts-ignore
+                                if (t.isArrowFunctionExpression(callbackArg) || t.isFunctionExpression(callbackArg)) {
+                                    const body = callbackArg.body
 
-                                // For arrow functions with expression body, we don't traverse
-                                if (t.isBlockStatement(body)) {
-                                    // For block statements, traverse the body
-                                    this.traverse(path.get('arguments', 1))
+                                    // For arrow functions with expression body, we don't traverse
+                                    if (t.isBlockStatement(body)) {
+                                        // For block statements, traverse the body
+                                        this.traverse(path.get('arguments', 1))
+                                    }
                                 }
                             }
 
@@ -146,7 +146,7 @@ function processAst(
                 }
             }
 
-            // Continue traversal for other nodes
+            // Continue traversal
             this.traverse(path)
 
             return false
@@ -155,25 +155,52 @@ function processAst(
 }
 
 /**
+ * Create a SourceRange from an AST node
+ *
+ * @param node The AST node
+ * @returns SourceRange with start and end offsets
+ */
+function createSourceRange(node: any): SourceRange {
+    return {
+        start: { offset: node.start },
+        end: { offset: node.end },
+    }
+}
+
+/**
  * Check if a node is a test block call (describe, it, or test)
+ * Also handles method chains like describe.skip, it.only, etc.
  *
  * @param node The AST node to check
  * @returns True if node is a test block call
  */
 function isTestBlockCall(node: any): boolean {
-    return (
-        t.isIdentifier(node.callee) &&
-        (node.callee.name === 'describe' || node.callee.name === 'it' || node.callee.name === 'test')
-    )
+    // Direct call (describe, it, test)
+    if (t.isIdentifier(node.callee) && ['describe', 'it', 'test'].includes(node.callee.name)) {
+        return true
+    }
+
+    // Method chain call (describe.skip, it.only, etc.)
+    if (
+        t.isMemberExpression(node.callee) &&
+        t.isIdentifier(node.callee.object) &&
+        ['describe', 'it', 'test'].includes(node.callee.object.name)
+    ) {
+        return true
+    }
+
+    return false
 }
 
 /**
  * Get the type of test block (describe, it, or test)
+ * Handles both direct calls and method chain calls
  *
  * @param node The AST node
  * @returns The test block type or null if not a test block
  */
 function getTestBlockType(node: any): 'describe' | 'it' | 'test' | null {
+    // Direct call
     if (t.isIdentifier(node.callee)) {
         if (node.callee.name === 'describe') {
             return 'describe'
@@ -184,13 +211,26 @@ function getTestBlockType(node: any): 'describe' | 'it' | 'test' | null {
         if (node.callee.name === 'test') {
             return 'test'
         }
+    } else if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.object)) {
+        // Method chain call (e.g., describe.skip, it.only)
+
+        if (node.callee.object.name === 'describe') {
+            return 'describe'
+        }
+        if (node.callee.object.name === 'it') {
+            return 'it'
+        }
+        if (node.callee.object.name === 'test') {
+            return 'test'
+        }
     }
+
     return null
 }
 
 /**
  * Extract test name from the first argument of a test block
- * Handles various string formats (literals, template literals, concatenations)
+ * Handles various string formats and provides placeholders for dynamic content
  *
  * @param node The AST node containing the test name
  * @returns The extracted test name or null if invalid
@@ -217,159 +257,13 @@ function extractTestName(node: any): string | null {
 
         if (left !== null && right !== null) {
             return left + right
+        } else if (left !== null) {
+            return left + '...'
+        } else if (right !== null) {
+            return '...' + right
         }
     }
 
-    return null
-}
-
-/**
- * Convert an AST node to a VSCode range
- *
- * @param node The AST node
- * @param document VSCode document for position conversion
- * @returns VSCode range object
- */
-function nodeToRange(node: any, document: vscode.TextDocument): vscode.Range {
-    const start = document.positionAt(node.start)
-    const end = document.positionAt(node.end)
-    return new vscode.Range(start, end)
-}
-
-/**
- * Fallback parser that uses regex to extract test cases when AST parsing fails
- *
- * @param fileContent Content of the test file
- * @param document VSCode document for position conversion
- * @returns Array of test case information
- */
-function fallbackParseTestCases(fileContent: string, document: vscode.TextDocument): TestCaseInfo[] {
-    const testCases: TestCaseInfo[] = []
-
-    // Remove comments to avoid false positives
-    const contentWithoutComments = fileContent.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//gm, '')
-
-    // Find describe blocks
-    const describeRegex =
-        /\bdescribe\s*\(\s*(['"`])((?:(?!\1).|\\.)*)\1\s*,\s*(?:function\s*\([^)]*\)|(?:\([^)]*\)\s*=>))/g
-    let describeMatch
-
-    while ((describeMatch = describeRegex.exec(contentWithoutComments)) !== null) {
-        const describeName = describeMatch[2]
-        const startPos = document.positionAt(describeMatch.index)
-        const endPos = document.positionAt(describeMatch.index + describeMatch[0].length)
-
-        // Find closing bracket for this describe block
-        const blockStart = describeMatch.index + describeMatch[0].length
-        let blockEnd = findClosingBracket(contentWithoutComments, blockStart)
-        if (blockEnd === -1) {
-            blockEnd = contentWithoutComments.length
-        }
-
-        // Extract content of this describe block
-        const blockContent = contentWithoutComments.substring(blockStart, blockEnd)
-
-        // Find it blocks within this describe
-        const itBlocks = findItBlocks(blockContent, document, blockStart)
-
-        // Create describe test case
-        const describeCase: TestCaseInfo = {
-            type: 'describe',
-            name: describeName,
-            range: new vscode.Range(startPos, endPos),
-            children: itBlocks,
-        }
-
-        testCases.push(describeCase)
-    }
-
-    // Find top-level it blocks
-    const topLevelIt = findItBlocks(contentWithoutComments, document, 0)
-
-    // Filter out it blocks that are already within describe blocks
-    const itInDescribe = new Set<number>()
-    testCases.forEach((describe) => {
-        describe.children.forEach((it) => {
-            itInDescribe.add(it.range.start.line)
-        })
-    })
-
-    // Add it blocks that aren't in any describe
-    topLevelIt.forEach((it) => {
-        if (!itInDescribe.has(it.range.start.line)) {
-            testCases.push(it)
-        }
-    })
-
-    return testCases
-}
-
-/**
- * Find it/test blocks in the content
- *
- * @param content Content to search in
- * @param document VSCode document
- * @param startOffset Starting offset in the document
- * @returns Array of it/test blocks
- */
-function findItBlocks(content: string, document: vscode.TextDocument, startOffset: number): TestCaseInfo[] {
-    const itBlocks: TestCaseInfo[] = []
-
-    // Regex for it blocks
-    const itRegex = /\b(it|test)\s*\(\s*(['"`])((?:(?!\2).|\\.)*)\2\s*,\s*(?:function\s*\([^)]*\)|(?:\([^)]*\)\s*=>))/g
-    let itMatch
-
-    while ((itMatch = itRegex.exec(content)) !== null) {
-        const itType = itMatch[1] as 'it' | 'test'
-        const itName = itMatch[3]
-        const startPos = document.positionAt(startOffset + itMatch.index)
-        const endPos = document.positionAt(startOffset + itMatch.index + itMatch[0].length)
-
-        itBlocks.push({
-            type: itType,
-            name: itName,
-            range: new vscode.Range(startPos, endPos),
-            children: [],
-        })
-    }
-
-    return itBlocks
-}
-
-/**
- * Find the position of the closing bracket that matches the opening bracket after startPos
- *
- * @param content Content to search in
- * @param startPos Position after the opening bracket
- * @returns Position of the matching closing bracket or -1 if not found
- */
-function findClosingBracket(content: string, startPos: number): number {
-    let depth = 1
-    let inString = false
-    let stringChar = ''
-    let escaped = false
-
-    for (let i = startPos; i < content.length; i++) {
-        const char = content[i]
-
-        if (!inString) {
-            if (char === '{') {
-                depth++
-            } else if (char === '}') {
-                depth--
-                if (depth === 0) {
-                    return i
-                }
-            } else if (char === "'" || char === '"' || char === '`') {
-                inString = true
-                stringChar = char
-            }
-        } else if (!escaped && char === stringChar) {
-            inString = false
-        }
-
-        escaped = char === '\\' && !escaped
-    }
-
-    return -1
+    // For dynamic content (variables, function calls, etc.)
+    return '[dynamic]'
 }
