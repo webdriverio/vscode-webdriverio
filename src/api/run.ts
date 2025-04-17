@@ -85,7 +85,11 @@ function parseJson<T>(strJson: string): T {
 
 function getGrep(test: vscode.TestItem) {
     const testNames = test.id.split(TEST_ID_SEPARATOR)
-    return test.id.includes(TEST_ID_SEPARATOR) ? testNames[testNames.length - 1] : undefined
+    // Escape following characters
+    // $, ^, ., *, +, ?, (, ), [, ], {, }, |, \
+    return test.id.includes(TEST_ID_SEPARATOR)
+        ? testNames[testNames.length - 1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        : undefined
 }
 
 function getRange(test: vscode.TestItem) {
