@@ -2,26 +2,29 @@ import * as vscode from 'vscode'
 
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 
-import type { WebDriverIOConfig } from '../types.js'
+import type { WdioLogLevel, WebDriverIOConfig } from '../types.js'
 import { log } from '../utils/logger.js'
 import { ConfigParser } from '@wdio/config/node'
 import { findWdioConfig } from './find.js'
+import EventEmitter from 'node:events'
 
 export const testControllerId = EXTENSION_ID
 
 type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
 
-class WdioConfig {
+class WdioConfig extends EventEmitter {
     private _globalConfig: WebDriverIOConfig
     private _configParser = new Map<string, ConfigParser>()
 
     constructor() {
+        super()
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
 
         this._globalConfig = {
             configPath: config.get<string>('configPath') || DEFAULT_CONFIG_VALUES.configPath,
             testFilePattern: config.get<string>('testFilePattern') || DEFAULT_CONFIG_VALUES.testFilePattern,
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
+            logLevel: config.get<WdioLogLevel>('logLevel') || 'info',
         }
     }
 
@@ -49,6 +52,7 @@ class WdioConfig {
             const newValue = config.get<WebDriverIOConfig[typeof prop]>(prop)
             if (event.affectsConfiguration(configKey) && newValue !== undefined) {
                 log.debug(`Update ${prop}: ${newValue}`)
+                this.emit(prop, newValue)
                 Object.assign(this._globalConfig, { [prop]: newValue })
             }
         }

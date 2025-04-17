@@ -1,5 +1,5 @@
 {
-    "name": "wdio-vscode",
+    "name": "vscode-webdriverio",
     "displayName": "WebDriverIO",
     "description": "WebDriverIO for the vscode",
     "version": "0.0.1",
@@ -66,6 +66,19 @@
                     "type": "string",
                     "default": "**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts",
                     "description": "Glob pattern for test files"
+                },
+                "webdriverio.logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "trace",
+                        "debug",
+                        "info",
+                        "warn",
+                        "error",
+                        "silent"
+                    ],
+                    "default": "info",
+                    "description": "Set the logLevel"
                 }
             }
         }
