@@ -1,3 +1,5 @@
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import WDIOReporter, { type RunnerStats, type SuiteStats } from '@wdio/reporter'
 import type { Reporters } from '@wdio/types'
 
@@ -13,12 +15,14 @@ export default class VscodeJsonReporter extends WDIOReporter {
     private _orderedSuites: SuiteStats[] = []
     // Track parent-child relationships
     private _suiteParents: Record<string, string> = {}
+    private _outputDir: string | undefined
 
     constructor(options: Reporters.Options) {
-        if (options.logFile && options.logFile.endsWith('.log')) {
-            options.logFile = options.logFile.slice(0, -4) + '.json'
-        }
         super(options)
+        if (!options.outputDir) {
+            options.stdout = true
+        }
+        this._outputDir = options.outputDir
     }
 
     // Track suite start to capture nesting information
@@ -50,14 +54,30 @@ export default class VscodeJsonReporter extends WDIOReporter {
 
     onRunnerEnd(runner: RunnerStats) {
         const json = this.#prepareJson(runner)
+
         this.write(JSON.stringify(json))
+        this.writeFile(runner.cid, JSON.stringify(json, null, 2))
+    }
+
+    private writeFile(cid: string, content: string) {
+        if (!this._outputDir) {
+            return
+        }
+        try {
+            const logFile = path.join(this._outputDir, `wdio-${cid}.json`)
+            fs.mkdirSync(this._outputDir, { recursive: true })
+            fs.writeFileSync(logFile, content)
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            console.log(errorMessage)
+        }
     }
 
     /**
      * Get suites in the order they were called
      * @return {Array} Ordered suites
      */
-    getOrderedSuites() {
+    getOrderedSuites(): SuiteStats[] {
         if (this._orderedSuites.length) {
             return this._orderedSuites
         }

@@ -8,17 +8,18 @@ function startWorker() {
         console.error('Worker port not specified. Use WDIO_WORKER_PORT environment variable.')
         process.exit(1)
     }
-    const { ws, client } = createRpcClient(wsUrl)
+
+    const { ws, log } = createRpcClient(wsUrl)
 
     // Handle process signals
     process.on('SIGINT', () => {
-        client.log('Worker received SIGINT, shutting down')
+        log.info('Worker received SIGINT, shutting down')
         ws.close()
         process.exit(0)
     })
 
     process.on('SIGTERM', () => {
-        client.log('Worker received SIGTERM, shutting down')
+        log.info('Worker received SIGTERM, shutting down')
         ws.close()
         process.exit(0)
     })

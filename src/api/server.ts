@@ -8,10 +8,12 @@ import { createBirpc } from 'birpc'
 import { WebSocketServer } from 'ws'
 
 import { log } from '../utils/logger.js'
+import { LOG_LEVEL } from '../constants.js'
 import { configManager } from '../config/index.js'
 
 import type * as vscode from 'vscode'
 import type { ExtensionApi, WorkerApi } from './types.js'
+import type { NumericLogLevel } from '../types.js'
 
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
 /**
@@ -28,9 +30,7 @@ export class WorkerManager {
     constructor() {
         // Define extension API implementation
         this._extensionApi = {
-            log: async (message: string) => {
-                log.debug(message)
-            },
+            log: loggingFn,
             reportProgress: async (progress) => {
                 // Progress reporting is handled by the caller
                 // This is for direct worker-to-extension progress updates
@@ -191,5 +191,28 @@ export class WorkerManager {
             await this.stop()
             await this.start()
         }
+    }
+}
+
+async function loggingFn(_logLevel: NumericLogLevel, message: string) {
+    switch (_logLevel) {
+        case LOG_LEVEL.TRACE:
+            log.trace(message)
+            break
+        case LOG_LEVEL.DEBUG:
+            log.debug(message)
+            break
+        case LOG_LEVEL.ERROR:
+            log.error(message)
+            break
+        case LOG_LEVEL.WARN:
+            log.warn(message)
+            break
+        case LOG_LEVEL.INFO:
+            log.info(message)
+            break
+        default:
+            log.debug(message)
+            break
     }
 }

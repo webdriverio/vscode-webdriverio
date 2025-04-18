@@ -1,3 +1,5 @@
+import * as os from 'node:os'
+import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 import { log } from '../utils/logger.js'
@@ -25,6 +27,7 @@ export async function runWdio(
 
     const grep = _tests.length === 1 ? getGrep(_tests[0]) : undefined
     const range = _tests.length === 1 ? getRange(_tests[0]) : undefined
+    const outputDir = getOutputDir()
 
     try {
         if (!workerManager) {
@@ -32,17 +35,19 @@ export async function runWdio(
         }
         const testOptions: RunTestOptions = {
             rootDir: rootDir,
+            outputDir,
             configPath: fullConfigPath,
             specs,
             grep,
             range,
         }
+
+        log.trace(`REQUEST: ${JSON.stringify(testOptions, null, 2)}`)
         await workerManager.ensureConnected()
         const result = await workerManager.getWorkerRpc().runTest(testOptions)
 
         const resultData = parseJson<ResultSet[]>(result.stdout)
-        log.debug(`RESULT: ${result.success}`)
-        log.debug(`DETAIL: ${JSON.stringify(resultData, null, 2)}`)
+        log.trace(`RESULT: ${JSON.stringify(resultData, null, 2)}`)
 
         return {
             success: result.success,
@@ -57,6 +62,20 @@ export async function runWdio(
             errorMessage: _error.message,
             detail: [],
         }
+    }
+}
+
+function getOutputDir() {
+    const resultRootDir = path.join(os.tmpdir(), 'vscode-webdriverio')
+    try {
+        fs.mkdirSync(resultRootDir, { recursive: true })
+        const outputDir = fs.mkdtempSync(path.join(resultRootDir, 'result-'))
+        return outputDir
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        log.debug(`Failed to create output directory: ${errorMessage}`)
+        log.debug('Fallback to extract data from stdout.')
+        return
     }
 }
 

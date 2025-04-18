@@ -1,17 +1,18 @@
+import * as fs from 'node:fs/promises'
+import { join, resolve } from 'node:path'
+
 import type { RunCommandArguments } from '@wdio/cli'
-import type { ExtensionApi, RunTestOptions, TestResult } from '../api/types.js'
-import { resolve } from 'node:path'
+import type { LoggerInterface } from '../types.js'
+import type { RunTestOptions, TestResult } from '../api/types.js'
 
 const VSCODE_REPORTER_PATH = resolve(__dirname, '../reporter/index.cjs')
 
-export function createHandler(client: ExtensionApi) {
+export function createHandler(log: LoggerInterface) {
     return {
         /**
          * Run WebDriverIO tests
          */
         async runTest(options: RunTestOptions): Promise<TestResult> {
-            client.log(`Running tests with options: ${JSON.stringify(options)}`)
-
             try {
                 // Prepare launcher options
                 const wdioArgs: RunCommandArguments = {
@@ -29,9 +30,10 @@ export function createHandler(client: ExtensionApi) {
                     wdioArgs.mochaOpts = { grep: options.grep }
                 }
 
-                wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true }]]
+                wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: options.outputDir }]]
 
-                client.log(`Launching WebDriverIO with configuration: ${JSON.stringify(wdioArgs)}`)
+                log.info('Launching WebDriverIO...')
+                log.trace(`Configuration: ${JSON.stringify(wdioArgs, null, 2)}`)
 
                 // Track output
                 let outputText = ''
@@ -78,17 +80,17 @@ export function createHandler(client: ExtensionApi) {
                 console.log = originalConsoleLog
                 console.error = originalConsoleError
 
-                client.log(`Tests completed with exit code: ${exitCode}`)
+                log.info(`Tests completed with exit code: ${exitCode}`)
 
                 return {
                     success: exitCode === 0,
-                    stdout: extractResultJson(outputText),
+                    stdout: await extractResultJson(log, options.outputDir, outputText),
                     stderr: stderrText,
                 }
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error)
                 const stack = error instanceof Error ? error.stack : ''
-                client.log(`Error in WebDriverIO runner: ${errorMessage}`)
+                log.error(`Error in WebDriverIO runner: ${errorMessage}`)
 
                 return {
                     success: false,
@@ -102,7 +104,7 @@ export function createHandler(client: ExtensionApi) {
             return 'pong'
         },
         shutdown: async function (): Promise<void> {
-            client.log('Shutting down worker process')
+            log.info('Shutting down worker process')
             // Give some time for the message to be sent before exiting
             setTimeout(() => process.exit(0), 100)
         },
@@ -115,19 +117,63 @@ type JsonResult = {
     json: string
 }
 
-function extractResultJson(text: string) {
+async function extractResultJson(log: LoggerInterface, outputDir: string | undefined, text: string) {
+    if (outputDir) {
+        try {
+            await fs.access(outputDir, fs.constants.R_OK)
+            log.debug(`Extract result file from dir: ${outputDir}`)
+            const filePattern = 'wdio-.*.json'
+            const fileNames = (await fs.readdir(outputDir)).filter((file) => file.match(filePattern))
+            const data: unknown[] = []
+
+            await Promise.all(
+                fileNames.map(async (fileName) => {
+                    log.debug(`Reading files... : ${fileName}`)
+                    data.push(JSON.parse((await fs.readFile(join(outputDir, fileName))).toString()))
+                })
+            )
+
+            await removeResultDir(log, outputDir)
+
+            return JSON.stringify(data)
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            log.debug(`Result file could not be read: ${errorMessage}`)
+        }
+    }
+    // fallback processing
+    log.debug('Extract result from stdout.')
+    return extractFromStdout(text)
+}
+
+async function removeResultDir(log: LoggerInterface, outputDir: string) {
+    try {
+        log.debug('Remove all files...')
+        await fs.rm(outputDir, { recursive: true, force: true })
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        log.debug(`Remove Failed: ${errorMessage}`)
+        // pass
+    }
+}
+
+/**
+ * Function to extract the JSON part from a string
+ * @param text The target string to search
+ * @returns The extracted JSON string, or '{}' if not found
+ */
+function extractFromStdout(text: string) {
     let start = 0
-    let result = ''
+    const result: string[] = []
     while (start >= 0) {
         //     client.log(`=>>> ${start}`)
         const _result = extractJsonString(text, start + 1)
         if (_result.start > 0) {
-            result = result.length === 0 ? `[${_result.json}` : `${result},${_result.json}`
+            result.push(_result.json)
         }
         start = _result.end
     }
-    result = `${result}]`
-    return result
+    return `[${result.join(',')}]`
 }
 
 /**

@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import type { NumericLogLevel } from '../types.js'
 /**
  * Shared type definitions for communication between extension and worker
  */
@@ -26,7 +27,7 @@ export type ExtensionApi = {
     /**
      * Log message to extension output channel
      */
-    log(message: string): Promise<void>
+    log(logLevel: NumericLogLevel, message: string): Promise<void>
 
     /**
      * Report test progress
@@ -38,6 +39,8 @@ export type ExtensionApi = {
 export interface RunTestOptions {
     // Root directory of the project
     rootDir: string
+    // Path to the test result files
+    outputDir?: string
     // Path to WebDriverIO config file
     configPath: string
     // Spec files to run (optional)

@@ -1,8 +1,11 @@
-import { WebSocket } from 'ws'
-import type { ExtensionApi, TestProgress, WorkerApi } from '../api/types.js'
-import { createBirpc } from 'birpc'
 import v8 from 'node:v8'
+import { WebSocket } from 'ws'
+import { createBirpc } from 'birpc'
 import { createHandler } from './handler.js'
+import { getLogger } from './logger.js'
+
+import type { NumericLogLevel } from '../types.js'
+import type { ExtensionApi, TestProgress, WorkerApi } from '../api/types.js'
 
 export function createRpcClient(url: string) {
     const ws = new WebSocket(url)
@@ -12,8 +15,8 @@ export function createRpcClient(url: string) {
 
     // Api caller for the extension side
     const client: ExtensionApi = {
-        log(message: string): Promise<void> {
-            return callServerMethod(async (r) => r.log(`[WORKER] ${message}`))
+        log(logLevel: NumericLogLevel, message: string): Promise<void> {
+            return callServerMethod(async (r) => r.log(logLevel, `[WORKER] ${message}`))
         },
         reportProgress: function (_progress: TestProgress): Promise<void> {
             throw new Error('Function not implemented.')
@@ -36,12 +39,16 @@ export function createRpcClient(url: string) {
         })
     }
 
+    const logger = getLogger(client)
+    logger.debug(`Starting WebDriverIO worker (PID: ${process.pid})`)
+    logger.debug(`Connecting the extension server: ${url}`)
+
     // Execute when ws was connected
     ws.on('open', () => {
         isConnected = true
 
         // Initialize the RPC
-        rpc = createBirpc<ExtensionApi, WorkerApi>(createHandler(client), {
+        rpc = createBirpc<ExtensionApi, WorkerApi>(createHandler(logger), {
             post: (data) => ws.send(data),
             on: (data) => ws.on('message', data),
             serialize: v8.serialize,
@@ -55,5 +62,5 @@ export function createRpcClient(url: string) {
         }
     })
 
-    return { ws, client }
+    return { ws, client, log: logger }
 }
