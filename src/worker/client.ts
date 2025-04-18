@@ -12,6 +12,7 @@ export function createRpcClient(url: string) {
     let rpc: ExtensionApi | null = null
     const pendingCalls: Array<() => void> = []
     let isConnected = false
+    let shutdownRequested = false
 
     // Api caller for the extension side
     const client: ExtensionApi = {
@@ -48,17 +49,53 @@ export function createRpcClient(url: string) {
         isConnected = true
 
         // Initialize the RPC
-        rpc = createBirpc<ExtensionApi, WorkerApi>(createHandler(logger), {
-            post: (data) => ws.send(data),
-            on: (data) => ws.on('message', data),
-            serialize: v8.serialize,
-            deserialize: (v) => v8.deserialize(Buffer.from(v) as any),
-        })
+        rpc = createBirpc<ExtensionApi, WorkerApi>(
+            {
+                ...createHandler(logger),
+                shutdown: async function (): Promise<void> {
+                    logger.info('Shutting down worker process')
+                    shutdownRequested = true
+                    logger.info('Worker received shutdown request')
+
+                    // Implement safe shutdown procedure
+                    try {
+                        // Give pending tasks a chance to complete
+                        if (pendingCalls.length > 0) {
+                            await new Promise((resolve) => setTimeout(resolve, 500))
+                        }
+
+                        // Close WebSocket connection
+                        ws.close()
+
+                        // Set safety timeout in case WebSocket doesn't close
+                        setTimeout(() => {
+                            process.exit(0)
+                        }, 2000)
+                    } catch (error) {
+                        console.error('Error during shutdown:', error)
+                        process.exit(1)
+                    }
+                },
+            },
+            {
+                post: (data) => ws.send(data),
+                on: (data) => ws.on('message', data),
+                serialize: v8.serialize,
+                deserialize: (v) => v8.deserialize(Buffer.from(v) as any),
+            }
+        )
 
         // Execute pending calls
         while (pendingCalls.length > 0) {
             const call = pendingCalls.shift()
             call?.()
+        }
+    })
+
+    ws.on('close', () => {
+        if (shutdownRequested) {
+            // Normal exit after shutdown request
+            process.exit(0)
         }
     })
 

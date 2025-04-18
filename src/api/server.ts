@@ -1,7 +1,7 @@
 import * as v8 from 'node:v8'
 import { resolve } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createServer } from 'node:http'
+import { createServer, type Server } from 'node:http'
 
 import getPort from 'get-port'
 import { createBirpc } from 'birpc'
@@ -26,6 +26,8 @@ export class WorkerManager {
     private _workerConnected = false
     private _extensionApi: ExtensionApi
     private _disposables: vscode.Disposable[] = []
+    private _server: Server | null = null
+    private _wss: WebSocketServer | null = null
 
     constructor() {
         // Define extension API implementation
@@ -37,6 +39,16 @@ export class WorkerManager {
                 log.debug(`Progress: ${progress.message}`)
             },
         }
+        process.on('exit', () => {
+            if (this._workerProcess && !this._workerProcess.killed) {
+                log.debug('Extension host exiting - ensuring worker process is terminated')
+                try {
+                    this._workerProcess.kill('SIGKILL')
+                } catch (e) {
+                    console.log(e)
+                }
+            }
+        })
     }
 
     /**
@@ -51,16 +63,16 @@ export class WorkerManager {
 
         try {
             // Find available port for WebSocket communication
+            // Store server instances for proper cleanup
             this._workerPort = await getPort()
-            const server = createServer().listen(this._workerPort).unref()
-            const wss = new WebSocketServer({ server })
-            const wsUrl = `ws://localhost:${this._workerPort}`
+            this._server = createServer().listen(this._workerPort)
+            this._server.unref()
+            this._wss = new WebSocketServer({ server: this._server })
+
             log.debug(`Starting WebDriverIO worker on port ${this._workerPort}`)
-
-            // Get path to worker script
-
             log.debug(`Worker path: ${WORKER_PATH}`)
 
+            const wsUrl = `ws://localhost:${this._workerPort}`
             const env = { ...process.env, WDIO_WORKER_WS_URL: wsUrl, FORCE_COLOR: '0' }
             // @ts-expect-error
             delete env.ELECTRON_RUN_AS_NODE
@@ -72,30 +84,37 @@ export class WorkerManager {
                 stdio: 'pipe',
             })
 
-            // Handle process output
-            this._workerProcess.stdout?.on('data', (data) => {
-                log.debug(`[Worker stdout] ${data.toString().trim()}`)
-            })
-
-            this._workerProcess.stderr?.on('data', (data) => {
-                log.debug(`[Worker stderr] ${data.toString().trim()}`)
-            })
-
-            // Handle process exit
-            this._workerProcess.on('exit', (code) => {
-                log.debug(`Worker process exited with code ${code}`)
-                this._workerProcess = null
-                this._workerRpc = null
-                this._workerConnected = false
-            })
+            this.setListeners(this._workerProcess)
 
             // Connect to worker via WebSocket
-            await this.connectToWorker(wss)
+            await this.connectToWorker(this._wss)
+
+            this.startHealthCheck()
+            log.debug('Worker process started successfully')
         } catch (error) {
             log.debug(`Failed to start worker: ${error instanceof Error ? error.message : String(error)}`)
             this.stop()
             throw error
         }
+    }
+
+    private setListeners(wp: ChildProcess) {
+        // Handle process output
+        wp.stdout?.on('data', (data) => {
+            log.debug(`[Worker stdout] ${data.toString().trim()}`)
+        })
+
+        wp.stderr?.on('data', (data) => {
+            log.debug(`[Worker stderr] ${data.toString().trim()}`)
+        })
+
+        // Handle process exit
+        wp.on('exit', (code) => {
+            log.debug(`Worker process exited with code ${code}`)
+            this._workerProcess = null
+            this._workerRpc = null
+            this._workerConnected = false
+        })
     }
 
     /**
@@ -105,8 +124,15 @@ export class WorkerManager {
         if (!this._workerPort) {
             throw new Error('Worker port not set')
         }
-        new Promise<void>((resolve, reject) => {
+
+        return new Promise<void>((resolve, reject) => {
+            // Add timeout to prevent connection hanging indefinitely
+            const timeout = setTimeout(() => {
+                reject(new Error('Worker connection timeout'))
+            }, 10000) // 10 seconds timeout
+
             wss.once('connection', (ws) => {
+                clearTimeout(timeout)
                 this._workerRpc = createBirpc<WorkerApi, ExtensionApi>(this._extensionApi, {
                     post: (data) => ws.send(data),
                     on: (fn) => ws.on('message', fn),
@@ -116,6 +142,7 @@ export class WorkerManager {
                 this._workerConnected = true
 
                 ws.on('error', (error) => {
+                    log.error(`WebSocket error: ${error.message}`)
                     reject(error)
                 })
 
@@ -141,21 +168,47 @@ export class WorkerManager {
      * Stop the worker process
      */
     async stop(): Promise<void> {
+        let shutdownSucceeded = false
+
+        // Set a timeout for graceful shutdown
+        const shutdownTimeout = 3000 // 3 seconds
+
+        // 1. First try graceful shutdown via RPC
         if (this._workerRpc && this._workerConnected) {
             try {
-                // Try graceful shutdown
-                await this._workerRpc.shutdown()
+                const timeoutPromise = new Promise<void>((_, reject) => {
+                    setTimeout(() => reject(new Error('Shutdown timeout')), shutdownTimeout)
+                })
+
+                await Promise.race([this._workerRpc.shutdown(), timeoutPromise])
+
+                shutdownSucceeded = true
+                log.debug('Worker process shutdown gracefully')
             } catch (error) {
                 log.debug(`Error during worker shutdown: ${error instanceof Error ? error.message : String(error)}`)
             }
         }
 
-        if (this._workerProcess) {
-            // Force kill if still running
-            this._workerProcess.kill()
-            this._workerProcess = null
+        // 2. Forcefully terminate if necessary
+        if (!shutdownSucceeded && this._workerProcess) {
+            try {
+                // Send SIGTERM first to allow graceful termination
+                this._workerProcess.kill('SIGTERM')
+
+                // Wait a short time before checking if process is still alive
+                await new Promise<void>((resolve) => setTimeout(resolve, 1000))
+
+                // If process is still running, force kill with SIGKILL
+                if (this._workerProcess.exitCode === null && !this._workerProcess.killed) {
+                    log.debug('Forcing worker process termination with SIGKILL')
+                    this._workerProcess.kill('SIGKILL')
+                }
+            } catch (error) {
+                log.error(`Failed to kill worker process: ${error instanceof Error ? error.message : String(error)}`)
+            }
         }
 
+        this._workerProcess = null
         this._workerRpc = null
         this._workerConnected = false
 
@@ -164,6 +217,25 @@ export class WorkerManager {
             disposable.dispose()
         }
         this._disposables = []
+
+        if (this._wss) {
+            this._wss.close((err) => {
+                if (err) {
+                    log.debug(`Error closing WebSocket server: ${err.message}`)
+                }
+            })
+            this._wss = null
+        }
+
+        if (this._server) {
+            this._server.close((err) => {
+                if (err) {
+                    log.debug(`Error closing HTTP server: ${err.message}`)
+                }
+            })
+            this._server = null
+        }
+        log.debug('Worker manager stopped completely')
     }
 
     /**
@@ -191,6 +263,32 @@ export class WorkerManager {
             await this.stop()
             await this.start()
         }
+    }
+
+    private startHealthCheck() {
+        const interval = setInterval(async () => {
+            if (!this.isConnected()) {
+                log.debug('Health check: Worker not connected')
+                return
+            }
+
+            try {
+                const response = await this._workerRpc?.ping()
+                if (response !== 'pong') {
+                    log.warn('Worker health check failed: unexpected response')
+                    await this.ensureConnected()
+                } else {
+                    log.debug('Worker health check success!')
+                }
+            } catch (error) {
+                log.warn(`Worker health check failed: ${error instanceof Error ? error.message : String(error)}`)
+                await this.ensureConnected()
+            }
+        }, 60000) // Check every minute
+
+        this._disposables.push({
+            dispose: () => clearInterval(interval),
+        })
     }
 }
 
