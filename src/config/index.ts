@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 
-import type { WdioLogLevel, WebDriverIOConfig } from '../types.js'
+import type { WebDriverIOConfig } from '../types.js'
 import { log } from '../utils/logger.js'
 import { ConfigParser } from '@wdio/config/node'
 import { findWdioConfig } from './find.js'
@@ -24,7 +24,6 @@ class WdioConfig extends EventEmitter {
             configPath: config.get<string>('configPath') || DEFAULT_CONFIG_VALUES.configPath,
             testFilePattern: config.get<string>('testFilePattern') || DEFAULT_CONFIG_VALUES.testFilePattern,
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
-            logLevel: config.get<WdioLogLevel>('logLevel') || 'info',
         }
     }
 
@@ -56,23 +55,53 @@ class WdioConfig extends EventEmitter {
                 Object.assign(this._globalConfig, { [prop]: newValue })
             }
         }
-    }
+    } /**
+     * Gets the WebDriverIO configuration from the current workspace
+     * @param workspaceFolder Optional workspace folder path. If not provided, it will be detected automatically.
+     * @param reload Whether to reload the configuration from disk even if it's cached
+     * @returns The WebDriverIO configuration
+     * @throws Error if no workspace is detected, multiple workspaces are detected, or no config file is found
+     */
+    public async getWdioConfig(workspaceFolder?: string, reload = false) {
+        let targetWorkspace: string
 
-    public async getWdioConfig(workSpaceRoot: string, reload = false) {
-        const cachedConfig = this._configParser.get(workSpaceRoot)
+        if (workspaceFolder) {
+            // Use provided workspace folder if specified
+            targetWorkspace = workspaceFolder
+        } else {
+            // Get workspace folders automatically
+            const workspaceFolders = this.getWorkspaceFolderPath()
+
+            // Check if we have exactly one workspace folder
+            if (workspaceFolders.length === 0) {
+                throw new Error('No workspace is detected.')
+            }
+
+            if (workspaceFolders.length > 1) {
+                throw new Error('Multiple workspaces are not supported.')
+            }
+
+            targetWorkspace = workspaceFolders[0]
+        }
+
+        // Check if we have a cached configuration
+        const cachedConfig = this._configParser.get(targetWorkspace)
         if (cachedConfig && !reload) {
             return cachedConfig
         }
 
-        const configFile = await findWdioConfig(workSpaceRoot)
+        // Find the configuration file
+        const configFile = await findWdioConfig(targetWorkspace)
         if (!configFile) {
-            return undefined
+            throw new Error('WebDriverIO configuration file not found.')
         }
 
+        // Initialize the configuration
         const config = new ConfigParser(configFile)
         await config.initialize()
 
-        this._configParser.set(workSpaceRoot, config)
+        // Cache the configuration
+        this._configParser.set(targetWorkspace, config)
         return config
     }
 

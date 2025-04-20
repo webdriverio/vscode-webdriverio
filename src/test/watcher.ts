@@ -1,0 +1,112 @@
+import * as vscode from 'vscode'
+import { configManager } from '../config/index.js'
+import { log } from '../utils/logger.js'
+
+/**
+ * Manages file watchers for WebDriverIO test files
+ */
+export class FileWatcherManager implements vscode.Disposable {
+    private _watchers: vscode.Disposable[] = []
+    private _fileChangeHandlers: ((uri: vscode.Uri) => void)[] = []
+    private _fileDeleteHandlers: ((uri: vscode.Uri) => void)[] = []
+
+    /**
+     * Create a new FileWatcherManager
+     */
+    constructor() {
+        this.createWatchers()
+    }
+
+    /**
+     * Add a handler for file change events (create or modify)
+     * @param handler The handler function to call when a file changes
+     * @returns This FileWatcherManager instance for chaining
+     */
+    public onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+        this._fileChangeHandlers.push(handler)
+        return this
+    }
+
+    /**
+     * Add a handler for file delete events
+     * @param handler The handler function to call when a file is deleted
+     * @returns This FileWatcherManager instance for chaining
+     */
+    public onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+        this._fileDeleteHandlers.push(handler)
+        return this
+    }
+
+    /**
+     * Recreate watchers based on current configuration
+     */
+    public refreshWatchers(): void {
+        log.debug('Refreshing file watchers based on current configuration')
+        this.disposeWatchers()
+        this.createWatchers()
+    }
+
+    /**
+     * Create file watchers for all configured test patterns
+     */
+    private createWatchers(): void {
+        // Get test file pattern from configuration
+        const testFilePattern = configManager.globalConfig.testFilePattern
+
+        // Split pattern by comma and create watchers for each
+        const patterns = testFilePattern.split(',').map((p) => p.trim())
+        log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)
+
+        for (const pattern of patterns) {
+            const watcher = vscode.workspace.createFileSystemWatcher(pattern)
+
+            // Add event handlers
+            watcher.onDidChange((uri) => this.handleFileChange(uri))
+            watcher.onDidCreate((uri) => this.handleFileChange(uri))
+            watcher.onDidDelete((uri) => this.handleFileDelete(uri))
+
+            this._watchers.push(watcher)
+        }
+    }
+
+    /**
+     * Handle file change events (create or modify)
+     * @param uri The URI of the changed file
+     */
+    private handleFileChange(uri: vscode.Uri): void {
+        log.debug(`File changed: ${uri.fsPath}`)
+        for (const handler of this._fileChangeHandlers) {
+            handler(uri)
+        }
+    }
+
+    /**
+     * Handle file delete events
+     * @param uri The URI of the deleted file
+     */
+    private handleFileDelete(uri: vscode.Uri): void {
+        log.debug(`File deleted: ${uri.fsPath}`)
+        for (const handler of this._fileDeleteHandlers) {
+            handler(uri)
+        }
+    }
+
+    /**
+     * Dispose all watchers
+     */
+    private disposeWatchers(): void {
+        for (const watcher of this._watchers) {
+            watcher.dispose()
+        }
+        this._watchers = []
+    }
+
+    /**
+     * Dispose this manager and all its watchers
+     */
+    public dispose(): void {
+        this.disposeWatchers()
+        this._fileChangeHandlers = []
+        this._fileDeleteHandlers = []
+    }
+}

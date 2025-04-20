@@ -26,8 +26,11 @@ describe('WdioConfig', () => {
     const mockWorkspacePath = '/mock/workspace'
     const mockConfigPath = '/mock/workspace/wdio.conf.js'
 
+    let workspaceFolderSpy: any = null
+
     beforeEach(() => {
         vi.resetAllMocks()
+
         // Setup default vscode configuration mocks
         vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
             get: vi.fn().mockImplementation((key) => {
@@ -43,9 +46,16 @@ describe('WdioConfig', () => {
                 return undefined
             }),
         } as any)
+
+        // clear map of _configParser
+        ;(configManager as any)._configParser = new Map()
     })
 
     afterEach(() => {
+        if (workspaceFolderSpy) {
+            workspaceFolderSpy.mockRestore()
+            workspaceFolderSpy = null
+        }
         vi.clearAllMocks()
     })
 
@@ -175,16 +185,52 @@ describe('WdioConfig', () => {
             expect(result).toBe(mockConfigParser)
         })
 
-        it('should handle case when no config file is found', async () => {
+        it('should throw error when no config file is found', async () => {
             // Setup
             vi.mocked(findWdioConfig).mockResolvedValue(undefined)
 
+            // Execute & Verify
+            await expect(configManager.getWdioConfig(mockWorkspacePath, true)).rejects.toThrow(
+                'WebDriverIO configuration file not found.'
+            )
+        })
+
+        it('should auto-detect workspace when not specified', async () => {
+            // Setup
+            const mockConfigParser = {
+                initialize: vi.fn().mockResolvedValue(undefined),
+            } as any
+
+            workspaceFolderSpy = vi.spyOn(configManager, 'getWorkspaceFolderPath').mockReturnValue([mockWorkspacePath])
+
+            vi.mocked(findWdioConfig).mockResolvedValue(mockConfigPath)
+            vi.mocked(ConfigParser).mockImplementation(() => mockConfigParser)
+
             // Execute
-            const result = await configManager.getWdioConfig(mockWorkspacePath, true)
+            const result = await configManager.getWdioConfig()
 
             // Verify
+            expect(workspaceFolderSpy).toHaveBeenCalled()
             expect(findWdioConfig).toHaveBeenCalledWith(mockWorkspacePath)
-            expect(result).toBeUndefined()
+            expect(result).toBe(mockConfigParser)
+        })
+
+        it('should throw error when no workspace is detected', async () => {
+            // Setup
+            workspaceFolderSpy = vi.spyOn(configManager, 'getWorkspaceFolderPath').mockReturnValue([])
+
+            // Execute & Verify
+            await expect(configManager.getWdioConfig()).rejects.toThrow('No workspace is detected.')
+        })
+
+        it('should throw error when multiple workspaces are detected', async () => {
+            // Setup
+            workspaceFolderSpy = vi
+                .spyOn(configManager, 'getWorkspaceFolderPath')
+                .mockReturnValue(['/workspace1', '/workspace2'])
+
+            // Execute & Verify
+            await expect(configManager.getWdioConfig()).rejects.toThrow('Multiple workspaces are not supported.')
         })
     })
 
