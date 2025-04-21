@@ -3,48 +3,39 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 
 import { log } from '../utils/logger.js'
-import { configManager } from '../config/index.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
+import { isConfig, isSpec, isTestcase, isWdioTestItem } from '../test/index.js'
 
 import type * as vscode from 'vscode'
-import type { WorkerManager } from './server.js'
 import type { ResultSet } from '../reporter/types.js'
 import type { RunTestOptions } from './types.js'
 
-export async function runWdio(
-    rootDir: string,
-    tests: vscode.TestItem | vscode.TestItem[],
-    workerManager: WorkerManager | null
-) {
-    // TODO: Support search the configuration files
-    // Get config path from settings
-    const configPath = configManager.globalConfig.configPath
-    const fullConfigPath = path.resolve(rootDir, configPath)
+export async function runWdio(test: vscode.TestItem) {
+    if (!isWdioTestItem(test)) {
+        throw new Error("The metadata for TestItem is not set. This is extension's bug.")
+    }
 
-    const _tests = Array.isArray(tests) ? tests : [tests]
+    if (!isConfig(test) && !isSpec(test) && !isTestcase(test)) {
+        throw new Error('Workspace TestItem is not valid.')
+    }
 
-    const specs = getSpec(_tests)
-
-    const grep = _tests.length === 1 ? getGrep(_tests[0]) : undefined
-    const range = _tests.length === 1 ? getRange(_tests[0]) : undefined
+    const specs = isSpec(test) || isTestcase(test) ? getSpec(test) : undefined
+    const grep = isTestcase(test) ? getGrep(test) : undefined
+    const range = isTestcase(test) ? getRange(test) : undefined
     const outputDir = getOutputDir()
 
     try {
-        if (!workerManager) {
-            throw new Error('Worker is not initialized.')
-        }
         const testOptions: RunTestOptions = {
-            rootDir: rootDir,
             outputDir,
-            configPath: fullConfigPath,
+            configPath: test.metadata.repository.wdioConfigPath,
             specs,
             grep,
             range,
         }
 
         log.trace(`REQUEST: ${JSON.stringify(testOptions, null, 2)}`)
-        await workerManager.ensureConnected()
-        const result = await workerManager.getWorkerRpc().runTest(testOptions)
+        await test.metadata.repository.worker.ensureConnected()
+        const result = await test.metadata.repository.worker.rpc.runTest(testOptions)
 
         const resultData = parseJson<ResultSet[]>(result.stdout)
         log.trace(`RESULT: ${JSON.stringify(resultData, null, 2)}`)
@@ -79,17 +70,9 @@ function getOutputDir() {
     }
 }
 
-function getSpec(tests: vscode.TestItem[]) {
-    if (tests.length === 1) {
-        const testPath = tests[0].uri?.fsPath
-        return testPath ? [testPath] : undefined
-    }
-    return tests
-        .map((test) => {
-            const testPath = test.uri?.fsPath
-            return testPath ? testPath : undefined
-        })
-        .filter((testPath) => typeof testPath === 'string')
+function getSpec(tests: vscode.TestItem) {
+    const testPath = tests.uri?.fsPath
+    return testPath ? [testPath] : undefined
 }
 function parseJson<T>(strJson: string): T {
     try {
@@ -106,13 +89,10 @@ function getGrep(test: vscode.TestItem) {
     const testNames = test.id.split(TEST_ID_SEPARATOR)
     // Escape following characters
     // $, ^, ., *, +, ?, (, ), [, ], {, }, |, \
-    return test.id.includes(TEST_ID_SEPARATOR)
-        ? testNames[testNames.length - 1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        : undefined
+    return testNames[testNames.length - 1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function getRange(test: vscode.TestItem) {
-    const isRoot = test.id === test.uri?.fsPath
     const isEmptyRange = !test.range || test.range.isEmpty
-    return isRoot || isEmptyRange ? undefined : test.range
+    return isEmptyRange ? undefined : test.range
 }

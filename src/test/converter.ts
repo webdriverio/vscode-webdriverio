@@ -1,8 +1,7 @@
-// src/test/adapter.ts
 import * as vscode from 'vscode'
-import { parseTestCases } from './parser.js'
 import type { TestData, SourceRange, VscodeTestData } from './types.js'
-
+import path from 'node:path'
+import type { ReadSpecsResult } from '../api/index.js'
 /**
  * Convert the parser's TestData to VSCode compatible TestData
  *
@@ -10,8 +9,14 @@ import type { TestData, SourceRange, VscodeTestData } from './types.js'
  * @param document VSCode document for position conversion
  * @returns Array of VscodeTestData
  */
-function convertTestData(testCases: TestData[], document: vscode.TextDocument): VscodeTestData[] {
-    return testCases.map((testCase) => _convertTestData(testCase, document))
+export async function convertTestData(testData: ReadSpecsResult): Promise<VscodeTestData[]> {
+    try {
+        const document = await vscode.workspace.openTextDocument(convertPathToUri(testData.spec))
+
+        return testData.tests.map((testCase) => _convertTestData(testCase, document))
+    } catch (error) {
+        throw new Error(`Failed to parse or adapt test cases: ${(error as Error).message}`)
+    }
 }
 
 /**
@@ -50,24 +55,15 @@ function convertSourceRangeToVSCodeRange(sourceRange: SourceRange, document: vsc
     return new vscode.Range(start, end)
 }
 
-/**
- * Parse test file content and adapt to VSCode compatible format
- *
- * @param fileContent Test file content
- * @param document VSCode document
- * @param filePath File URI for error reporting
- * @returns Array of VSCode compatible TestData
- */
-export async function parseAndConvertTestData(fileContent: string, filePath: string): Promise<VscodeTestData[]> {
-    try {
-        const document = await vscode.workspace.openTextDocument(convertPathToUri(filePath))
-        const testCases = parseTestCases(fileContent, filePath)
-        return convertTestData(testCases, document)
-    } catch (error) {
-        throw new Error(`Failed to parse or adapt test cases: ${(error as Error).message}`)
-    }
-}
-
 export function convertPathToUri(filePath: string) {
     return vscode.Uri.file(filePath)
+}
+
+/**
+ * Check if a file is a Cucumber feature file
+ * @param filePath File path to check
+ * @returns True if it's a feature file
+ */
+export function isCucumberFeatureFile(filePath: string): boolean {
+    return path.extname(filePath).toLowerCase() === '.feature'
 }

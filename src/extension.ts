@@ -1,62 +1,53 @@
 import * as vscode from 'vscode'
 import { configureTests } from './commands/configureTests.js'
-import { configManager, testControllerId } from './config/index.js'
-import { createRunHandler } from './utils/runHandler.js'
+import { configManager } from './config/index.js'
+import { serverManager } from './api/index.js'
+import { repositoryManager } from './test/index.js'
 import { log } from './utils/logger.js'
-import { WorkerManager } from './api/server.js'
-import { TestRegistry } from './test/registry.js'
-import path from 'node:path'
+// import path from 'node:path'
 
-import type { FileWatcherManager } from './test/watcher.js'
-
+let extension: WdioExtension | null = null
 export async function activate(context: vscode.ExtensionContext) {
-    const extension = new WdioExtension()
+    extension = new WdioExtension()
     context.subscriptions.push(extension)
     await extension.activate()
 }
 
 export function deactivate() {
-    // Clean up resources when extension is deactivated
+    if (extension) {
+        extension.dispose()
+        extension = null
+    }
 }
 
-class WdioExtension {
-    private _testController: vscode.TestController
+class WdioExtension implements vscode.Disposable {
+    // private _testController: vscode.TestController
 
     private _disposables: vscode.Disposable[] = []
-    private _loadingTestItem: vscode.TestItem
-    private _workerManager: WorkerManager | null = null
-    private _testRegistry: TestRegistry | null = null
-    private _fileWatcherManager: FileWatcherManager | null = null
-
     constructor() {
-        this._testController = vscode.tests.createTestController(testControllerId, 'WebdriverIO')
-        this._loadingTestItem = this._testController.createTestItem('_resolving', 'Resolving WebdriverIO Tests...')
-        this._loadingTestItem.sortText = '.0' // show at first line
+        // this._loadingTestItem = this._testController.createTestItem('_resolving', 'Resolving WebdriverIO Tests...')
+        // this._loadingTestItem.sortText = '.0' // show? at first line
     }
 
     async activate() {
         log.info('WebDriverIO Runner extension is now active')
 
+        // // path to the configuration file for wdio (e.g. /path/to/wdio.config.js)
+        await configManager.initialize()
+        const configPaths = configManager.getWdioConfigPaths()
+
         // Start worker process
         try {
-            this._workerManager = new WorkerManager()
-            await this._workerManager.start()
+            await serverManager.start(configPaths)
         } catch (error) {
             const errorMessage = `Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`
             log.error(errorMessage)
             vscode.window.showErrorMessage('Failed to start WebDriverIO worker process')
-            throw new Error(errorMessage)
+            return
         }
 
-        // Create test registry
-        this._testRegistry = new TestRegistry(this._testController, this._loadingTestItem)
-        const runHandler = createRunHandler(this._testRegistry, this._workerManager)
-
-        // Create run profile
-        this._testController.createRunProfile('Run Tests', vscode.TestRunProfileKind.Run, runHandler, true)
-
         // Set up refresh handler for test explorer UI
-        this._testController.refreshHandler = async () => {
+        repositoryManager.controller.refreshHandler = async () => {
             log.info('Refreshing WebDriverIO tests...')
             await this.refreshTests()
         }
@@ -67,16 +58,24 @@ class WdioExtension {
         this._disposables = [
             vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
             vscode.workspace.onDidChangeConfiguration(configManager.listener),
-            this._testController,
             ...fileWatchers,
-            this._testRegistry,
+            serverManager,
+            repositoryManager,
+            configManager,
         ]
-        await this._testRegistry.discoverAllTests()
+
+        // await new Promise((resolve) => setTimeout(resolve, 3000))
+        await repositoryManager.initialize()
+        Promise.all(
+            repositoryManager.repos.map(async (repo) => {
+                await repo.discoverAllTests()
+            })
+        ).then(() => repositoryManager.registerToTestController())
     }
     /**
      * Create file watchers for test files based on configured patterns
      */
-    private createFileWatchers(): vscode.Disposable[] {
+    private createFileWatchers() {
         const testFilePattern = configManager.globalConfig.testFilePattern
         const patterns = testFilePattern.split(',').map((p) => p.trim())
         log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)
@@ -87,8 +86,8 @@ class WdioExtension {
             const watcher = vscode.workspace.createFileSystemWatcher(pattern)
 
             // Add event handlers
+            watcher.onDidCreate((uri) => this.handleFileChange(uri, true))
             watcher.onDidChange((uri) => this.handleFileChange(uri))
-            watcher.onDidCreate((uri) => this.handleFileChange(uri))
             watcher.onDidDelete((uri) => this.handleFileDelete(uri))
 
             watchers.push(watcher)
@@ -97,13 +96,41 @@ class WdioExtension {
         return watchers
     }
     /**
+     * Handle file changes (create or modify)
+     */
+    private async handleFileChange(uri: vscode.Uri, isCreated: boolean = false): Promise<void> {
+        const specFilePath = uri.fsPath
+        log.debug(`Test file ${isCreated ? 'created' : 'changed'}: ${specFilePath}`)
+
+        // If a Spec file is newly created, attempt to read in all repositories,
+        // as it is unclear which configuration file should be reflected.
+        const repos = isCreated
+            ? repositoryManager.repos
+            : repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
+
+        log.debug(`Affected repository are ${repos.length} repositories`)
+        await Promise.all(repos.map(async (repo) => await repo.reloadSpecFiles([repo.normalizePath(specFilePath)])))
+    }
+
+    /**
+     * Handle file deletion
+     */
+    private async handleFileDelete(uri: vscode.Uri): Promise<void> {
+        const specFilePath = uri.fsPath
+        log.debug(`Test file deleted: ${specFilePath}`)
+
+        const repos = repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
+        log.debug(`Affected repository are ${repos.length} repositories`)
+
+        repos.map(async (repo) => {
+            repo.removeSpecFile(repo.normalizePath(specFilePath))
+        })
+    }
+
+    /**
      * Refresh WebDriverIO tests
      */
     private async refreshTests(): Promise<void> {
-        if (!this._testRegistry) {
-            return
-        }
-
         return vscode.window.withProgress(
             {
                 location: vscode.ProgressLocation.Notification,
@@ -112,13 +139,12 @@ class WdioExtension {
             },
             async () => {
                 try {
-                    if (!this._testRegistry) {
-                        return
+                    for (const repo of repositoryManager.repos) {
+                        // Clear existing tests
+                        repo.clearTests()
+                        // Discover tests again
+                        await repo.discoverAllTests()
                     }
-                    // Clear existing tests
-                    this._testRegistry.clearTests()
-                    // Discover tests again
-                    await this._testRegistry.discoverAllTests()
 
                     vscode.window.showInformationMessage('WebDriverIO tests reloaded successfully')
                 } catch (error) {
@@ -130,35 +156,7 @@ class WdioExtension {
         )
     }
 
-    /**
-     * Handle file changes (create or modify)
-     */
-    private async handleFileChange(uri: vscode.Uri): Promise<void> {
-        log.debug(`Test file changed: ${uri.fsPath}`)
-
-        if (this._testRegistry) {
-            log.info(`Reloading changed file: ${path.basename(uri.fsPath)}`)
-            await this._testRegistry.reloadSpecFiles([uri.fsPath])
-        }
-    }
-
-    /**
-     * Handle file deletion
-     */
-    private async handleFileDelete(uri: vscode.Uri): Promise<void> {
-        log.debug(`Test file deleted: ${uri.fsPath}`)
-
-        if (this._testRegistry) {
-            log.info(`Removing deleted file from test registry: ${path.basename(uri.fsPath)}`)
-            this._testRegistry.removeSpecFile(uri.fsPath)
-        }
-    }
-
     async dispose() {
-        if (this._workerManager) {
-            await this._workerManager.stop()
-            this._workerManager = null
-        }
         this._disposables.forEach((d) => d.dispose())
         this._disposables = []
     }

@@ -2,14 +2,15 @@ import { createRpcClient } from './client.js'
 
 // Start WebSocket server when this file is run as a separate process
 function startWorker() {
-    const wsUrl = process.env.WDIO_WORKER_WS_URL || ''
+    const cid = process.env.WDIO_EXTENSION_WORKER_CID || ''
+    const wsUrl = process.env.WDIO_EXTENSION_WORKER_WS_URL || ''
 
     if (!wsUrl) {
-        console.error('Worker port not specified. Use WDIO_WORKER_PORT environment variable.')
+        console.error('Server URL is not specified. Use WDIO_EXTENSION_WORKER_WS_URL environment variable.')
         process.exit(1)
     }
 
-    const { ws, log } = createRpcClient(wsUrl)
+    const { ws, log } = createRpcClient(cid, wsUrl)
 
     // Handle process signals
     process.on('SIGINT', () => {

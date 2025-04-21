@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import type { TestRegistry } from './registry.js'
+import type { TestRepository } from './repository.js'
 import { log } from '../utils/logger.js'
 import type { ResultSet, TestSuite, Test } from '../reporter/types.js'
 
@@ -14,7 +14,7 @@ export class TestReporter {
      * @param _run The current test run
      */
     constructor(
-        private readonly _registry: TestRegistry,
+        private readonly _registry: TestRepository,
         private readonly _run: vscode.TestRun
     ) {}
 
@@ -38,7 +38,7 @@ export class TestReporter {
 
                 for (const specPath of specPaths) {
                     // Get the spec file TestItem
-                    const specTestItem = this._registry.getSpecById(specPath)
+                    const specTestItem = this._registry.getSpecByFilePath(specPath)
 
                     if (!specTestItem) {
                         log.debug(`Spec file TestItem not found for path: ${specPath}`)

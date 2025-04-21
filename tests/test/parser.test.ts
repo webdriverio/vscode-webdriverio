@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-import { parseTestCases } from '../../src/test/parser.js'
+import { parseTestCases } from '../../src/test/jsParser.js'
 import type { TestData } from '../../src/test/types.js'
 
 // Mock vscode dependencies only

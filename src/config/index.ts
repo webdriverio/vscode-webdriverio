@@ -1,20 +1,28 @@
+import EventEmitter from 'node:events'
 import * as vscode from 'vscode'
 
+import { findWdioConfig } from './find.js'
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
+import { log } from '../utils/logger.js'
 
 import type { WebDriverIOConfig } from '../types.js'
-import { log } from '../utils/logger.js'
-import { ConfigParser } from '@wdio/config/node'
-import { findWdioConfig } from './find.js'
-import EventEmitter from 'node:events'
 
 export const testControllerId = EXTENSION_ID
 
 type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
 
-class WdioConfig extends EventEmitter {
+type WorkspaceData = {
+    workspaceFolder: vscode.WorkspaceFolder
+    wdioConfigFiles: string[]
+}
+
+class WdioConfig extends EventEmitter implements vscode.Disposable {
+    private _isInitialized = false
+    private _isMultiWorkspace = false
     private _globalConfig: WebDriverIOConfig
-    private _configParser = new Map<string, ConfigParser>()
+    // private _configParser = new Map<string, ConfigParser>()
+    private _workspaceConfigMap = new Map<string, vscode.WorkspaceFolder>()
+    private _workspaces: WorkspaceData[] | undefined
 
     constructor() {
         super()
@@ -27,13 +35,19 @@ class WdioConfig extends EventEmitter {
         }
     }
 
-    private resolveBooleanConfig(config: vscode.WorkspaceConfiguration, key: string, defaultValue: boolean) {
-        const value = config.get<boolean>('showOutput')
-        return typeof value === 'boolean' ? value : defaultValue
+    public get isMultiWorkspace() {
+        return this._isMultiWorkspace
     }
 
     public get globalConfig() {
         return this._globalConfig
+    }
+
+    public get workspaces() {
+        if (!this._workspaces) {
+            throw new Error('WdioConfig class is not initialized.')
+        }
+        return this._workspaces
     }
 
     public listener(event: vscode.ConfigurationChangeEvent) {
@@ -55,54 +69,47 @@ class WdioConfig extends EventEmitter {
                 Object.assign(this._globalConfig, { [prop]: newValue })
             }
         }
-    } /**
-     * Gets the WebDriverIO configuration from the current workspace
-     * @param workspaceFolder Optional workspace folder path. If not provided, it will be detected automatically.
-     * @param reload Whether to reload the configuration from disk even if it's cached
-     * @returns The WebDriverIO configuration
-     * @throws Error if no workspace is detected, multiple workspaces are detected, or no config file is found
-     */
-    public async getWdioConfig(workspaceFolder?: string, reload = false) {
-        let targetWorkspace: string
+    }
 
-        if (workspaceFolder) {
-            // Use provided workspace folder if specified
-            targetWorkspace = workspaceFolder
-        } else {
-            // Get workspace folders automatically
-            const workspaceFolders = this.getWorkspaceFolderPath()
-
-            // Check if we have exactly one workspace folder
-            if (workspaceFolders.length === 0) {
-                throw new Error('No workspace is detected.')
-            }
-
-            if (workspaceFolders.length > 1) {
-                throw new Error('Multiple workspaces are not supported.')
-            }
-
-            targetWorkspace = workspaceFolders[0]
+    public async initialize() {
+        const workFolders = vscode.workspace.workspaceFolders
+        if (!workFolders || workFolders.length === 0) {
+            log.debug('No workspace is detected.')
+            return []
         }
+        this._isMultiWorkspace = workFolders.length > 1
 
-        // Check if we have a cached configuration
-        const cachedConfig = this._configParser.get(targetWorkspace)
-        if (cachedConfig && !reload) {
-            return cachedConfig
+        this._workspaces = await Promise.all(
+            workFolders.map(async (workspaceFolder) => {
+                const wdioConfigs = await findWdioConfig(workspaceFolder.uri.fsPath)
+                if (!wdioConfigs) {
+                    return {
+                        workspaceFolder: workspaceFolder,
+                        wdioConfigFiles: [],
+                    }
+                }
+                for (const wdioConfig of wdioConfigs) {
+                    this._workspaceConfigMap.set(wdioConfig, workspaceFolder)
+                }
+                return {
+                    workspaceFolder: workspaceFolder,
+                    wdioConfigFiles: wdioConfigs,
+                }
+            })
+        )
+        this._isInitialized = true
+    }
+
+    public getWdioConfigPaths() {
+        if (!this._isInitialized) {
+            throw new Error('Configuration manager is not initialized')
         }
+        return Array.from(this._workspaceConfigMap.keys())
+    }
 
-        // Find the configuration file
-        const configFile = await findWdioConfig(targetWorkspace)
-        if (!configFile) {
-            throw new Error('WebDriverIO configuration file not found.')
-        }
-
-        // Initialize the configuration
-        const config = new ConfigParser(configFile)
-        await config.initialize()
-
-        // Cache the configuration
-        this._configParser.set(targetWorkspace, config)
-        return config
+    private resolveBooleanConfig(config: vscode.WorkspaceConfiguration, key: string, defaultValue: boolean) {
+        const value = config.get<boolean>('showOutput')
+        return typeof value === 'boolean' ? value : defaultValue
     }
 
     public getWorkspaceFolderPath(workspaceFolders = vscode.workspace.workspaceFolders) {
@@ -120,10 +127,14 @@ class WdioConfig extends EventEmitter {
         log.warn('Not support the multiple workspaces')
         return []
     }
+
+    public dispose() {
+        this._workspaceConfigMap.clear()
+        this._workspaces = undefined
+    }
 }
 
 export const configManager = new WdioConfig()
-
 // TODO: Add Install command
 // To add install command, the following code seems to be used.
 // https://github.com/webdriverio/vscode-webdriverio/issues/8
@@ -146,7 +157,7 @@ export const configManager = new WdioConfig()
 // exports.config = {
 //     runner: 'local',
 //     specs: [
-//         './test/**/*.spec.js'
+//         './test/index.js'
 //     ],
 //     exclude: [],
 //     maxInstances: 10,

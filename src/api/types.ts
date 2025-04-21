@@ -1,25 +1,50 @@
 import type * as vscode from 'vscode'
 import type { NumericLogLevel } from '../types.js'
+import type { TestData } from '../test/index.js'
+
+export type WdioConfig = {
+    specs: string[]
+    // framework: string
+}
+
 /**
  * Shared type definitions for communication between extension and worker
  */
-
 // Worker API that extension can call
 export type WorkerApi = {
     /**
      * Run WebDriverIO tests
      */
     runTest(options: RunTestOptions): Promise<TestResult>
-
     /**
      * Ping worker to check if it's alive
      */
     ping(): Promise<string>
-
+    /**
+     * Read configuration for the WebdriverIO
+     */
+    loadWdioConfig(options: LoadConfigOptions): Promise<WdioConfig>
+    /**
+     * Read spec files for the WebdriverIO
+     */
+    readSpecs(options: ReadSpecsOptions): Promise<ReadSpecsResult[]>
     /**
      * Shutdown worker process
      */
     shutdown(): Promise<void>
+}
+
+export interface ReadSpecsOptions {
+    specs: string[]
+}
+
+export type ReadSpecsResult = {
+    spec: string
+    tests: TestData[]
+}
+
+export interface LoadConfigOptions {
+    configFilePath: string
 }
 
 // Extension API that worker can call
@@ -28,17 +53,10 @@ export type ExtensionApi = {
      * Log message to extension output channel
      */
     log(logLevel: NumericLogLevel, message: string): Promise<void>
-
-    /**
-     * Report test progress
-     */
-    reportProgress(progress: TestProgress): Promise<void>
 }
 
 // Test run options
 export interface RunTestOptions {
-    // Root directory of the project
-    rootDir: string
     // Path to the test result files
     outputDir?: string
     // Path to WebDriverIO config file
@@ -62,13 +80,6 @@ export interface TestResult {
     error?: string
 }
 
-// Test progress information
-export interface TestProgress {
-    // Current status message
-    message: string
-    // Progress percentage (0-100), if applicable
-    percentage?: number
-}
 export interface EventReady {
     type: 'ready'
     configs: string[]
@@ -104,3 +115,6 @@ export interface WorkerRunnerOptions {
     debug: boolean
     astCollect: boolean
 }
+
+export type { TestData }
+export type { TestType, SourceRange, SourcePosition } from '../test/index.js'

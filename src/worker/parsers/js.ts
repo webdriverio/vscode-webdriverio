@@ -1,9 +1,8 @@
-// src/test/parser.ts
 import * as babelParser from '@babel/parser'
 import * as t from '@babel/types'
 import { parse, types } from 'recast'
 
-import type { TestData, SourceRange, TestCodeParser } from './types.js'
+import type { TestData, SourceRange, WorkerMetaContext } from '../types.js'
 
 /**
  * Parse WebDriverIO test files and extract test cases using Recast and Babel parser
@@ -13,7 +12,8 @@ import type { TestData, SourceRange, TestCodeParser } from './types.js'
  * @returns Array of test case information
  * @throws Error if parsing fails
  */
-export const parseTestCases: TestCodeParser = (fileContent, uri) => {
+export function parseTestCases(this: WorkerMetaContext, fileContent: string, uri: string) {
+    this.log.debug('Javascript/Typescript parser is used.')
     // Set up a list to store all test cases
     const testCases: TestData[] = []
 

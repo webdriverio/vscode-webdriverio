@@ -1,7 +1,7 @@
 import * as v8 from 'node:v8'
 import { resolve } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createServer, type Server } from 'node:http'
+import { createServer as createHttpServer, type Server } from 'node:http'
 
 import getPort from 'get-port'
 import { createBirpc } from 'birpc'
@@ -9,36 +9,31 @@ import { WebSocketServer } from 'ws'
 
 import { log } from '../utils/logger.js'
 import { LOG_LEVEL } from '../constants.js'
-import { configManager } from '../config/index.js'
 
 import type * as vscode from 'vscode'
 import type { ExtensionApi, WorkerApi } from './types.js'
 import type { NumericLogLevel } from '../types.js'
 
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
+
 /**
  * Manages the WebDriverIO worker process
  */
-export class WorkerManager {
+export class WdioExtensionWorker {
+    public cid: string
     private _workerProcess: ChildProcess | null = null
     private _workerRpc: WorkerApi | null = null
     private _workerPort: number | null = null
     private _workerConnected = false
-    private _extensionApi: ExtensionApi
     private _disposables: vscode.Disposable[] = []
     private _server: Server | null = null
     private _wss: WebSocketServer | null = null
+    private _cwd: string
 
-    constructor() {
-        // Define extension API implementation
-        this._extensionApi = {
-            log: loggingFn,
-            reportProgress: async (progress) => {
-                // Progress reporting is handled by the caller
-                // This is for direct worker-to-extension progress updates
-                log.debug(`Progress: ${progress.message}`)
-            },
-        }
+    constructor(cid: string = '#0', cwd: string) {
+        this.cid = cid
+        this._cwd = cwd
+
         process.on('exit', () => {
             if (this._workerProcess && !this._workerProcess.killed) {
                 log.debug('Extension host exiting - ensuring worker process is terminated')
@@ -54,18 +49,16 @@ export class WorkerManager {
     /**
      * Start the worker process
      */
-    async start(): Promise<void> {
+    async _start(): Promise<void> {
         if (this._workerProcess) {
             log.debug('Worker already running')
             return
         }
-        const workspaceFolders = configManager.getWorkspaceFolderPath()
-
         try {
             // Find available port for WebSocket communication
             // Store server instances for proper cleanup
             this._workerPort = await getPort()
-            this._server = createServer().listen(this._workerPort)
+            this._server = createHttpServer().listen(this._workerPort)
             this._server.unref()
             this._wss = new WebSocketServer({ server: this._server })
 
@@ -73,13 +66,19 @@ export class WorkerManager {
             log.debug(`Worker path: ${WORKER_PATH}`)
 
             const wsUrl = `ws://localhost:${this._workerPort}`
-            const env = { ...process.env, WDIO_WORKER_WS_URL: wsUrl, FORCE_COLOR: '0' }
+
+            const env = {
+                ...process.env,
+                WDIO_EXTENSION_WORKER_CID: this.cid,
+                WDIO_EXTENSION_WORKER_WS_URL: wsUrl,
+                FORCE_COLOR: '0',
+            }
             // @ts-expect-error
             delete env.ELECTRON_RUN_AS_NODE
 
             // Start worker process
             this._workerProcess = spawn('node', [WORKER_PATH], {
-                cwd: workspaceFolders[0],
+                cwd: this._cwd,
                 env,
                 stdio: 'pipe',
             })
@@ -125,7 +124,7 @@ export class WorkerManager {
             throw new Error('Worker port not set')
         }
 
-        return new Promise<void>((resolve, reject) => {
+        return await new Promise<void>((resolve, reject) => {
             // Add timeout to prevent connection hanging indefinitely
             const timeout = setTimeout(() => {
                 reject(new Error('Worker connection timeout'))
@@ -133,7 +132,8 @@ export class WorkerManager {
 
             wss.once('connection', (ws) => {
                 clearTimeout(timeout)
-                this._workerRpc = createBirpc<WorkerApi, ExtensionApi>(this._extensionApi, {
+                const server = createRpcServer()
+                this._workerRpc = createBirpc<WorkerApi, ExtensionApi>(server, {
                     post: (data) => ws.send(data),
                     on: (fn) => ws.on('message', fn),
                     serialize: v8.serialize,
@@ -241,7 +241,7 @@ export class WorkerManager {
     /**
      * Get worker RPC interface
      */
-    getWorkerRpc(): WorkerApi {
+    get rpc(): WorkerApi {
         if (!this._workerRpc || !this._workerConnected) {
             throw new Error('Worker not connected')
         }
@@ -261,7 +261,7 @@ export class WorkerManager {
     async ensureConnected(): Promise<void> {
         if (!this.isConnected()) {
             await this.stop()
-            await this.start()
+            await this._start()
         }
     }
 
@@ -278,7 +278,7 @@ export class WorkerManager {
                     log.warn('Worker health check failed: unexpected response')
                     await this.ensureConnected()
                 } else {
-                    log.debug('Worker health check success!')
+                    log.trace('Worker health check success!')
                 }
             } catch (error) {
                 log.warn(`Worker health check failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -289,6 +289,12 @@ export class WorkerManager {
         this._disposables.push({
             dispose: () => clearInterval(interval),
         })
+    }
+}
+
+function createRpcServer(): ExtensionApi {
+    return {
+        log: loggingFn,
     }
 }
 

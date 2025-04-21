@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { TestReporter } from '../../src/test/reporter.js'
 import { log } from '../../src/utils/logger.js'
 
-import type { TestRegistry } from '../../src/test/registry.js'
+import type { TestRepository } from '../../src/test/repository.js'
 import type { ResultSet, TestSuite, Test } from '../../src/reporter/types.js'
 
 // Mock dependencies
@@ -23,7 +23,7 @@ vi.mock('../../src/utils/logger', () => ({
 }))
 
 describe('TestReporter', () => {
-    let mockRegistry: TestRegistry
+    let mockRegistry: TestRepository
     let mockTestRun: vscode.TestRun
     let testReporter: TestReporter
 
@@ -85,7 +85,7 @@ describe('TestReporter', () => {
         mockRegistry = {
             getSpecById: vi.fn(),
             searchSuite: vi.fn(),
-        } as unknown as TestRegistry
+        } as unknown as TestRepository
 
         // Setup mock test run
         mockTestRun = {

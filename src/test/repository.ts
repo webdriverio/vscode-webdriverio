@@ -3,62 +3,55 @@ import * as fs from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 import { log } from '../utils/logger.js'
-import { convertPathToUri, parseAndConvertTestData } from './converter.js'
+import { convertPathToUri, convertTestData } from './converter.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
-import { configManager } from '../config/index.js'
-
-import type * as vscode from 'vscode'
-import type { VscodeTestData } from './types.js'
 import { filterSpecsByPaths } from './utils.js'
 
+import type * as vscode from 'vscode'
+import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTestItem } from './types.js'
+import type { WdioExtensionWorker } from '../api/index.js'
+
 /**
- * TestRegistry class that manages all WebDriverIO tests in VSCode
- * Handles test discovery, registration, and management
+ * TestRepository class that manages all WebDriverIO tests at
+ * the single WebdriverIO configuration file
  */
-export class TestRegistry implements vscode.Disposable {
+export class TestRepository implements vscode.Disposable {
     // Mapping for the id and TestItem
-    private _suiteMap = new Map<string, vscode.TestItem>()
-    private _fileMap = new Map<string, vscode.TestItem>()
+    private _suiteMap = new Map<string, TestcaseTestItem>()
+    private _fileMap = new Map<string, SpecFileTestItem>()
 
     constructor(
         public readonly controller: vscode.TestController,
-        private _loadingTestItem: vscode.TestItem
-    ) {
-        this._loadingTestItem.busy = true
-        this.controller.items.add(this._loadingTestItem)
-    }
+        public readonly worker: WdioExtensionWorker,
+        public readonly wdioConfigPath: string,
+        private _wdioConfigTestItem: WdioConfigTestItem
+    ) {}
 
     /**
      * Discover and register all tests from WebDriverIO configuration
      */
     public async discoverAllTests(): Promise<void> {
         try {
-            // Show loading indicator
-            this._loadingTestItem.busy = true
-            if (!this.controller.items.get(this._loadingTestItem.id)) {
-                this.controller.items.add(this._loadingTestItem)
+            const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            if (!config) {
+                return
             }
 
-            // Get WebDriverIO configuration
-            const config = await configManager.getWdioConfig()
-            log.debug('Loaded configuration successfully.')
-
             // Get specs from configuration
-            const allSpecs = this.convertPathString(config.getSpecs())
+            const allSpecs = this.convertPathString(config.specs)
 
             if (allSpecs.length < 1) {
                 log.debug('No spec files found in configuration')
-                this.removeLoadingItem()
                 return
             }
 
             log.debug(`Discovered ${allSpecs.length} spec files`)
 
             // Register all specs
-            await this.resisterSpecs(allSpecs)
+            return await this.resisterSpecs(allSpecs)
         } catch (error) {
             log.error(`Failed to discover tests: ${(error as Error).message}`)
-            this.removeLoadingItem()
+            log.trace(`Failed to discover tests: ${(error as Error).stack}`)
         }
     }
 
@@ -73,12 +66,18 @@ export class TestRegistry implements vscode.Disposable {
         }
 
         try {
-            // Get all spec files from config
-            const config = await configManager.getWdioConfig()
-            const allConfigSpecs = this.convertPathString(config.getSpecs())
+            const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            if (!config) {
+                return
+            }
+
+            // Get specs from configuration
+            const allConfigSpecs = this.convertPathString(config.specs)
             // Filter specs to only include those that match the provided file paths
             const specsToReload = filterSpecsByPaths(allConfigSpecs, filePaths)
             if (specsToReload.length === 0) {
+                // TODO: If there is information in the Repository but it cannot be retrieved from the actual configuration file, there may be a discrepancy in the configuration.
+                // In this case, consider using a reload of the entire file.
                 log.debug('No matching spec files found for reload')
                 return
             }
@@ -89,7 +88,7 @@ export class TestRegistry implements vscode.Disposable {
             const affectedTestItems: vscode.TestItem[] = []
 
             for (const spec of specsToReload) {
-                const normalizedPath = this.convertPathToId(spec)
+                const normalizedPath = this.normalizePath(spec)
                 const testItem = this._fileMap.get(normalizedPath)
 
                 if (testItem) {
@@ -116,10 +115,11 @@ export class TestRegistry implements vscode.Disposable {
             log.debug(`Successfully reloaded ${specsToReload.length} spec files`)
         } catch (error) {
             log.error(`Failed to reload spec files: ${(error as Error).message}`)
+            log.trace(`Failed to reload spec files: ${(error as Error).stack}`)
 
             // Make sure to reset busy state even if reload fails
             for (const spec of filePaths) {
-                const normalizedPath = this.convertPathToId(spec)
+                const normalizedPath = this.normalizePath(spec)
                 const testItem = this._fileMap.get(normalizedPath)
                 if (testItem) {
                     testItem.busy = false
@@ -132,44 +132,66 @@ export class TestRegistry implements vscode.Disposable {
      * Register spec files with the test controller
      * @param specs Paths to spec files
      * @param clearExisting Whether to clear existing tests (default: true)
-     * @param customParseFunction Optional custom parser function
      */
-    public async resisterSpecs(
-        specs: string[],
-        clearExisting: boolean = true,
-        customParseFunction?: (content: string, filePath: string) => Promise<VscodeTestData[]>
-    ) {
+    private async resisterSpecs(specs: string[], clearExisting: boolean = true) {
         if (clearExisting) {
             this._suiteMap.clear()
             this._fileMap.clear()
         }
+        log.debug(`Spec files registration is started for: ${specs.length} files.`)
+        const testData = await this.worker.rpc.readSpecs({ specs })
 
-        const parseFunction = customParseFunction || parseAndConvertTestData
         const fileTestItems = (
             await Promise.all(
-                specs.map(async (spec) => {
+                testData.map(async (test) => {
                     try {
                         // Create TestItem testFile by testFile
-                        log.debug(`Parse spec files: ${spec}`)
+                        const fileId = [this._wdioConfigTestItem.id, test.spec].join(TEST_ID_SEPARATOR)
+                        // const fileContent = await this.readSpecFile(spec)
+                        const testCases = await convertTestData(test)
+
+                        const fileTestItem = this.resisterSpecFile(fileId, convertPathToUri(test.spec))
+
                         const testTreeCreator = (parentId: string, testCase: VscodeTestData) => {
                             const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
-                            const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, testCase.uri)
+
+                            log.trace(`[repository] test was registered: ${testCaseId}`)
+                            const testCaseItem = this.controller.createTestItem(
+                                testCaseId,
+                                testCase.name,
+                                testCase.uri
+                            ) as TestcaseTestItem
+
+                            testCaseItem.metadata = {
+                                isWorkspace: false,
+                                isConfigFile: false,
+                                isSpecFile: false,
+                                repository: this,
+                            }
+
                             testCaseItem.range = testCase.range
-                            if (testCase.type === 'describe') {
+
+                            // Add metadata as custom properties if available
+                            if (testCase.metadata) {
+                                // Use type assertion since customData isn't in TypeScript definition
+                                ;(testCaseItem as any).customData = testCase.metadata
+                            }
+
+                            if (
+                                testCase.type === 'describe' ||
+                                testCase.type === 'feature' ||
+                                testCase.type === 'scenario' ||
+                                testCase.type === 'scenarioOutline' ||
+                                testCase.type === 'background'
+                            ) {
                                 this._suiteMap.set(testCaseId, testCaseItem)
                             }
+
                             for (const childTestCase of testCase.children) {
                                 testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
                             }
                             return testCaseItem
                         }
-
-                        const fileId = this.convertPathToId(spec)
-
-                        const fileContent = await this.readSpecFile(spec)
-                        const testCases = await parseFunction(fileContent, spec)
-
-                        const fileTestItem = this.resisterSpecFile(fileId, convertPathToUri(spec))
 
                         // Create TestItem testCase by testCase
                         for (const testCase of testCases) {
@@ -177,7 +199,7 @@ export class TestRegistry implements vscode.Disposable {
                         }
                         return fileTestItem
                     } catch (error) {
-                        log.error(`Failed to register spec: ${spec} - ${(error as Error).message}`)
+                        log.error(`Failed to register spec: ${test.spec} - ${(error as Error).message}`)
                         return undefined
                     }
                 })
@@ -186,12 +208,10 @@ export class TestRegistry implements vscode.Disposable {
 
         if (clearExisting) {
             // Replace all items
-            this.controller.items.replace(fileTestItems)
+            this._wdioConfigTestItem.children.replace(fileTestItems)
         } else {
             // Add new items while preserving existing ones
-            const currentItems = Array.from(this.controller.items)
-                .map(([_id, item]) => item)
-                .filter((item) => item !== this._loadingTestItem)
+            const currentItems = Array.from(this._wdioConfigTestItem.children).map(([_id, item]) => item)
 
             // Remove items with the same ID
             const newItemIds = new Set<string>()
@@ -200,11 +220,9 @@ export class TestRegistry implements vscode.Disposable {
             const filteredCurrentItems = currentItems.filter((item) => !newItemIds.has(item.id))
 
             // Combine existing and new items
-            this.controller.items.replace([...filteredCurrentItems, ...fileTestItems])
+            this._wdioConfigTestItem.children.replace([...filteredCurrentItems, ...fileTestItems])
         }
-
-        // Remove loading indicator
-        this.removeLoadingItem()
+        log.debug(`spec files registration is finished for: ${specs.length} files.`)
     }
 
     /**
@@ -212,10 +230,11 @@ export class TestRegistry implements vscode.Disposable {
      * @param specPath Path to the spec file to remove
      */
     public removeSpecFile(specPath: string): void {
-        const normalizedPath = this.convertPathToId(specPath)
+        const normalizedPath = this.normalizePath(specPath)
+        const fileId = [this._wdioConfigTestItem.id, normalizedPath].join(TEST_ID_SEPARATOR)
 
         // Get the TestItem for this spec file
-        const fileItem = this._fileMap.get(normalizedPath)
+        const fileItem = this._fileMap.get(fileId)
         if (!fileItem) {
             log.debug(`Spec file not found in registry: ${specPath}`)
             return
@@ -231,10 +250,10 @@ export class TestRegistry implements vscode.Disposable {
         })
 
         // Remove the file from the registry
-        this._fileMap.delete(normalizedPath)
+        this._fileMap.delete(fileId)
 
         // Remove from the test controller
-        this.controller.items.delete(fileItem.id)
+        this._wdioConfigTestItem.children.delete(fileItem.id)
 
         log.debug(`Removed spec file: ${specPath}`)
     }
@@ -279,10 +298,6 @@ export class TestRegistry implements vscode.Disposable {
         // Clear internal maps
         this._suiteMap.clear()
         this._fileMap.clear()
-
-        // Clear test controller items
-        this.controller.items.replace([this._loadingTestItem])
-        this._loadingTestItem.busy = true
     }
 
     /**
@@ -295,21 +310,20 @@ export class TestRegistry implements vscode.Disposable {
     }
 
     /**
-     * Remove the loading item from the test controller
-     */
-    public removeLoadingItem() {
-        this._loadingTestItem.busy = false
-        this.controller.items.delete(this._loadingTestItem.id)
-    }
-
-    /**
      * Register a spec file with the test controller
      * @param id Spec file ID
      * @param spec Spec file URI
      * @returns TestItem for the spec file
      */
     private resisterSpecFile(id: string, spec: vscode.Uri) {
-        const fileTestItem = this.controller.createTestItem(id, path.basename(spec.fsPath), spec)
+        log.trace(`[repository] spec file was registered: ${id}`)
+        const fileTestItem = this.controller.createTestItem(id, path.basename(spec.fsPath), spec) as SpecFileTestItem
+        fileTestItem['metadata'] = {
+            isWorkspace: false,
+            isConfigFile: false,
+            isSpecFile: true,
+            repository: this,
+        }
         this._fileMap.set(id, fileTestItem)
         return fileTestItem
     }
@@ -319,8 +333,9 @@ export class TestRegistry implements vscode.Disposable {
      * @param specPath Path to convert
      * @returns Normalized path as ID
      */
-    public convertPathToId(specPath: string) {
-        return path.normalize(specPath)
+    public normalizePath(specPath: string) {
+        const _specPath = specPath.startsWith('file://') ? fileURLToPath(specPath) : specPath
+        return path.normalize(_specPath)
     }
 
     /**
@@ -348,11 +363,18 @@ export class TestRegistry implements vscode.Disposable {
      * @param specPath Path to the spec file
      * @returns TestItem for the spec file
      */
-    public getSpecById(specPath: string) {
-        const _specPath = specPath.startsWith('file://') ? fileURLToPath(specPath) : specPath
+    public getSpecByFilePath(specPath: string) {
+        const normalizedSpecFilePath = this.normalizePath(specPath)
+        log.trace(`searching the file :${normalizedSpecFilePath}`)
+        for (const [key, value] of this._fileMap.entries()) {
+            // The path of the Spec file is the third one, as it is the next level after Workspace,WdioConfig.
+            const candidatePath = key.split(TEST_ID_SEPARATOR)[2]
+            if (typeof key === 'string' && normalizedSpecFilePath === candidatePath) {
+                return value
+            }
+        }
 
-        const id = this.convertPathToId(_specPath)
-        return this._fileMap.get(id)
+        return undefined
     }
 
     /**

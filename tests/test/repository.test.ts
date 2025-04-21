@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
 
-import { TestRegistry } from '../../src/test/registry.js'
+import { TestRepository } from '../../src/test/repository.js'
 import { parseAndConvertTestData } from '../../src/test/converter.js'
 import { TEST_ID_SEPARATOR } from '../../src/constants.js'
 import { log } from '../../src/utils/logger.js'
@@ -54,7 +54,7 @@ describe('TestRegistry', () => {
     // Mock objects
     let testController: vscode.TestController
     let loadingTestItem: vscode.TestItem
-    let testRegistry: TestRegistry
+    let testRegistry: TestRepository
     let mockConfig: ConfigParser
 
     // Setup mocks before each test
@@ -125,7 +125,7 @@ describe('TestRegistry', () => {
         vi.mocked(configManager.getWdioConfig).mockResolvedValue(mockConfig)
 
         // Create registry with mocked dependencies
-        testRegistry = new TestRegistry(testController, loadingTestItem)
+        testRegistry = new TestRepository(testController, loadingTestItem)
     })
 
     afterEach(() => {
@@ -272,7 +272,7 @@ describe('TestRegistry', () => {
             vi.mocked(fs.readFile).mockResolvedValue(fileContent)
 
             // Create test instance with access to protected method
-            const MockClass = class MockTestRegistry extends TestRegistry {
+            const MockClass = class MockTestRegistry extends TestRepository {
                 public async _readSpecFile(filePath: string) {
                     return await this.readSpecFile(filePath)
                 }

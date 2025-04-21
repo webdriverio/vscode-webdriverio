@@ -14,21 +14,13 @@ export async function findWdioConfig(workSpaceRoot: string) {
                 log.debug(`Checking the path: ${wdioConfigPath}`)
                 try {
                     await fs.access(wdioConfigPath, fs.constants.R_OK)
-                    return { isOk: true, path: wdioConfigPath }
+                    return wdioConfigPath
                 } catch {
-                    return { isOk: false, path: wdioConfigPath }
+                    return undefined
                 }
             })
         )
-    ).filter((result) => result.isOk)
-
-    if (configs.length === 0) {
-        log.debug('There is no configuration file.')
-        return
-    } else if (configs.length > 1) {
-        log.debug(`Detected files: \n${configs.join('\n')}`)
-        log.debug(`${configs.length} configuration files were detected. Use first one. `)
-    }
-    log.debug(`Detected file: ${configs[0].path}`)
-    return configs[0].path
+    ).filter((result) => typeof result !== 'undefined')
+    log.debug(`Detected file: ${configs.join('\n')}`)
+    return configs
 }
