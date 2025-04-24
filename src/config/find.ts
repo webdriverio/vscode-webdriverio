@@ -1,16 +1,23 @@
-import path from 'node:path'
 import fs from 'node:fs/promises'
+import path from 'node:path'
+import { glob } from 'glob'
 
 import { log } from '../utils/logger.js'
 
-export async function findWdioConfig(workSpaceRoot: string) {
+export async function findWdioConfig(workSpaceRoot: string, configFilePattern: string[]) {
     log.debug(`Target workspace path: ${workSpaceRoot}`)
-    log.debug('Detecting the configuration file for WebdriverIO...')
+    log.debug(`Detecting the configuration file for WebdriverIO...: ${configFilePattern.join(', ')}`)
 
-    const wdioConfigPaths = [path.join(workSpaceRoot, 'wdio.conf.js'), path.join(workSpaceRoot, 'wdio.conf.ts')]
+    const wdioConfigPaths = await glob(configFilePattern, {
+        cwd: workSpaceRoot,
+        withFileTypes: false,
+        ignore: '**/node_modules/**',
+    })
+
     const configs = (
         await Promise.all(
-            wdioConfigPaths.map(async (wdioConfigPath) => {
+            wdioConfigPaths.map(async (_wdioConfigPath) => {
+                const wdioConfigPath = path.join(workSpaceRoot, _wdioConfigPath)
                 log.debug(`Checking the path: ${wdioConfigPath}`)
                 try {
                     await fs.access(wdioConfigPath, fs.constants.R_OK)

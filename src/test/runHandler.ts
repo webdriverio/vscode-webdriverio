@@ -2,7 +2,17 @@ import * as vscode from 'vscode'
 
 import { log } from '../utils/logger.js'
 import { runWdio } from '../api/index.js'
-import { repositoryManager, TestReporter, isConfig, isSpec, isTestcase, isWorkspace } from './index.js'
+import {
+    repositoryManager,
+    TestReporter,
+    isConfig,
+    isSpec,
+    isTestcase,
+    isWorkspace,
+    type SpecFileTestItem,
+    type TestcaseTestItem,
+    type WdioConfigTestItem,
+} from './index.js'
 
 // export function createRunHandler() {
 export async function runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
@@ -50,13 +60,15 @@ export async function runHandler(request: vscode.TestRunRequest, token: vscode.C
             throw new Error('Workspace TestItem is not valid.')
         }
 
-        const reporter = new TestReporter(test.metadata.repository, run)
+        const _test = conversionCucumberStep(test)
+
+        const reporter = new TestReporter(_test.metadata.repository, run)
 
         // Mark all tests as running
-        markTestsAsRunning(run, test)
+        markTestsAsRunning(run, _test)
 
         try {
-            const result = await runWdio(test)
+            const result = await runWdio(_test)
 
             if (result.detail && result.detail.length > 0) {
                 // Update test status based on actual test results
@@ -70,7 +82,6 @@ export async function runHandler(request: vscode.TestRunRequest, token: vscode.C
 
     run.end()
 }
-// }
 
 /**
  * Mark a test and all its children as running
@@ -80,4 +91,15 @@ export async function runHandler(request: vscode.TestRunRequest, token: vscode.C
 function markTestsAsRunning(run: vscode.TestRun, test: vscode.TestItem): void {
     run.started(test)
     test.children.forEach((child) => markTestsAsRunning(run, child))
+}
+
+function conversionCucumberStep(testItem: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem) {
+    if (testItem.metadata.repository.framework !== 'cucumber' || !isTestcase(testItem)) {
+        return testItem
+    }
+
+    if (testItem.metadata.type === 'step' && testItem.parent) {
+        return testItem.parent as TestcaseTestItem
+    }
+    return testItem
 }

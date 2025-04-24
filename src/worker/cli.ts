@@ -39,8 +39,10 @@ export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfi
 
     const configParser = await launcher.getProperty('configParser')
     const specs = configParser.getSpecs().flatMap((specs) => (Array.isArray(specs) ? specs : [specs]))
+    const framework = configParser.getConfig().framework
     this.log.debug(`Successfully loaded the config file: ${options.configFilePath} (${specs.length} specs)`)
     return {
+        framework,
         specs,
     }
 }

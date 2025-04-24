@@ -50,21 +50,27 @@
             ]
         },
         "configuration": {
-            "title": "WebDriverIO",
+            "title": "WebdriverIO",
             "properties": {
-                "webdriverio.configPath": {
-                    "type": "string",
-                    "default": "wdio.conf.js",
-                    "description": "Path to WebDriverIO configuration file"
-                },
-                "webdriverio.showOutput": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show WebDriverIO output in terminal"
+                "webdriverio.configFilePattern": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "**/wdio.conf.{ts,js}"
+                    ],
+                    "description": "Glob pattern for WebdriverIO configuration file"
                 },
                 "webdriverio.testFilePattern": {
-                    "type": "string",
-                    "default": "**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "**/*.{spec,test}.{ts,js}",
+                        "**/*.feature"
+                    ],
                     "description": "Glob pattern for test files"
                 },
                 "webdriverio.logLevel": {
@@ -79,6 +85,11 @@
                     ],
                     "default": "info",
                     "description": "Set the logLevel"
+                },
+                "webdriverio.showOutput": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show WebDriverIO output in terminal"
                 }
             }
         }

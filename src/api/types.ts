@@ -4,7 +4,7 @@ import type { TestData } from '../test/index.js'
 
 export type WdioConfig = {
     specs: string[]
-    // framework: string
+    framework: string
 }
 
 /**

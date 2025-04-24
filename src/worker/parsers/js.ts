@@ -66,6 +66,7 @@ export function parseTestCases(this: WorkerMetaContext, fileContent: string, uri
  * @param ast The parsed AST
  * @param testCases Array to store top-level test cases
  * @param testBlocksMap Map to track all test blocks for hierarchy building
+ * @param fileContent Original file content for line calculations
  */
 function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, TestData>): void {
     // Stack to track current describe block context
@@ -87,8 +88,8 @@ function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, 
                     const testName = extractTestName(node.arguments[0])
 
                     if (testName) {
-                        // Create source range using node offsets
-                        const range = createSourceRange(node)
+                        // Create source range using node location (line/column based)
+                        const range = createSourceRangeFromLocation(node.loc)
 
                         // Create test case info
                         const testCase: TestData = {
@@ -99,8 +100,7 @@ function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, 
                         }
 
                         // Generate a unique ID for this test block
-                        // @ts-ignore
-                        const blockId = `${blockType}:${node.start}:${node.end}`
+                        const blockId = `${blockType}:${node.loc?.start.line}:${node.loc?.start.column}`
                         if (!blockIdSet.has(blockId)) {
                             blockIdSet.add(blockId)
                             testBlocksMap.set(blockId, testCase)
@@ -125,9 +125,11 @@ function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, 
                             const callbackArg = node.arguments[1]
                             if (callbackArg) {
                                 // Handle both regular and async functions
-                                // @ts-ignore
-                                if (t.isArrowFunctionExpression(callbackArg) || t.isFunctionExpression(callbackArg)) {
-                                    const body = callbackArg.body
+                                if (
+                                    t.isArrowFunctionExpression(callbackArg as t.Node) ||
+                                    t.isFunctionExpression(callbackArg as t.Node)
+                                ) {
+                                    const body = (callbackArg as t.ArrowFunctionExpression | t.FunctionExpression).body
 
                                     // For arrow functions with expression body, we don't traverse
                                     if (t.isBlockStatement(body)) {
@@ -155,15 +157,28 @@ function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, 
 }
 
 /**
- * Create a SourceRange from an AST node
+ * Create a SourceRange from an AST node's location
  *
- * @param node The AST node
- * @returns SourceRange with start and end offsets
+ * @param loc The location object from AST node
+ * @returns SourceRange with line and column information
  */
-function createSourceRange(node: any): SourceRange {
+function createSourceRangeFromLocation(loc: any): SourceRange {
+    if (!loc) {
+        return {
+            start: { line: 0, column: 0 },
+            end: { line: 0, column: 0 },
+        }
+    }
+
     return {
-        start: { offset: node.start },
-        end: { offset: node.end },
+        start: {
+            line: loc.start.line - 1, // Convert from 1-based to 0-based
+            column: loc.start.column,
+        },
+        end: {
+            line: loc.end.line - 1, // Convert from 1-based to 0-based
+            column: loc.end.column,
+        },
     }
 }
 

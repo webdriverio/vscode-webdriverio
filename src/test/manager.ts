@@ -1,4 +1,4 @@
-import { basename } from 'node:path'
+import { basename, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as vscode from 'vscode'
 
@@ -27,6 +27,10 @@ class RepositoryManager implements vscode.Disposable {
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true
         this.controller.items.add(this._loadingTestItem)
+        this.controller.refreshHandler = async () => {
+            log.info('Refreshing WebDriverIO tests...')
+            await this.refreshTests()
+        }
     }
 
     public async initialize() {
@@ -47,7 +51,7 @@ class RepositoryManager implements vscode.Disposable {
                 const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
                 let isCreatedDefaultProfile = false
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
-                    const wdioConfigTestItem = this.createWdioConfigTestItem(workspaceTestItem.id, wdioConfigFile)
+                    const wdioConfigTestItem = this.createWdioConfigTestItem(workspaceTestItem, wdioConfigFile)
                     workspaceTestItem.children.add(wdioConfigTestItem)
                     this._wdioConfigTestItems.push(wdioConfigTestItem)
                     const worker = await serverManager.getConnection(wdioConfigFile)
@@ -91,34 +95,64 @@ class RepositoryManager implements vscode.Disposable {
     }
 
     private createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
-        const configItem = this.controller.createTestItem(
+        const workspaceItem = this.controller.createTestItem(
             `workspace:${fileURLToPath(workspaceFolder.uri.toString())}`,
             workspaceFolder.name,
             workspaceFolder.uri
         ) as WorkspaceTestItem
-        configItem['metadata'] = {
+        workspaceItem['metadata'] = {
             isWorkspace: true,
             isConfigFile: false,
             isSpecFile: false,
         }
-        return configItem
+        return workspaceItem
     }
 
-    private createWdioConfigTestItem(workspaceTestItemId: string, wdioConfigPath: string) {
+    private createWdioConfigTestItem(workspaceTestItem: WorkspaceTestItem, wdioConfigPath: string) {
         const configUri = convertPathToUri(wdioConfigPath)
 
-        const workspaceItem = this.controller.createTestItem(
-            [workspaceTestItemId, `config:${wdioConfigPath}`].join(TEST_ID_SEPARATOR),
+        const configItem = this.controller.createTestItem(
+            [workspaceTestItem.id, `config:${wdioConfigPath}`].join(TEST_ID_SEPARATOR),
             basename(wdioConfigPath),
             configUri
         ) as WdioConfigTestItem
-        workspaceItem['metadata'] = {
+        configItem['metadata'] = {
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
             repository: {} as TestRepository, // set dummy
         }
-        return workspaceItem
+        configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
+        return configItem
+    }
+
+    /**
+     * Refresh WebDriverIO tests
+     */
+    public async refreshTests(): Promise<void> {
+        return vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: 'Reloading WebDriverIO tests...',
+                cancellable: false,
+            },
+            async () => {
+                try {
+                    for (const repo of this.repos) {
+                        // Clear existing tests
+                        repo.clearTests()
+                        // Discover tests again
+                        await repo.discoverAllTests()
+                    }
+
+                    vscode.window.showInformationMessage('WebDriverIO tests reloaded successfully')
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error)
+                    log.error(`Failed to reload tests: ${errorMessage}`)
+                    vscode.window.showErrorMessage(`Failed to reload WebDriverIO tests: ${errorMessage}`)
+                }
+            }
+        )
     }
 
     dispose() {

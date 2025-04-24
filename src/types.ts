@@ -1,9 +1,10 @@
 import type { LOG_LEVEL } from './constants.js'
 
 export interface WebDriverIOConfig {
-    configPath: string
-    testFilePattern: string
+    configFilePattern: string[]
+    testFilePattern: string[]
     showOutput: boolean
+    logLevel: string
 }
 
 export type WdioLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent'

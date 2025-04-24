@@ -1,112 +1,48 @@
-import * as vscode from 'vscode'
 import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
+import { FileWatcherManager } from '../utils/watcher.js'
+import { repositoryManager } from './manager.js'
 
-/**
- * Manages file watchers for WebDriverIO test files
- */
-export class FileWatcherManager implements vscode.Disposable {
-    private _watchers: vscode.Disposable[] = []
-    private _fileChangeHandlers: ((uri: vscode.Uri) => void)[] = []
-    private _fileDeleteHandlers: ((uri: vscode.Uri) => void)[] = []
+import type * as vscode from 'vscode'
 
-    /**
-     * Create a new FileWatcherManager
-     */
+export class TestfileWatcher extends FileWatcherManager {
     constructor() {
-        this.createWatchers()
+        super()
+        this.onFileCreate((uri) => this.handleFileChange(uri, true))
+        this.onFileChange((uri) => this.handleFileChange(uri, false))
+        this.onFileDelete((uri) => this.handleFileDelete(uri))
+        configManager.on('update:testFilePattern', () => this.refreshWatchers())
     }
 
     /**
-     * Add a handler for file change events (create or modify)
-     * @param handler The handler function to call when a file changes
-     * @returns This FileWatcherManager instance for chaining
+     * Handle file changes (create or modify)
      */
-    public onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
-        this._fileChangeHandlers.push(handler)
-        return this
+    async handleFileChange(uri: vscode.Uri, isCreated: boolean = false): Promise<void> {
+        const specFilePath = uri.fsPath
+        log.debug(`Test file ${isCreated ? 'created' : 'changed'}: ${specFilePath}`)
+
+        // If a Spec file is newly created, attempt to read in all repositories,
+        // as it is unclear which configuration file should be reflected.
+        const repos = isCreated
+            ? repositoryManager.repos
+            : repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
+
+        log.debug(`Affected repository are ${repos.length} repositories`)
+        await Promise.all(repos.map(async (repo) => await repo.reloadSpecFiles([repo.normalizePath(specFilePath)])))
     }
 
     /**
-     * Add a handler for file delete events
-     * @param handler The handler function to call when a file is deleted
-     * @returns This FileWatcherManager instance for chaining
+     * Handle file deletion
      */
-    public onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
-        this._fileDeleteHandlers.push(handler)
-        return this
-    }
+    async handleFileDelete(uri: vscode.Uri): Promise<void> {
+        const specFilePath = uri.fsPath
+        log.debug(`Test file deleted: ${specFilePath}`)
 
-    /**
-     * Recreate watchers based on current configuration
-     */
-    public refreshWatchers(): void {
-        log.debug('Refreshing file watchers based on current configuration')
-        this.disposeWatchers()
-        this.createWatchers()
-    }
+        const repos = repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
+        log.debug(`Affected repository are ${repos.length} repositories`)
 
-    /**
-     * Create file watchers for all configured test patterns
-     */
-    private createWatchers(): void {
-        // Get test file pattern from configuration
-        const testFilePattern = configManager.globalConfig.testFilePattern
-
-        // Split pattern by comma and create watchers for each
-        const patterns = testFilePattern.split(',').map((p) => p.trim())
-        log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)
-
-        for (const pattern of patterns) {
-            const watcher = vscode.workspace.createFileSystemWatcher(pattern)
-
-            // Add event handlers
-            watcher.onDidChange((uri) => this.handleFileChange(uri))
-            watcher.onDidCreate((uri) => this.handleFileChange(uri))
-            watcher.onDidDelete((uri) => this.handleFileDelete(uri))
-
-            this._watchers.push(watcher)
-        }
-    }
-
-    /**
-     * Handle file change events (create or modify)
-     * @param uri The URI of the changed file
-     */
-    private handleFileChange(uri: vscode.Uri): void {
-        log.debug(`File changed: ${uri.fsPath}`)
-        for (const handler of this._fileChangeHandlers) {
-            handler(uri)
-        }
-    }
-
-    /**
-     * Handle file delete events
-     * @param uri The URI of the deleted file
-     */
-    private handleFileDelete(uri: vscode.Uri): void {
-        log.debug(`File deleted: ${uri.fsPath}`)
-        for (const handler of this._fileDeleteHandlers) {
-            handler(uri)
-        }
-    }
-
-    /**
-     * Dispose all watchers
-     */
-    private disposeWatchers(): void {
-        for (const watcher of this._watchers) {
-            watcher.dispose()
-        }
-        this._watchers = []
-    }
-
-    /**
-     * Dispose this manager and all its watchers
-     */
-    public dispose(): void {
-        this.disposeWatchers()
-        this._fileChangeHandlers = []
-        this._fileDeleteHandlers = []
+        repos.map(async (repo) => {
+            repo.removeSpecFile(repo.normalizePath(specFilePath))
+        })
     }
 }

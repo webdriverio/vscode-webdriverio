@@ -1,9 +1,10 @@
 export const EXTENSION_ID = 'webdriverio'
 
 export const DEFAULT_CONFIG_VALUES = {
-    configPath: 'wdio.conf.js',
-    testFilePattern: '**/*.spec.js,**/*.test.js,**/*.spec.ts,**/*.test.ts,**/*.feature',
+    configFilePattern: ['**/wdio.conf.{ts,js}'],
+    testFilePattern: ['**/*.{spec,test}.{ts,js}', '**/*.feature'],
     showOutput: true,
+    logLevel: 'info',
 } as const
 
 export const TEST_ID_SEPARATOR = '#WDIO_SEP#'

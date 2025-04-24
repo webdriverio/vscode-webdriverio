@@ -49,9 +49,9 @@ function _convertTestData(testCase: TestData, document: vscode.TextDocument): Vs
  * @param document VSCode document for position conversion
  * @returns VSCode Range
  */
-function convertSourceRangeToVSCodeRange(sourceRange: SourceRange, document: vscode.TextDocument): vscode.Range {
-    const start = document.positionAt(sourceRange.start.offset)
-    const end = document.positionAt(sourceRange.end.offset)
+function convertSourceRangeToVSCodeRange(sourceRange: SourceRange, _document: vscode.TextDocument): vscode.Range {
+    const start = new vscode.Position(sourceRange.start.line, sourceRange.start.column)
+    const end = new vscode.Position(sourceRange.end.line, sourceRange.end.column)
     return new vscode.Range(start, end)
 }
 

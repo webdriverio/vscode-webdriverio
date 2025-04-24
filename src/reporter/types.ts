@@ -33,6 +33,8 @@ export interface TestSuite {
     suites?: TestSuite[]
     // Used during processing, can be removed before final output
     level?: number
+    // Cucumber specific - store rule information
+    rule?: string
 }
 
 export interface Test {

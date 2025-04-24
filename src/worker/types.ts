@@ -13,6 +13,7 @@ export type CucumberTestData = Omit<TestData, 'type' | 'children'> & {
         tags?: CucumberTag[]
         stepType?: StepType
         // For future extensions
+        steps?: StepInfo[]
         examples?: { [key: string]: string[] } // For Scenario outlines
         dataTable?: string[][] // For data tables
         docString?: string // For document strings
@@ -33,4 +34,23 @@ export interface WorkerMetaContext {
     ws: WebSocket
     shutdownRequested: boolean
     pendingCalls: Array<() => void>
+}
+
+export interface GherkinLocation {
+    line: number
+    column: number
+}
+
+export interface StepInfo {
+    type: 'step'
+    text: string
+    keyword: StepType
+    range: SourceRange
+    dataTable?: string[][]
+    docString?: string
+}
+
+export interface TagInfo {
+    name: string
+    range: SourceRange
 }

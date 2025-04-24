@@ -19,13 +19,20 @@ export class TestRepository implements vscode.Disposable {
     // Mapping for the id and TestItem
     private _suiteMap = new Map<string, TestcaseTestItem>()
     private _fileMap = new Map<string, SpecFileTestItem>()
-
+    private _framework: string | undefined = undefined
     constructor(
         public readonly controller: vscode.TestController,
         public readonly worker: WdioExtensionWorker,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: WdioConfigTestItem
     ) {}
+
+    public get framework() {
+        if (!this._framework) {
+            throw new Error('The configuration for WebdriverIO is not loaded')
+        }
+        return this._framework
+    }
 
     /**
      * Discover and register all tests from WebDriverIO configuration
@@ -36,6 +43,8 @@ export class TestRepository implements vscode.Disposable {
             if (!config) {
                 return
             }
+
+            this._framework = config.framework
 
             // Get specs from configuration
             const allSpecs = this.convertPathString(config.specs)
@@ -70,6 +79,8 @@ export class TestRepository implements vscode.Disposable {
             if (!config) {
                 return
             }
+
+            this._framework = config.framework
 
             // Get specs from configuration
             const allConfigSpecs = this.convertPathString(config.specs)
@@ -155,7 +166,6 @@ export class TestRepository implements vscode.Disposable {
                         const testTreeCreator = (parentId: string, testCase: VscodeTestData) => {
                             const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
 
-                            log.trace(`[repository] test was registered: ${testCaseId}`)
                             const testCaseItem = this.controller.createTestItem(
                                 testCaseId,
                                 testCase.name,
@@ -167,6 +177,7 @@ export class TestRepository implements vscode.Disposable {
                                 isConfigFile: false,
                                 isSpecFile: false,
                                 repository: this,
+                                type: testCase.type,
                             }
 
                             testCaseItem.range = testCase.range
@@ -182,8 +193,11 @@ export class TestRepository implements vscode.Disposable {
                                 testCase.type === 'feature' ||
                                 testCase.type === 'scenario' ||
                                 testCase.type === 'scenarioOutline' ||
-                                testCase.type === 'background'
+                                testCase.type === 'background' ||
+                                testCase.type === 'rule' ||
+                                testCase.type === 'step'
                             ) {
+                                log.trace(`[repository] test was registered: ${testCaseId}`)
                                 this._suiteMap.set(testCaseId, testCaseItem)
                             }
 

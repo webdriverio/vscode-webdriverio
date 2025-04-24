@@ -1,4 +1,4 @@
-import EventEmitter from 'node:events'
+import { EventEmitter } from 'node:events'
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from './find.js'
@@ -20,7 +20,6 @@ class WdioConfig extends EventEmitter implements vscode.Disposable {
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebDriverIOConfig
-    // private _configParser = new Map<string, ConfigParser>()
     private _workspaceConfigMap = new Map<string, vscode.WorkspaceFolder>()
     private _workspaces: WorkspaceData[] | undefined
 
@@ -28,10 +27,20 @@ class WdioConfig extends EventEmitter implements vscode.Disposable {
         super()
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
 
+        const configFilePattern = config.get<string[]>('configFilePattern')
+        const testFilePattern = config.get<string[]>('testFilePattern')
+
         this._globalConfig = {
-            configPath: config.get<string>('configPath') || DEFAULT_CONFIG_VALUES.configPath,
-            testFilePattern: config.get<string>('testFilePattern') || DEFAULT_CONFIG_VALUES.testFilePattern,
+            configFilePattern:
+                configFilePattern && configFilePattern.length > 0
+                    ? configFilePattern
+                    : [...DEFAULT_CONFIG_VALUES.configFilePattern],
+            testFilePattern:
+                testFilePattern && testFilePattern.length > 0
+                    ? testFilePattern
+                    : [...DEFAULT_CONFIG_VALUES.testFilePattern],
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
+            logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }
     }
 
@@ -65,35 +74,39 @@ class WdioConfig extends EventEmitter implements vscode.Disposable {
             const newValue = config.get<WebDriverIOConfig[typeof prop]>(prop)
             if (event.affectsConfiguration(configKey) && newValue !== undefined) {
                 log.debug(`Update ${prop}: ${newValue}`)
-                this.emit(prop, newValue)
+                this.emit(`update:${prop}`, newValue)
+
                 Object.assign(this._globalConfig, { [prop]: newValue })
             }
         }
     }
 
     public async initialize() {
-        const workFolders = vscode.workspace.workspaceFolders
-        if (!workFolders || workFolders.length === 0) {
+        const workspaceFolders = vscode.workspace.workspaceFolders
+        if (!workspaceFolders || workspaceFolders.length === 0) {
             log.debug('No workspace is detected.')
             return []
         }
-        this._isMultiWorkspace = workFolders.length > 1
+        this._isMultiWorkspace = workspaceFolders.length > 1
 
         this._workspaces = await Promise.all(
-            workFolders.map(async (workspaceFolder) => {
-                const wdioConfigs = await findWdioConfig(workspaceFolder.uri.fsPath)
-                if (!wdioConfigs) {
+            workspaceFolders.map(async (workspaceFolder) => {
+                const wdioConfigFiles = await findWdioConfig(
+                    workspaceFolder.uri.fsPath,
+                    this._globalConfig.configFilePattern
+                )
+                if (!wdioConfigFiles) {
                     return {
-                        workspaceFolder: workspaceFolder,
+                        workspaceFolder,
                         wdioConfigFiles: [],
                     }
                 }
-                for (const wdioConfig of wdioConfigs) {
-                    this._workspaceConfigMap.set(wdioConfig, workspaceFolder)
+                for (const wdioConfigFile of wdioConfigFiles) {
+                    this._workspaceConfigMap.set(wdioConfigFile, workspaceFolder)
                 }
                 return {
-                    workspaceFolder: workspaceFolder,
-                    wdioConfigFiles: wdioConfigs,
+                    workspaceFolder,
+                    wdioConfigFiles,
                 }
             })
         )
@@ -110,22 +123,6 @@ class WdioConfig extends EventEmitter implements vscode.Disposable {
     private resolveBooleanConfig(config: vscode.WorkspaceConfiguration, key: string, defaultValue: boolean) {
         const value = config.get<boolean>('showOutput')
         return typeof value === 'boolean' ? value : defaultValue
-    }
-
-    public getWorkspaceFolderPath(workspaceFolders = vscode.workspace.workspaceFolders) {
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            log.debug('No workspace is detected.')
-            return []
-        }
-        if (workspaceFolders.length === 1) {
-            const workspaceFolder = workspaceFolders[0]
-            log.debug(`Detected workspace path: ${workspaceFolder.uri.fsPath}`)
-            return [workspaceFolder.uri.fsPath]
-        }
-        //TODO: support multiple workspace
-        log.debug(`Detected ${workspaceFolders.length} workspaces.`)
-        log.warn('Not support the multiple workspaces')
-        return []
     }
 
     public dispose() {

@@ -16,6 +16,8 @@ export default class VscodeJsonReporter extends WDIOReporter {
     // Track parent-child relationships
     private _suiteParents: Record<string, string> = {}
     private _outputDir: string | undefined
+    // Track rules for Cucumber
+    private _suiteRules: Record<string, string> = {}
 
     constructor(options: Reporters.Options) {
         super(options)
@@ -33,6 +35,11 @@ export default class VscodeJsonReporter extends WDIOReporter {
         if (this.currentSuites.length > 1) {
             const parentSuite = this.currentSuites[this.currentSuites.length - 2]
             this._suiteParents[suite.uid] = parentSuite.uid
+        }
+
+        // Check for Cucumber Rule
+        if ('rule' in suite && typeof suite.rule === 'string') {
+            this._suiteRules[suite.uid] = suite.rule
         }
 
         // Handle feature (top-level) suites differently from nested suites
@@ -107,12 +114,17 @@ export default class VscodeJsonReporter extends WDIOReporter {
 
     /**
      * Create a nested structure for suites based on parent-child relationships
+     * with special handling for Cucumber Rules
      * @param {Array} orderedSuites Suites in execution order
      * @return {Array} Nested suite structure
      */
     createNestedStructure(orderedSuites: SuiteStats[]): TestSuite[] {
         // First process all suites into TestSuite objects
         const suitesMap: Record<string, TestSuite> = {}
+        // Map to track rule suites
+        const ruleSuites: Record<string, TestSuite> = {}
+        // Map to track which feature each rule belongs to
+        const ruleParents: Record<string, string> = {}
 
         // Convert all suites to TestSuite format but don't link them yet
         for (const suite of orderedSuites) {
@@ -121,7 +133,10 @@ export default class VscodeJsonReporter extends WDIOReporter {
                 continue
             }
 
-            suitesMap[suite.uid] = {
+            const hasRule = this._suiteRules[suite.uid] !== undefined
+            const rule = this._suiteRules[suite.uid]
+
+            const testSuite: TestSuite = {
                 name: suite.title,
                 duration: suite._duration,
                 start: suite.start,
@@ -132,13 +147,85 @@ export default class VscodeJsonReporter extends WDIOReporter {
                 suites: [], // Initialize empty array for children
                 level: this.indent(suite.uid),
             }
+
+            // Store rule information if present
+            if (hasRule && rule) {
+                testSuite.rule = rule
+            }
+
+            suitesMap[suite.uid] = testSuite
         }
 
         // Top level suites (no parent or parent is root)
         const topLevelSuites: TestSuite[] = []
 
-        // Now establish all parent-child relationships
+        // First pass: identify rules and create rule suites
         for (const [uid, suite] of Object.entries(suitesMap)) {
+            // cucumber support
+            if (suite.rule) {
+                const parentUid = this._suiteParents[uid]
+                if (parentUid) {
+                    // Find the feature this scenario belongs to (might be through multiple levels)
+                    let currentParentUid = parentUid
+                    let featureUid = null
+
+                    // Traverse up until we find a feature or no more parents
+                    while (currentParentUid) {
+                        const parentInOrderedSuites = orderedSuites.find((s) => s.uid === currentParentUid)
+
+                        if (parentInOrderedSuites?.type === 'feature') {
+                            featureUid = currentParentUid
+                            break
+                        }
+
+                        currentParentUid = this._suiteParents[currentParentUid]
+                    }
+
+                    if (featureUid) {
+                        // Create rule suite if it doesn't exist
+                        const ruleKey = `${featureUid}-${suite.rule}`
+                        const level =
+                            typeof suitesMap[featureUid].level === 'undefined' ? 0 : suitesMap[featureUid].level
+                        if (!ruleSuites[ruleKey]) {
+                            ruleSuites[ruleKey] = {
+                                name: suite.rule,
+                                duration: 0,
+                                start: suite.start, // Will update with min later
+                                end: suite.end, // Will update with max later
+                                sessionId: suite.sessionId,
+                                tests: [],
+                                hooks: [],
+                                suites: [],
+                                level,
+                            }
+
+                            // Track which feature this rule belongs to
+                            ruleParents[ruleKey] = featureUid
+                        }
+
+                        // Update rule suite timing
+                        if (suite.start < ruleSuites[ruleKey].start) {
+                            ruleSuites[ruleKey].start = suite.start
+                        }
+                        if (suite.end && ruleSuites[ruleKey].end && suite.end > ruleSuites[ruleKey].end) {
+                            ruleSuites[ruleKey].end = suite.end
+                        }
+                        ruleSuites[ruleKey].duration += suite.duration
+
+                        // Store this suite under the rule
+                        ruleSuites[ruleKey].suites!.push({ ...suite, level })
+                    }
+                }
+            }
+        }
+
+        // Now establish parent-child relationships for non-rule suites
+        for (const [uid, suite] of Object.entries(suitesMap)) {
+            // Skip suites that have a rule (cot cucumber)
+            if (suite.rule) {
+                continue
+            }
+
             const parentUid = this._suiteParents[uid]
 
             if (parentUid && suitesMap[parentUid]) {
@@ -149,6 +236,15 @@ export default class VscodeJsonReporter extends WDIOReporter {
             } else {
                 // No parent or parent is root - this is a top level suite
                 topLevelSuites.push(suite)
+            }
+        }
+
+        // Finally, add rule suites to their feature parents
+        for (const [ruleKey, ruleSuite] of Object.entries(ruleSuites)) {
+            const featureUid = ruleParents[ruleKey]
+            if (featureUid && suitesMap[featureUid]) {
+                suitesMap[featureUid].suites = suitesMap[featureUid].suites || []
+                suitesMap[featureUid].suites.push(ruleSuite)
             }
         }
 

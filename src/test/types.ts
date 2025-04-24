@@ -12,7 +12,8 @@ export type TestResult = {
 export type TestResults = TestResult[]
 
 export interface SourcePosition {
-    offset: number
+    line: number
+    column: number
 }
 
 export interface SourceRange {
@@ -97,5 +98,6 @@ export interface TestcaseTestItem extends WdioTestItem {
         isConfigFile: false
         isSpecFile: false
         repository: TestRepository
+        type: TestType
     }
 }

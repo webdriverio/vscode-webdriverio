@@ -4,7 +4,15 @@ import * as path from 'node:path'
 
 import { log } from '../utils/logger.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
-import { isConfig, isSpec, isTestcase, isWdioTestItem } from '../test/index.js'
+import {
+    isConfig,
+    isSpec,
+    isTestcase,
+    isWdioTestItem,
+    type SpecFileTestItem,
+    type WdioConfigTestItem,
+    type TestcaseTestItem,
+} from '../test/index.js'
 
 import type * as vscode from 'vscode'
 import type { ResultSet } from '../reporter/types.js'
@@ -18,10 +26,16 @@ export async function runWdio(test: vscode.TestItem) {
     if (!isConfig(test) && !isSpec(test) && !isTestcase(test)) {
         throw new Error('Workspace TestItem is not valid.')
     }
+    const isCucumberTestItems = checkCucumberTestItems(test)
 
-    const specs = isSpec(test) || isTestcase(test) ? getSpec(test) : undefined
-    const grep = isTestcase(test) ? getGrep(test) : undefined
-    const range = isTestcase(test) ? getRange(test) : undefined
+    const cucumberSpecs = isCucumberTestItems && isTestcase(test) ? getCucumberSpec(test) : undefined
+
+    const _specs = isSpec(test) || isTestcase(test) ? getSpec(test) : undefined
+
+    const specs = !cucumberSpecs ? _specs : cucumberSpecs
+
+    const grep = !isCucumberTestItems && isTestcase(test) ? getGrep(test) : undefined
+    const range = !isCucumberTestItems && isTestcase(test) ? getRange(test) : undefined
     const outputDir = getOutputDir()
 
     try {
@@ -95,4 +109,47 @@ function getGrep(test: vscode.TestItem) {
 function getRange(test: vscode.TestItem) {
     const isEmptyRange = !test.range || test.range.isEmpty
     return isEmptyRange ? undefined : test.range
+}
+
+function getCucumberSpec(testItem: TestcaseTestItem) {
+    const baseSpec = getSpec(testItem)
+    if (!baseSpec) {
+        return undefined
+    }
+    if (testItem.metadata.type === 'rule') {
+        const specs = []
+        for (const [_, childItem] of testItem.children) {
+            if ((childItem as TestcaseTestItem).metadata.type === 'scenario') {
+                const start = childItem.range?.start.line || 0
+                const end = childItem.range?.end.line || 0
+                if (start > 0 && end > 0) {
+                    const spec = `${baseSpec}:${String(start + 1)}:${String(end + 1)}`
+                    log.debug(`cucumber spec: ${spec}`)
+                    specs.push(spec)
+                }
+            }
+        }
+        if (specs.length > 0) {
+            return specs
+        }
+    }
+
+    if (testItem.metadata.type === 'scenario') {
+        const specs = []
+        const start = testItem.range?.start.line || 0
+        const end = testItem.range?.end.line || 0
+        if (start > 0 && end > 0) {
+            const spec = `${baseSpec}:${String(start + 1)}:${String(end + 1)}`
+            log.debug(`cucumber spec: ${spec}`)
+            specs.push(spec)
+        }
+        if (specs.length > 0) {
+            return specs
+        }
+    }
+    return baseSpec
+}
+
+function checkCucumberTestItems(testItem: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem) {
+    return testItem.metadata.repository.framework === 'cucumber'
 }
