@@ -22,10 +22,10 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             wdioArgs.spec = options.specs
         }
 
-        // TODO: support the Jasmine, and Cucumber.js
         // Add grep pattern if provided
         if (options.grep) {
             wdioArgs.mochaOpts = { grep: options.grep }
+            wdioArgs.jasmineOpts = { grep: options.grep }
         }
 
         wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: options.outputDir }]]

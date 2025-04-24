@@ -15,12 +15,20 @@ export function mapHooks(hooks: HookStats[]): Hook[] {
 }
 
 export function mapTests(tests: TestStats[]): Test[] {
-    return tests.map((test) => ({
-        name: test.title,
-        start: test.start,
-        end: test.end,
-        duration: test.duration,
-        state: test.state,
-        error: test.error,
-    }))
+    const result = []
+    for (const test of tests) {
+        if (typeof test.pendingReason !== 'undefined' && test.pendingReason === 'grep') {
+            continue
+        }
+
+        result.push({
+            name: test.title,
+            start: test.start,
+            end: test.end,
+            duration: test.duration,
+            state: test.state,
+            error: test.error,
+        })
+    }
+    return result
 }
