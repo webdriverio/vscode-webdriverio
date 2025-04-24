@@ -5,7 +5,7 @@ import { parse, types } from 'recast'
 import type { TestData, SourceRange, WorkerMetaContext } from '../types.js'
 
 /**
- * Parse WebDriverIO test files and extract test cases using Recast and Babel parser
+ * Parse WebdriverIO test files and extract test cases using Recast and Babel parser
  *
  * @param fileContent Content of the test file
  * @param uri File URI for error reporting

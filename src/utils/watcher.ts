@@ -3,7 +3,7 @@ import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
 
 /**
- * Manages file watchers for WebDriverIO test files
+ * Manages file watchers for WebdriverIO test files
  */
 export class FileWatcherManager implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []

@@ -23,7 +23,7 @@ class WdioExtension implements vscode.Disposable {
     private _disposables: vscode.Disposable[] = []
 
     async activate() {
-        log.info('WebDriverIO Runner extension is now active')
+        log.info('WebdriverIO Runner extension is now active')
 
         await configManager.initialize()
         const configPaths = configManager.getWdioConfigPaths()
@@ -34,7 +34,7 @@ class WdioExtension implements vscode.Disposable {
         } catch (error) {
             const errorMessage = `Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`
             log.error(errorMessage)
-            vscode.window.showErrorMessage('Failed to start WebDriverIO worker process')
+            vscode.window.showErrorMessage('Failed to start WebdriverIO worker process')
             return
         }
 

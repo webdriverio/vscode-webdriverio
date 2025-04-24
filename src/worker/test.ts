@@ -30,7 +30,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
 
         wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: options.outputDir }]]
 
-        this.log.info('Launching WebDriverIO...')
+        this.log.info('Launching WebdriverIO...')
         this.log.trace(`Configuration: ${JSON.stringify(wdioArgs, null, 2)}`)
 
         // Track output
@@ -77,11 +77,11 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         const stack = error instanceof Error ? error.stack : ''
-        this.log.error(`Error in WebDriverIO runner: ${errorMessage}`)
+        this.log.error(`Error in WebdriverIO runner: ${errorMessage}`)
 
         return {
             success: false,
-            stdout: `Error launching WebDriverIO: ${errorMessage}${stack ? '\n' + stack : ''}`,
+            stdout: `Error launching WebdriverIO: ${errorMessage}${stack ? '\n' + stack : ''}`,
             error: errorMessage,
         }
     }

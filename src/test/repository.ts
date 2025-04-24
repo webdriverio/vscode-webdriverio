@@ -12,7 +12,7 @@ import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTest
 import type { WdioExtensionWorker } from '../api/index.js'
 
 /**
- * TestRepository class that manages all WebDriverIO tests at
+ * TestRepository class that manages all WebdriverIO tests at
  * the single WebdriverIO configuration file
  */
 export class TestRepository implements vscode.Disposable {
@@ -35,7 +35,7 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Discover and register all tests from WebDriverIO configuration
+     * Discover and register all tests from WebdriverIO configuration
      */
     public async discoverAllTests(): Promise<void> {
         try {
@@ -273,7 +273,7 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Convert spec paths from WebDriverIO config to file system paths
+     * Convert spec paths from WebdriverIO config to file system paths
      */
     private convertPathString(specs: (string | string[])[]) {
         return specs.flatMap((spec) =>

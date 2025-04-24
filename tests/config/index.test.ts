@@ -191,7 +191,7 @@ describe('WdioConfig', () => {
 
             // Execute & Verify
             await expect(configManager.getWdioConfig(mockWorkspacePath, true)).rejects.toThrow(
-                'WebDriverIO configuration file not found.'
+                'WebdriverIO configuration file not found.'
             )
         })
 

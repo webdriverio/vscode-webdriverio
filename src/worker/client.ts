@@ -37,7 +37,7 @@ export function createRpcClient(cid: string, url: string) {
     }
 
     const log = getLogger(client)
-    log.debug(`Starting WebDriverIO worker (PID: ${process.pid})`)
+    log.debug(`Starting WebdriverIO worker (PID: ${process.pid})`)
     log.debug(`Connecting the extension server: ${url}`)
 
     // Execute when ws was connected

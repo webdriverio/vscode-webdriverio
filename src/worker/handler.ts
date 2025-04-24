@@ -8,7 +8,7 @@ import type { WorkerApi } from '../api/index.js'
 export function createWorker(context: WorkerMetaContext): WorkerApi {
     return {
         /**
-         * Run WebDriverIO tests
+         * Run WebdriverIO tests
          */
         runTest: runTest.bind(context),
         /**

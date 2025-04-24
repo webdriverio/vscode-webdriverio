@@ -64,7 +64,7 @@ describe('TestRegistry', () => {
         // Mock loading test item
         loadingTestItem = {
             id: '_resolving',
-            label: 'Resolving WebDriverIO...',
+            label: 'Resolving WebdriverIO...',
             busy: false,
             children: {
                 add: vi.fn(),

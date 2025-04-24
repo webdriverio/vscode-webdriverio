@@ -3,7 +3,7 @@ import * as path from 'node:path'
 import * as fs from 'node:fs'
 
 /**
- * Configure WebDriverIO test settings
+ * Configure WebdriverIO test settings
  */
 export async function configureTests(): Promise<void> {
     // Get workspace folder
@@ -21,7 +21,7 @@ export async function configureTests(): Promise<void> {
 
     // Ask for config file
     const configPath = await vscode.window.showInputBox({
-        prompt: 'Path to WebDriverIO config file (relative to workspace root)',
+        prompt: 'Path to WebdriverIO config file (relative to workspace root)',
         value: currentConfigPath,
         validateInput: (value) => {
             if (!value) {
@@ -61,7 +61,7 @@ export async function configureTests(): Promise<void> {
 
     const showOutput = await vscode.window
         .showQuickPick(['Yes', 'No'], {
-            placeHolder: 'Show WebDriverIO output in terminal?',
+            placeHolder: 'Show WebdriverIO output in terminal?',
         })
         .then((result) => result === 'Yes')
 
@@ -70,5 +70,5 @@ export async function configureTests(): Promise<void> {
     await config.update('testFilePattern', testPattern, vscode.ConfigurationTarget.Workspace)
     await config.update('showOutput', showOutput, vscode.ConfigurationTarget.Workspace)
 
-    vscode.window.showInformationMessage('WebDriverIO Runner settings updated')
+    vscode.window.showInformationMessage('WebdriverIO Runner settings updated')
 }

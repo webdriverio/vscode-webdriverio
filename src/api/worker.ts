@@ -17,7 +17,7 @@ import type { NumericLogLevel } from '../types.js'
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
 
 /**
- * Manages the WebDriverIO worker process
+ * Manages the WebdriverIO worker process
  */
 export class WdioExtensionWorker {
     public cid: string
@@ -62,7 +62,7 @@ export class WdioExtensionWorker {
             this._server.unref()
             this._wss = new WebSocketServer({ server: this._server })
 
-            log.debug(`Starting WebDriverIO worker on port ${this._workerPort}`)
+            log.debug(`Starting WebdriverIO worker on port ${this._workerPort}`)
             log.debug(`Worker path: ${WORKER_PATH}`)
 
             const wsUrl = `ws://localhost:${this._workerPort}`

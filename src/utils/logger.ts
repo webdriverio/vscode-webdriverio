@@ -17,7 +17,7 @@ class VscodeWdioLogger implements LoggerInterface {
     private _timezoneString: string | undefined
     constructor(
         private _logLevel: LOG_LEVEL = this.updateLogLevel(),
-        private _outputChannel = vscode.window.createOutputChannel('WebDriverIO')
+        private _outputChannel = vscode.window.createOutputChannel('WebdriverIO')
     ) {
         this._outputChannel.show(true)
         vscode.workspace.onDidChangeConfiguration((event) => {

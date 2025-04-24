@@ -9,7 +9,7 @@ export const DEFAULT_CONFIG_VALUES = {
 
 export const TEST_ID_SEPARATOR = '#WDIO_SEP#'
 
-export const ERROR_MESSAGE_BUG = 'Please report this bug to the WebDriverIO extension repository.'
+export const ERROR_MESSAGE_BUG = 'Please report this bug to the WebdriverIO extension repository.'
 
 export enum LOG_LEVEL {
     TRACE = 0,

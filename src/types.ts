@@ -1,6 +1,6 @@
 import type { LOG_LEVEL } from './constants.js'
 
-export interface WebDriverIOConfig {
+export interface WebdriverIOConfig {
     configFilePattern: string[]
     testFilePattern: string[]
     showOutput: boolean

@@ -13,7 +13,7 @@ export type WdioConfig = {
 // Worker API that extension can call
 export type WorkerApi = {
     /**
-     * Run WebDriverIO tests
+     * Run WebdriverIO tests
      */
     runTest(options: RunTestOptions): Promise<TestResult>
     /**
@@ -59,7 +59,7 @@ export type ExtensionApi = {
 export interface RunTestOptions {
     // Path to the test result files
     outputDir?: string
-    // Path to WebDriverIO config file
+    // Path to WebdriverIO config file
     configPath: string
     // Spec files to run (optional)
     specs?: string[]

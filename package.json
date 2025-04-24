@@ -1,7 +1,7 @@
 {
     "name": "vscode-webdriverio",
-    "displayName": "WebDriverIO",
-    "description": "WebDriverIO for the vscode",
+    "displayName": "WebdriverIO",
+    "description": "WebdriverIO for the vscode",
     "version": "0.0.1",
     "type": "module",
     "author": "WebdriverIO Team",
@@ -15,7 +15,7 @@
         "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
     },
     "keywords": [
-        "WebDriverIO",
+        "WebdriverIO",
         "test",
         "typescript",
         "javascript"
@@ -37,14 +37,14 @@
         "commands": [
             {
                 "command": "webdriverio.configureTests",
-                "title": "WebDriverIO: Configure Tests"
+                "title": "WebdriverIO: Configure Tests"
             }
         ],
         "viewsContainers": {
             "activitybar": [
                 {
                     "id": "webdriverio-explorer",
-                    "title": "WebDriverIO Explorer",
+                    "title": "WebdriverIO Explorer",
                     "icon": "media/icon.svg"
                 }
             ]
@@ -89,7 +89,7 @@
                 "webdriverio.showOutput": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Show WebDriverIO output in terminal"
+                    "description": "Show WebdriverIO output in terminal"
                 }
             }
         }
