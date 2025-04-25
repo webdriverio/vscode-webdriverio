@@ -1,29 +1,38 @@
 import { basename, dirname, relative } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import * as vscode from 'vscode'
 
 import { convertPathToUri } from './converter.js'
 import { TestRepository } from './repository.js'
-import { runHandler } from './runHandler.js'
-import { serverManager } from '../api/manager.js'
-import { configManager } from '../config/index.js'
-import { EXTENSION_ID, TEST_ID_SEPARATOR } from '../constants.js'
+import { createRunProfile } from './utils.js'
+import { TEST_ID_SEPARATOR } from '../constants.js'
 import { log } from '../utils/logger.js'
 
 import type { WdioConfigTestItem, WorkspaceTestItem } from './types.js'
+import type { ServerManager } from '../api/manager.js'
+import type { ExtensionConfigManager } from '../config/index.js'
+
+/**
+ * workspace                                        -- managed by this class
+ *   - configuration file (e.g. wdio.conf.js)       -- managed by this class
+ *                                                  -- managed by repository class
+ *     -  spec file (e.g. e2e.spec.js)              -- managed by repository class
+ *       - test (e.g. describe('test', ()=>{...}))  -- managed by repository class
+ */
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
-class RepositoryManager implements vscode.Disposable {
-    public readonly controller: vscode.TestController
+export class RepositoryManager implements vscode.Disposable {
     public readonly repos: TestRepository[] = []
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: WorkspaceTestItem[] = []
     private _wdioConfigTestItems: WdioConfigTestItem[] = []
 
-    constructor() {
-        this.controller = vscode.tests.createTestController(EXTENSION_ID, 'WebdriverIO')
+    constructor(
+        public readonly controller: vscode.TestController,
+        public readonly configManager: ExtensionConfigManager,
+        private readonly serverManager: ServerManager
+    ) {
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true
@@ -35,7 +44,7 @@ class RepositoryManager implements vscode.Disposable {
     }
 
     public async initialize() {
-        const workspaces = configManager.workspaces
+        const workspaces = this.configManager.workspaces
 
         if (workspaces.length < 1) {
             log.info('No workspaces is detected.')
@@ -52,28 +61,11 @@ class RepositoryManager implements vscode.Disposable {
                 const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
                 let isCreatedDefaultProfile = false
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
-                    const wdioConfigTestItem = this.createWdioConfigTestItem(workspaceTestItem, wdioConfigFile)
-                    workspaceTestItem.children.add(wdioConfigTestItem)
-                    this._wdioConfigTestItems.push(wdioConfigTestItem)
-                    const worker = await serverManager.getConnection(wdioConfigFile)
-                    const repo = new TestRepository(this.controller, worker, wdioConfigFile, wdioConfigTestItem)
-                    wdioConfigTestItem.metadata.repository = repo
-                    this.repos.push(repo)
+                    await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigFile)
 
                     // Create run profile
-                    if (workspaces.length > 0) {
-                        const profileName =
-                            workspaces.length === 1
-                                ? basename(wdioConfigFile)
-                                : `${workspace.workspaceFolder.name} - ${basename(wdioConfigFile)}`
-                        this.controller.createRunProfile(
-                            profileName,
-                            vscode.TestRunProfileKind.Run,
-                            runHandler,
-                            !isCreatedDefaultProfile
-                        )
-                        isCreatedDefaultProfile = true
-                    }
+                    createRunProfile(this, wdioConfigFile, !isCreatedDefaultProfile)
+                    isCreatedDefaultProfile = true
                 }
                 return workspaceTestItem
             })
@@ -82,7 +74,7 @@ class RepositoryManager implements vscode.Disposable {
     }
 
     /**
-     * registerToTestController
+     * The test is reflected in the UI by registering the loaded test in the controller.
      */
     public registerToTestController() {
         log.debug('Registering the TestItems to Test controller.')
@@ -97,7 +89,7 @@ class RepositoryManager implements vscode.Disposable {
 
     private createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
         const workspaceItem = this.controller.createTestItem(
-            `workspace:${fileURLToPath(workspaceFolder.uri.toString())}`,
+            `workspace:${workspaceFolder.uri.fsPath}`,
             workspaceFolder.name,
             workspaceFolder.uri
         ) as WorkspaceTestItem
@@ -109,19 +101,26 @@ class RepositoryManager implements vscode.Disposable {
         return workspaceItem
     }
 
-    private createWdioConfigTestItem(workspaceTestItem: WorkspaceTestItem, wdioConfigPath: string) {
+    private async createWdioConfigTestItem(workspaceTestItem: WorkspaceTestItem, wdioConfigPath: string) {
         const configUri = convertPathToUri(wdioConfigPath)
-
         const configItem = this.controller.createTestItem(
-            [workspaceTestItem.id, `config:${wdioConfigPath}`].join(TEST_ID_SEPARATOR),
+            [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR),
             basename(wdioConfigPath),
             configUri
         ) as WdioConfigTestItem
+
+        workspaceTestItem.children.add(configItem)
+        this._wdioConfigTestItems.push(configItem)
+
+        const worker = await this.serverManager.getConnection(wdioConfigPath)
+        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem)
+        this.repos.push(repo)
+
         configItem['metadata'] = {
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
-            repository: {} as TestRepository, // set dummy
+            repository: repo,
         }
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
         return configItem
@@ -156,9 +155,9 @@ class RepositoryManager implements vscode.Disposable {
         )
     }
 
-    dispose() {
-        this.controller.dispose()
+    public dispose() {
+        this.repos.splice(0)
+        this._workspaceTestItems = []
+        this._wdioConfigTestItems = []
     }
 }
-
-export const repositoryManager = new RepositoryManager()

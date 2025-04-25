@@ -40,6 +40,7 @@ export class TestRepository implements vscode.Disposable {
     public async discoverAllTests(): Promise<void> {
         try {
             const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+
             if (!config) {
                 return
             }
@@ -99,9 +100,7 @@ export class TestRepository implements vscode.Disposable {
             const affectedTestItems: vscode.TestItem[] = []
 
             for (const spec of specsToReload) {
-                const normalizedPath = this.normalizePath(spec)
-                const testItem = this._fileMap.get(normalizedPath)
-
+                const testItem = this.getSpecByFilePath(spec)
                 if (testItem) {
                     // Set busy state before removal
                     testItem.busy = true
@@ -130,8 +129,7 @@ export class TestRepository implements vscode.Disposable {
 
             // Make sure to reset busy state even if reload fails
             for (const spec of filePaths) {
-                const normalizedPath = this.normalizePath(spec)
-                const testItem = this._fileMap.get(normalizedPath)
+                const testItem = this.getSpecByFilePath(spec)
                 if (testItem) {
                     testItem.busy = false
                 }
@@ -240,7 +238,7 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Remove a specific spec file from the registry
+     * Remove a specific spec file from the repository
      * @param specPath Path to the spec file to remove
      */
     public removeSpecFile(specPath: string): void {
@@ -250,7 +248,7 @@ export class TestRepository implements vscode.Disposable {
         // Get the TestItem for this spec file
         const fileItem = this._fileMap.get(fileId)
         if (!fileItem) {
-            log.debug(`Spec file not found in registry: ${specPath}`)
+            log.debug(`Spec file not found in repository: ${specPath}`)
             return
         }
 
@@ -263,7 +261,7 @@ export class TestRepository implements vscode.Disposable {
             this.removeNestedSuites(suiteId)
         })
 
-        // Remove the file from the registry
+        // Remove the file from the repository
         this._fileMap.delete(fileId)
 
         // Remove from the test controller
@@ -282,7 +280,7 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Recursively remove nested suites from the registry
+     * Recursively remove nested suites from the repository
      * @param parentId Parent suite ID
      */
     private removeNestedSuites(parentId: string): void {
@@ -304,10 +302,10 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Clear all tests from the registry
+     * Clear all tests from the repository
      */
     public clearTests(): void {
-        log.debug('Clearing all tests from registry')
+        log.debug('Clearing all tests from repository')
 
         // Clear internal maps
         this._suiteMap.clear()

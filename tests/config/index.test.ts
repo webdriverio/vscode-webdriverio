@@ -1,69 +1,77 @@
-import { ConfigParser } from '@wdio/config/node'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from '../../src/config/find.js'
-import { configManager } from '../../src/config/index.js'
+import { ExtensionConfigManager } from '../../src/config/index.js'
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../../src/constants.js'
 import { log } from '../../src/utils/logger.js'
 
 // Mock dependencies
-vi.mock('vscode', () => import('../__mocks__/vscode.js'))
-vi.mock('@wdio/config/node')
-vi.mock('../../src/config/find')
-vi.mock('../../src/utils/logger', () => ({
+vi.mock('vscode', () => {
+    return {
+        workspace: {
+            getConfiguration: vi.fn(),
+            workspaceFolders: undefined,
+        },
+        ConfigurationChangeEvent: vi.fn(),
+        WorkspaceFolder: vi.fn(),
+        EventEmitter: vi.fn(),
+        Disposable: vi.fn(),
+    }
+})
+vi.mock('../../src/config/find.js')
+vi.mock('../../src/utils/logger.js', () => ({
     log: {
         debug: vi.fn(),
         warn: vi.fn(),
+        error: vi.fn(),
     },
 }))
+vi.mock('node:events', () => {
+    const EventEmitter = vi.fn()
+    EventEmitter.prototype.emit = vi.fn()
+    return { EventEmitter }
+})
 
-function createNewInstance() {
-    const WdioConfig = (configManager as any).constructor
-    return new WdioConfig()
-}
-
-describe('WdioConfig', () => {
-    const mockWorkspacePath = '/mock/workspace'
-    const mockConfigPath = '/mock/workspace/wdio.conf.js'
-
-    let workspaceFolderSpy: any = null
+describe('ExtensionConfigManager', () => {
+    let configManager: ExtensionConfigManager
+    const mockConfiguration = {
+        get: vi.fn(),
+    }
 
     beforeEach(() => {
         vi.resetAllMocks()
 
         // Setup default vscode configuration mocks
-        vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
-            get: vi.fn().mockImplementation((key) => {
-                if (key === 'configPath') {
-                    return DEFAULT_CONFIG_VALUES.configPath
-                }
-                if (key === 'testFilePattern') {
-                    return DEFAULT_CONFIG_VALUES.testFilePattern
-                }
-                if (key === 'showOutput') {
-                    return DEFAULT_CONFIG_VALUES.showOutput
-                }
-                return undefined
-            }),
-        } as any)
+        vi.mocked(vscode.workspace.getConfiguration).mockReturnValue(mockConfiguration as any)
 
-        // clear map of _configParser
-        ;(configManager as any)._configParser = new Map()
+        // Setup default configuration mock values
+        mockConfiguration.get.mockImplementation((key, defaultValue) => {
+            if (key === 'configFilePattern') {
+                return DEFAULT_CONFIG_VALUES.configFilePattern
+            }
+            if (key === 'testFilePattern') {
+                return DEFAULT_CONFIG_VALUES.testFilePattern
+            }
+            if (key === 'showOutput') {
+                return DEFAULT_CONFIG_VALUES.showOutput
+            }
+            if (key === 'logLevel') {
+                return DEFAULT_CONFIG_VALUES.logLevel
+            }
+            return defaultValue
+        })
+
+        configManager = new ExtensionConfigManager()
     })
 
     afterEach(() => {
-        if (workspaceFolderSpy) {
-            workspaceFolderSpy.mockRestore()
-            workspaceFolderSpy = null
-        }
         vi.clearAllMocks()
+        configManager.dispose()
     })
 
     describe('constructor', () => {
         it('should initialize with default config values', () => {
-            // Execute (create a new instance for testing)
-            const _instance = createNewInstance()
             // Verify
             expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith(EXTENSION_ID)
             expect(configManager.globalConfig).toEqual(DEFAULT_CONFIG_VALUES)
@@ -71,33 +79,57 @@ describe('WdioConfig', () => {
 
         it('should use custom config values when provided', () => {
             // Setup
-            const customConfig = {
-                configPath: 'custom/path',
-                testFilePattern: '**/*.custom.spec.ts',
-                showOutput: false,
-            }
+            const customConfigFilePattern = ['custom/path/wdio.*.conf.ts']
+            const customTestFilePattern = ['**/*.custom.spec.ts']
+            const customShowOutput = false
+            const customLogLevel = 'warn'
 
-            vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
-                get: vi.fn().mockImplementation((key) => {
-                    if (key === 'configPath') {
-                        return customConfig.configPath
-                    }
-                    if (key === 'testFilePattern') {
-                        return customConfig.testFilePattern
-                    }
-                    if (key === 'showOutput') {
-                        return customConfig.showOutput
-                    }
-                    return undefined
-                }),
-            } as any)
+            mockConfiguration.get.mockImplementation((key, defaultValue) => {
+                if (key === 'configFilePattern') {
+                    return customConfigFilePattern
+                }
+                if (key === 'testFilePattern') {
+                    return customTestFilePattern
+                }
+                if (key === 'showOutput') {
+                    return customShowOutput
+                }
+                if (key === 'logLevel') {
+                    return customLogLevel
+                }
+                return defaultValue
+            })
 
-            // Execute (create a new instance for testing)
-            const WdioConfig = (configManager as any).constructor
-            const instance = new WdioConfig()
+            // Execute
+            const instance = new ExtensionConfigManager()
 
             // Verify
-            expect(instance.globalConfig).toEqual(customConfig)
+            expect(instance.globalConfig).toEqual({
+                configFilePattern: customConfigFilePattern,
+                testFilePattern: customTestFilePattern,
+                showOutput: customShowOutput,
+                logLevel: customLogLevel,
+            })
+        })
+
+        it('should use default values when config returns empty arrays', () => {
+            // Setup
+            mockConfiguration.get.mockImplementation((key, defaultValue) => {
+                if (key === 'configFilePattern') {
+                    return []
+                }
+                if (key === 'testFilePattern') {
+                    return []
+                }
+                return defaultValue
+            })
+
+            // Execute
+            const instance = new ExtensionConfigManager()
+
+            // Verify
+            expect(instance.globalConfig.configFilePattern).toEqual(DEFAULT_CONFIG_VALUES.configFilePattern)
+            expect(instance.globalConfig.testFilePattern).toEqual(DEFAULT_CONFIG_VALUES.testFilePattern)
         })
     })
 
@@ -106,7 +138,8 @@ describe('WdioConfig', () => {
             // Setup
             const mockEvent = {
                 affectsConfiguration: vi.fn().mockReturnValue(false),
-            } as any
+            } as unknown as vscode.ConfigurationChangeEvent
+            vi.resetAllMocks()
 
             // Execute
             configManager.listener(mockEvent)
@@ -123,22 +156,23 @@ describe('WdioConfig', () => {
                     if (key === EXTENSION_ID) {
                         return true
                     }
-                    if (key === `${EXTENSION_ID}.configPath`) {
+                    if (key === `${EXTENSION_ID}.configFilePattern`) {
                         return true
                     }
                     return false
                 }),
-            } as any
+            } as unknown as vscode.ConfigurationChangeEvent
 
-            const newConfigPath = 'updated/config/path'
-            vi.mocked(vscode.workspace.getConfiguration).mockReturnValue({
-                get: vi.fn().mockImplementation((key) => {
-                    if (key === 'configPath') {
-                        return newConfigPath
-                    }
-                    return undefined
-                }),
-            } as any)
+            const newConfigFilePattern = ['updated/config/path/*.conf.js']
+            mockConfiguration.get.mockImplementation((key) => {
+                if (key === 'configFilePattern') {
+                    return newConfigFilePattern
+                }
+                return undefined
+            })
+
+            // Setup spy on emit method
+            const emitSpy = vi.spyOn(configManager as any, 'emit')
 
             // Execute
             configManager.listener(mockEvent)
@@ -147,126 +181,126 @@ describe('WdioConfig', () => {
             expect(mockEvent.affectsConfiguration).toHaveBeenCalledWith(EXTENSION_ID)
             expect(vscode.workspace.getConfiguration).toHaveBeenCalledWith(EXTENSION_ID)
             expect(log.debug).toHaveBeenCalledWith('The configuration for this extension were updated.')
-            expect(log.debug).toHaveBeenCalledWith(`Update configPath: ${newConfigPath}`)
-            expect(configManager.globalConfig.configPath).toBe(newConfigPath)
+            expect(log.debug).toHaveBeenCalledWith(`Update configFilePattern: ${newConfigFilePattern}`)
+            expect(emitSpy).toHaveBeenCalledWith('update:configFilePattern', newConfigFilePattern)
+            expect(configManager.globalConfig.configFilePattern).toEqual(newConfigFilePattern)
         })
     })
 
-    describe('getWdioConfig', () => {
-        it('should return cached config if available and reload is false', async () => {
+    describe('initialize', () => {
+        it('should return empty array when no workspace folders', async () => {
             // Setup
-            const mockConfigParser = {} as ConfigParser
-            // Set cached config for testing
-            ;(configManager as any)._configParser.set(mockWorkspacePath, mockConfigParser)
+            ;(vscode.workspace.workspaceFolders as any) = undefined
 
             // Execute
-            const result = await configManager.getWdioConfig(mockWorkspacePath, false)
-
-            // Verify
-            expect(result).toBe(mockConfigParser)
-            expect(findWdioConfig).not.toHaveBeenCalled()
-        })
-
-        it('should find and initialize new config when no cache or reload is true', async () => {
-            // Setup
-            const mockConfigParser = {
-                initialize: vi.fn().mockResolvedValue(undefined),
-            } as any
-
-            vi.mocked(findWdioConfig).mockResolvedValue(mockConfigPath)
-            vi.mocked(ConfigParser).mockImplementation(() => mockConfigParser)
-
-            // Execute
-            const result = await configManager.getWdioConfig(mockWorkspacePath, true)
-
-            // Verify
-            expect(findWdioConfig).toHaveBeenCalledWith(mockWorkspacePath)
-            expect(ConfigParser).toHaveBeenCalledWith(mockConfigPath)
-            expect(mockConfigParser.initialize).toHaveBeenCalled()
-            expect(result).toBe(mockConfigParser)
-        })
-
-        it('should throw error when no config file is found', async () => {
-            // Setup
-            vi.mocked(findWdioConfig).mockResolvedValue(undefined)
-
-            // Execute & Verify
-            await expect(configManager.getWdioConfig(mockWorkspacePath, true)).rejects.toThrow(
-                'WebdriverIO configuration file not found.'
-            )
-        })
-
-        it('should auto-detect workspace when not specified', async () => {
-            // Setup
-            const mockConfigParser = {
-                initialize: vi.fn().mockResolvedValue(undefined),
-            } as any
-
-            workspaceFolderSpy = vi.spyOn(configManager, 'getWorkspaceFolderPath').mockReturnValue([mockWorkspacePath])
-
-            vi.mocked(findWdioConfig).mockResolvedValue(mockConfigPath)
-            vi.mocked(ConfigParser).mockImplementation(() => mockConfigParser)
-
-            // Execute
-            const result = await configManager.getWdioConfig()
-
-            // Verify
-            expect(workspaceFolderSpy).toHaveBeenCalled()
-            expect(findWdioConfig).toHaveBeenCalledWith(mockWorkspacePath)
-            expect(result).toBe(mockConfigParser)
-        })
-
-        it('should throw error when no workspace is detected', async () => {
-            // Setup
-            workspaceFolderSpy = vi.spyOn(configManager, 'getWorkspaceFolderPath').mockReturnValue([])
-
-            // Execute & Verify
-            await expect(configManager.getWdioConfig()).rejects.toThrow('No workspace is detected.')
-        })
-
-        it('should throw error when multiple workspaces are detected', async () => {
-            // Setup
-            workspaceFolderSpy = vi
-                .spyOn(configManager, 'getWorkspaceFolderPath')
-                .mockReturnValue(['/workspace1', '/workspace2'])
-
-            // Execute & Verify
-            await expect(configManager.getWdioConfig()).rejects.toThrow('Multiple workspaces are not supported.')
-        })
-    })
-
-    describe('getWorkspaceFolderPath', () => {
-        it('should return empty array when no workspace folders are available', () => {
-            // Execute
-            const result = configManager.getWorkspaceFolderPath(undefined)
+            const result = await configManager.initialize()
 
             // Verify
             expect(result).toEqual([])
             expect(log.debug).toHaveBeenCalledWith('No workspace is detected.')
+            expect(configManager.isMultiWorkspace).toBe(false)
         })
 
-        it('should return array with single workspace path when one workspace is available', () => {
+        it('should initialize workspaces and find config files', async () => {
+            // Setup
+            const mockWorkspaceFolder1 = { uri: { fsPath: '/workspace1' } } as vscode.WorkspaceFolder
+            const mockWorkspaceFolder2 = { uri: { fsPath: '/workspace2' } } as vscode.WorkspaceFolder
+
+            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder1, mockWorkspaceFolder2]
+
+            const wdioConfigFiles1 = ['/workspace1/wdio.conf.js', '/workspace1/wdio.e2e.conf.js']
+            const wdioConfigFiles2 = ['/workspace2/wdio.conf.js']
+
+            vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles1).mockResolvedValueOnce(wdioConfigFiles2)
+
             // Execute
-            const result = configManager.getWorkspaceFolderPath([
-                { uri: { fsPath: mockWorkspacePath } },
-            ] as unknown as vscode.WorkspaceFolder[])
+            await configManager.initialize()
 
             // Verify
-            expect(result).toEqual([mockWorkspacePath])
-            expect(log.debug).toHaveBeenCalledWith(`Detected workspace path: ${mockWorkspacePath}`)
+            expect(configManager.isMultiWorkspace).toBe(true)
+            expect(findWdioConfig).toHaveBeenCalledTimes(2)
+            expect(findWdioConfig).toHaveBeenCalledWith('/workspace1', DEFAULT_CONFIG_VALUES.configFilePattern)
+            expect(findWdioConfig).toHaveBeenCalledWith('/workspace2', DEFAULT_CONFIG_VALUES.configFilePattern)
+
+            expect(configManager.workspaces).toEqual([
+                {
+                    workspaceFolder: mockWorkspaceFolder1,
+                    wdioConfigFiles: wdioConfigFiles1,
+                },
+                {
+                    workspaceFolder: mockWorkspaceFolder2,
+                    wdioConfigFiles: wdioConfigFiles2,
+                },
+            ])
         })
 
-        it('should return empty array and warn when multiple workspaces are available', () => {
+        it('should handle workspaces with no config files', async () => {
+            // Setup
+            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
+            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+            vi.mocked(findWdioConfig).mockResolvedValueOnce([])
+
             // Execute
-            const result = configManager.getWorkspaceFolderPath([
-                { uri: { fsPath: '/workspace1' } },
-                { uri: { fsPath: '/workspace2' } },
-            ] as unknown as vscode.WorkspaceFolder[])
+            await configManager.initialize()
 
             // Verify
-            expect(result).toEqual([])
-            expect(log.debug).toHaveBeenCalledWith('Detected 2 workspaces.')
-            expect(log.warn).toHaveBeenCalledWith('Not support the multiple workspaces')
+            expect(configManager.isMultiWorkspace).toBe(false)
+            expect(configManager.workspaces).toEqual([
+                {
+                    workspaceFolder: mockWorkspaceFolder,
+                    wdioConfigFiles: [],
+                },
+            ])
+        })
+    })
+
+    describe('getWdioConfigPaths', () => {
+        it('should throw error when not initialized', () => {
+            // Execute & Verify
+            expect(() => configManager.getWdioConfigPaths()).toThrow('Configuration manager is not initialized')
+        })
+
+        it('should return all config paths after initialization', async () => {
+            // Setup
+            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
+            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+
+            const wdioConfigFiles = ['/workspace/wdio.conf.js', '/workspace/wdio.e2e.conf.js']
+            vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)
+
+            // Execute
+            await configManager.initialize()
+            const paths = configManager.getWdioConfigPaths()
+
+            // Verify
+            expect(paths).toEqual(wdioConfigFiles)
+        })
+    })
+
+    describe('workspaces property', () => {
+        it('should throw error when accessed before initialization', () => {
+            // Execute & Verify
+            expect(() => configManager.workspaces).toThrow('WdioConfig class is not initialized.')
+        })
+    })
+
+    describe('dispose', () => {
+        it('should clear workspaces data', async () => {
+            // Setup
+            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
+            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+
+            const wdioConfigFiles = ['/workspace/wdio.conf.js']
+            vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)
+
+            await configManager.initialize()
+            expect(configManager.workspaces).toBeDefined()
+
+            // Execute
+            configManager.dispose()
+
+            // Verify
+            expect(() => configManager.workspaces).toThrow('WdioConfig class is not initialized.')
         })
     })
 })

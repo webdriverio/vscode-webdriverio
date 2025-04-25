@@ -1,8 +1,8 @@
 import type { Launcher as LauncherType } from '@wdio/cli'
-import type { WorkerMetaContext } from './types.js'
-import type { LoadConfigOptions, WdioConfig } from '../api/index.js'
 
 type LauncherPublicProperty = 'configParser' | 'isMultiremote' | 'isParallelMultiremote' | 'runner' | 'interface'
+
+/* c8 ignore start */
 
 export class Launcher {
     #esmLauncher: Promise<LauncherType>
@@ -30,19 +30,4 @@ export class Launcher {
         return (await this.#esmLauncher)[name]
     }
 }
-
-export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfigOptions): Promise<WdioConfig> {
-    this.log.debug(`Loading the config file: ${options.configFilePath}`)
-    // Create launcher instance
-    const launcher = new Launcher(options.configFilePath)
-    await launcher.initialize()
-
-    const configParser = await launcher.getProperty('configParser')
-    const specs = configParser.getSpecs().flatMap((specs) => (Array.isArray(specs) ? specs : [specs]))
-    const framework = configParser.getConfig().framework
-    this.log.debug(`Successfully loaded the config file: ${options.configFilePath} (${specs.length} specs)`)
-    return {
-        framework,
-        specs,
-    }
-}
+/* c8 ignore stop */

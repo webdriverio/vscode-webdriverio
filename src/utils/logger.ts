@@ -12,26 +12,28 @@ export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
     [LOG_LEVEL.SILENT]: 'SILENT ',
 } as const
 
-const DEBUG_ACTIVE = Boolean(process.env.VSCODE_WDIO_DEBUG)
-
-class VscodeWdioLogger implements LoggerInterface {
+export class VscodeWdioLogger implements LoggerInterface {
     private _timezoneString: string | undefined
+    private _disposables: vscode.Disposable[] = []
+
     constructor(
         private _logLevel: LOG_LEVEL = this.updateLogLevel(),
-        private _outputChannel = vscode.window.createOutputChannel('WebdriverIO')
+        private _outputChannel = this.createOutputChannel()
     ) {
-        this._outputChannel.show(true)
-        vscode.workspace.onDidChangeConfiguration((event) => {
+        const watcher = vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration('webdriverio.logLevel')) {
                 this._logLevel = this.updateLogLevel()
             }
         })
+        this._disposables.push(watcher)
     }
 
     private updateLogLevel(): LOG_LEVEL {
+        const isDebug = Boolean(process.env.VSCODE_WDIO_DEBUG)
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
-        const newValue = DEBUG_ACTIVE ? 'trace' : config.get<WdioLogLevel>('logLevel') || 'info'
-        switch (newValue.toLowerCase()) {
+        const newValue = isDebug ? 'trace' : config.get<WdioLogLevel>('logLevel')
+
+        switch (!newValue ? 'info' : newValue.toLowerCase()) {
             case 'trace':
                 return LOG_LEVEL.TRACE
             case 'debug':
@@ -47,6 +49,13 @@ class VscodeWdioLogger implements LoggerInterface {
             default:
                 return LOG_LEVEL.INFO
         }
+    }
+
+    private createOutputChannel() {
+        const channel = vscode.window.createOutputChannel('WebdriverIO')
+        channel.show(true)
+        this._disposables.push(channel)
+        return channel
     }
 
     private log(level: LOG_LEVEL, message: unknown): void {

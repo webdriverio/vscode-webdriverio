@@ -1,0 +1,38 @@
+name: Build
+
+on:
+    workflow_call:
+        # Make this a reusable workflow, no value needed
+        # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+        inputs:
+            os:
+                description: 'OS of runner'
+                default: 'ubuntu-latest'
+                type: string
+
+jobs:
+    build:
+        name: Build
+        runs-on: ${{ inputs.os }}
+        steps:
+            - name: 👷 Checkout
+              uses: actions/checkout@v4
+              with:
+                  ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+            - name: 🛠️ Setup workspace
+              uses: ./.github/workflows/actions/setup-workspace
+              with:
+                  node-version: '20'
+
+            - name: 🏗️ Build Packages
+              run: pnpm run compile
+              shell: bash
+
+            - name: ⬆️ Upload Build Artifacts
+              if: ${{ runner.os == 'Linux' }}
+              uses: ./.github/workflows/actions/upload-archive
+              with:
+                  name: vscode-webdriverio
+                  output: vscode-webdriverio-build.zip
+                  paths: dist

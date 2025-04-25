@@ -6,6 +6,7 @@ import { log } from '../../src/utils/logger.js'
 
 import type { ResultSet, TestSuite, Test } from '../../src/reporter/types.js'
 import type { TestRepository } from '../../src/test/repository.js'
+import type { SpecFileTestItem } from '../../src/test/types.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => {
@@ -15,7 +16,7 @@ vi.mock('vscode', async () => {
         ...mockModule,
     }
 })
-vi.mock('../../src/test/registry')
+vi.mock('../../src/test/repository')
 vi.mock('../../src/utils/logger', () => ({
     log: {
         debug: vi.fn(),
@@ -82,9 +83,9 @@ describe('TestReporter', () => {
     beforeEach(() => {
         vi.resetAllMocks()
 
-        // Setup mock registry
+        // Setup mock repository
         mockRegistry = {
-            getSpecById: vi.fn(),
+            getSpecByFilePath: vi.fn(), // Changed from getSpecById to getSpecByFilePath
             searchSuite: vi.fn(),
         } as unknown as TestRepository
 
@@ -127,36 +128,36 @@ describe('TestReporter', () => {
         it('should return true when all tests passed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js')
+            const specTestItem = createMockTestItem(specPath, 'spec.js') as SpecFileTestItem
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 2, failed: 0, skipped: 0 })
 
-            vi.mocked(mockRegistry.getSpecById).mockReturnValue(specTestItem)
+            vi.mocked(mockRegistry.getSpecByFilePath).mockReturnValue(specTestItem)
 
             // Execute
             const result = testReporter.updateTestStatus([mockResult])
 
             // Verify
             expect(result).toBe(true)
-            expect(mockRegistry.getSpecById).toHaveBeenCalledWith(specPath)
+            expect(mockRegistry.getSpecByFilePath).toHaveBeenCalledWith(specPath)
             expect(mockTestRun.passed).toHaveBeenCalledWith(specTestItem)
         })
 
         it('should return false when any test failed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js')
+            const specTestItem = createMockTestItem(specPath, 'spec.js') as SpecFileTestItem
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 1, failed: 1, skipped: 0 })
 
-            vi.mocked(mockRegistry.getSpecById).mockReturnValue(specTestItem)
+            vi.mocked(mockRegistry.getSpecByFilePath).mockReturnValue(specTestItem) // Changed from getSpecById to getSpecByFilePath
 
             // Execute
             const result = testReporter.updateTestStatus([mockResult])
 
             // Verify
             expect(result).toBe(false)
-            expect(mockRegistry.getSpecById).toHaveBeenCalledWith(specPath)
+            expect(mockRegistry.getSpecByFilePath).toHaveBeenCalledWith(specPath) // Changed from getSpecById to getSpecByFilePath
             expect(mockTestRun.failed).toHaveBeenCalledWith(specTestItem, expect.any(vscode.TestMessage))
         })
 
@@ -166,7 +167,8 @@ describe('TestReporter', () => {
             const mockResult = createMockResultSet([specPath], [], { passed: 1, failed: 0, skipped: 0 })
 
             // Force an error
-            vi.mocked(mockRegistry.getSpecById).mockImplementation(() => {
+            vi.mocked(mockRegistry.getSpecByFilePath).mockImplementation(() => {
+                // Changed from getSpecById to getSpecByFilePath
                 throw new Error('Test error')
             })
 
@@ -178,12 +180,12 @@ describe('TestReporter', () => {
             expect(log.error).toHaveBeenCalledWith(expect.stringContaining('Test error'))
         })
 
-        it('should skip spec files not found in registry', () => {
+        it('should skip spec files not found in repository', () => {
             // Setup
             const specPath = '/path/to/spec.js'
             const mockResult = createMockResultSet([specPath], [], { passed: 1, failed: 0, skipped: 0 })
 
-            vi.mocked(mockRegistry.getSpecById).mockReturnValue(undefined)
+            vi.mocked(mockRegistry.getSpecByFilePath).mockReturnValue(undefined) // Changed from getSpecById to getSpecByFilePath
 
             // Execute
             const result = testReporter.updateTestStatus([mockResult])
@@ -231,7 +233,7 @@ describe('TestReporter', () => {
             expect(updateSuiteStatusSpy).toHaveBeenCalledWith(suiteItem, mockSuite)
         })
 
-        it('should skip suite when not found in registry', () => {
+        it('should skip suite when not found in repository', () => {
             // Setup
             const parentItem = createMockTestItem('parent', 'Parent')
             const mockSuite = createMockTestSuite('Suite', [])

@@ -1,5 +1,6 @@
 import type EventEmitter from 'node:events'
 import type * as vscode from 'vscode'
+import type { ResultSet } from '../reporter/types.js'
 import type { TestData } from '../test/index.js'
 import type { NumericLogLevel } from '../types.js'
 
@@ -79,7 +80,7 @@ export interface TestResult {
     // Error message if any
     error?: string
     // The detail test result (this is set the stringified json data)
-    json: string
+    json: ResultSet[]
 }
 
 export interface EventReady {

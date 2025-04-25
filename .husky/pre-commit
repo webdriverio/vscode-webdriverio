@@ -1,1 +1,1 @@
-pnpx lint-staged
+pnpx lint-staged --concurrent false

@@ -5,7 +5,7 @@ import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 
-class ServerManager implements vscode.Disposable {
+export class ServerManager implements vscode.Disposable {
     private _serverPool = new Map<string, WdioExtensionWorker>()
     private latestId = 0
 
@@ -53,6 +53,7 @@ class ServerManager implements vscode.Disposable {
         const strId = `#${String(id)}`
         const server = new WdioExtensionWorker(strId, configPaths)
         await server.start()
+        await server.waitForStart()
         log.debug(`[server manager] server was resisted: ${configPaths}`)
         this._serverPool.set(configPaths, server)
         return server
@@ -65,5 +66,3 @@ class ServerManager implements vscode.Disposable {
         }
     }
 }
-
-export const serverManager = new ServerManager()

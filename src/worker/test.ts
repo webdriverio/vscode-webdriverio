@@ -3,10 +3,10 @@ import * as os from 'node:os'
 import { join, resolve } from 'node:path'
 
 import { Launcher } from './cli.js'
-
 import type { RunCommandArguments } from '@wdio/cli'
 import type { WorkerMetaContext } from './types.js'
 import type { RunTestOptions, TestResult } from '../api/index.js'
+import type { ResultSet } from '../reporter/types.js'
 import type { LoggerInterface } from '../types.js'
 
 const VSCODE_REPORTER_PATH = resolve(__dirname, '../reporter/index.cjs')
@@ -89,7 +89,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             success: false,
             stdout: `Error launching WebdriverIO: ${errorMessage}${stack ? '\n' + stack : ''}`,
             error: errorMessage,
-            json: JSON.stringify([]),
+            json: [],
         }
     }
 }
@@ -108,7 +108,7 @@ async function getOutputDir(this: WorkerMetaContext) {
     }
 }
 
-async function extractResultJson(log: LoggerInterface, outputDir: string | undefined) {
+async function extractResultJson(log: LoggerInterface, outputDir: string | undefined): Promise<ResultSet[]> {
     if (outputDir) {
         try {
             await fs.access(outputDir, fs.constants.R_OK)
@@ -126,13 +126,13 @@ async function extractResultJson(log: LoggerInterface, outputDir: string | undef
 
             await removeResultDir(log, outputDir)
 
-            return JSON.stringify(data)
+            return data as ResultSet[]
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
             log.debug(`Result file could not be read: ${errorMessage}`)
         }
     }
-    return JSON.stringify([])
+    return []
 }
 
 async function removeResultDir(log: LoggerInterface, outputDir: string) {

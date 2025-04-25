@@ -1,11 +1,10 @@
-import { TEST_ID_SEPARATOR } from '../constants.js'
+import { getGrep, getRange, getCucumberSpec, getSpec } from './utils.js'
 import { isConfig, isSpec, isTestcase, isWdioTestItem } from '../test/index.js'
 import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 import type { RunTestOptions } from './types.js'
 import type { WdioExtensionWorkerInterface } from './types.js'
-import type { ResultSet } from '../reporter/types.js'
 import type { SpecFileTestItem, WdioConfigTestItem, TestcaseTestItem } from '../test/index.js'
 
 type Listeners = {
@@ -14,54 +13,33 @@ type Listeners = {
 }
 
 export class TestRunner {
-    public stdout = ''
+    private _stdout = ''
     private _stderr = ''
     private _listeners: Listeners | undefined
 
     constructor(private _worker: WdioExtensionWorkerInterface) {}
+
+    public get stdout() {
+        return this._stdout
+    }
+
+    public get stderr() {
+        return this._stderr
+    }
+
+    /**
+     * Run a test based on the provided TestItem
+     */
     public async run(test: vscode.TestItem) {
-        if (!isWdioTestItem(test)) {
-            throw new Error("The metadata for TestItem is not set. This is extension's bug.")
-        }
+        // Validate test item
+        this.validateTestItem(test)
 
-        if (!isConfig(test) && !isSpec(test) && !isTestcase(test)) {
-            throw new Error('Workspace TestItem is not valid.')
-        }
-        const isCucumberTestItems = checkCucumberTestItems(test)
-
-        const cucumberSpecs = isCucumberTestItems && isTestcase(test) ? getCucumberSpec(test) : undefined
-
-        const _specs = isSpec(test) || isTestcase(test) ? getSpec(test) : undefined
-
-        const specs = !cucumberSpecs ? _specs : cucumberSpecs
-
-        const grep = !isCucumberTestItems && isTestcase(test) ? getGrep(test) : undefined
-        const range = !isCucumberTestItems && isTestcase(test) ? getRange(test) : undefined
+        // Create test execution options
+        const testOptions = this.createTestOptions(test)
 
         try {
-            const testOptions: RunTestOptions = {
-                configPath: test.metadata.repository.wdioConfigPath,
-                specs,
-                grep,
-                range,
-            }
-
-            log.trace(`REQUEST: ${JSON.stringify(testOptions, null, 2)}`)
-            await this._worker.ensureConnected()
-            this.setListener()
-            const result = await this._worker.rpc.runTest(testOptions)
-            this.removeListener()
-
-            const resultData = parseJson<ResultSet[]>(result.json)
-            log.trace(`RESULT: ${JSON.stringify(resultData, null, 2)}`)
-
-            return {
-                success: result.success,
-                duration: 0,
-                detail: resultData,
-                log: result.stdout,
-                errorMessage: result.error,
-            }
+            // Execute test and process results
+            return await this.executeTest(testOptions)
         } catch (error) {
             const _error = error as Error
             return {
@@ -69,6 +47,91 @@ export class TestRunner {
                 errorMessage: _error.message,
                 detail: [],
             }
+        }
+    }
+
+    /**
+     * Validates that the provided TestItem is a valid WebdriverIO test
+     */
+    private validateTestItem(
+        test: vscode.TestItem
+    ): asserts test is TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem {
+        if (!isWdioTestItem(test)) {
+            throw new Error("The metadata for TestItem is not set. This is extension's bug.")
+        }
+
+        if (!isConfig(test) && !isSpec(test) && !isTestcase(test)) {
+            throw new Error('Workspace TestItem is not valid.')
+        }
+    }
+
+    /**
+     * Creates RunTestOptions based on the test type and framework
+     */
+    private createTestOptions(test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem): RunTestOptions {
+        const isCucumberFramework = this.isCucumberFramework(test)
+
+        // Get appropriate specs based on the test framework and type
+        const specs = this.determineSpecs(test, isCucumberFramework)
+
+        // Get grep pattern for mocha-like frameworks when testing individual test cases
+        const grep = !isCucumberFramework && isTestcase(test) ? getGrep(test) : undefined
+
+        // Get line range information for test file
+        const range = !isCucumberFramework && isTestcase(test) ? getRange(test) : undefined
+
+        return {
+            configPath: test.metadata.repository.wdioConfigPath,
+            specs,
+            grep,
+            range,
+        }
+    }
+
+    /**
+     * Determines if the test is using Cucumber framework
+     */
+    private isCucumberFramework(test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem): boolean {
+        return test.metadata.repository.framework === 'cucumber'
+    }
+
+    /**
+     * Determines the specs to run based on test type and framework
+     */
+    private determineSpecs(
+        test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem,
+        isCucumberFramework: boolean
+    ): string[] | undefined {
+        if (isCucumberFramework && isTestcase(test)) {
+            return getCucumberSpec(test)
+        }
+
+        if (isSpec(test) || isTestcase(test)) {
+            return getSpec(test)
+        }
+
+        return undefined
+    }
+
+    /**
+     * Executes the test with the provided options and processes the results
+     */
+    private async executeTest(testOptions: RunTestOptions) {
+        log.trace(`REQUEST: ${JSON.stringify(testOptions, null, 2)}`)
+        await this._worker.ensureConnected()
+        this.setListener()
+
+        const result = await this._worker.rpc.runTest(testOptions)
+        this.removeListener()
+        const resultData = result.json
+        log.trace(`RESULT: ${JSON.stringify(resultData, null, 2)}`)
+
+        return {
+            success: result.success,
+            duration: 0,
+            detail: resultData,
+            log: result.stdout,
+            errorMessage: result.error,
         }
     }
 
@@ -89,80 +152,10 @@ export class TestRunner {
     }
 
     private stdoutListener(data: string) {
-        this.stdout += data + '\n'
+        this._stdout += data + '\n'
     }
 
     private stderrListener(data: string) {
         this._stderr += data + '\n'
     }
-}
-
-function getSpec(tests: vscode.TestItem) {
-    const testPath = tests.uri?.fsPath
-    return testPath ? [testPath] : undefined
-}
-function parseJson<T>(strJson: string): T {
-    try {
-        return JSON.parse(strJson)
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        log.error(`Failed to parse JSON of the wdio result: ${errorMessage}`)
-        log.debug(strJson)
-        throw new Error(errorMessage)
-    }
-}
-
-function getGrep(test: vscode.TestItem) {
-    const testNames = test.id.split(TEST_ID_SEPARATOR)
-    // Escape following characters
-    // $, ^, ., *, +, ?, (, ), [, ], {, }, |, \
-    return testNames[testNames.length - 1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function getRange(test: vscode.TestItem) {
-    const isEmptyRange = !test.range || test.range.isEmpty
-    return isEmptyRange ? undefined : test.range
-}
-
-function getCucumberSpec(testItem: TestcaseTestItem) {
-    const baseSpec = getSpec(testItem)
-    if (!baseSpec) {
-        return undefined
-    }
-    if (testItem.metadata.type === 'rule') {
-        const specs = []
-        for (const [_, childItem] of testItem.children) {
-            if ((childItem as TestcaseTestItem).metadata.type === 'scenario') {
-                const start = childItem.range?.start.line || 0
-                const end = childItem.range?.end.line || 0
-                if (start > 0 && end > 0) {
-                    const spec = `${baseSpec}:${String(start + 1)}:${String(end + 1)}`
-                    log.debug(`cucumber spec: ${spec}`)
-                    specs.push(spec)
-                }
-            }
-        }
-        if (specs.length > 0) {
-            return specs
-        }
-    }
-
-    if (testItem.metadata.type === 'scenario') {
-        const specs = []
-        const start = testItem.range?.start.line || 0
-        const end = testItem.range?.end.line || 0
-        if (start > 0 && end > 0) {
-            const spec = `${baseSpec}:${String(start + 1)}:${String(end + 1)}`
-            log.debug(`cucumber spec: ${spec}`)
-            specs.push(spec)
-        }
-        if (specs.length > 0) {
-            return specs
-        }
-    }
-    return baseSpec
-}
-
-function checkCucumberTestItems(testItem: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem) {
-    return testItem.metadata.repository.framework === 'cucumber'
 }

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
-import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
+import type { ExtensionConfigManager } from '../config/index.js'
 
 /**
  * Manages file watchers for WebdriverIO test files
@@ -15,7 +15,7 @@ export class FileWatcherManager implements vscode.Disposable {
     /**
      * Create a new FileWatcherManager
      */
-    constructor() {
+    constructor(protected configManager: ExtensionConfigManager) {
         this.createWatchers()
     }
 
@@ -24,7 +24,7 @@ export class FileWatcherManager implements vscode.Disposable {
      * @param handler The handler function to call when a file changes
      * @returns This FileWatcherManager instance for chaining
      */
-    public onFileCreate(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    protected onFileCreate(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileCreateHandlers.push(handler)
         return this
     }
@@ -34,7 +34,7 @@ export class FileWatcherManager implements vscode.Disposable {
      * @param handler The handler function to call when a file changes
      * @returns This FileWatcherManager instance for chaining
      */
-    public onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    protected onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileChangeHandlers.push(handler)
         return this
     }
@@ -44,7 +44,7 @@ export class FileWatcherManager implements vscode.Disposable {
      * @param handler The handler function to call when a file is deleted
      * @returns This FileWatcherManager instance for chaining
      */
-    public onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    protected onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileDeleteHandlers.push(handler)
         return this
     }
@@ -63,7 +63,7 @@ export class FileWatcherManager implements vscode.Disposable {
      */
     private createWatchers(): void {
         // Get test file pattern from configuration
-        const patterns = configManager.globalConfig.testFilePattern || []
+        const patterns = this.configManager.globalConfig.testFilePattern || []
 
         // Split pattern by comma and create watchers for each
         log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)

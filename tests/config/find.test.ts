@@ -1,13 +1,14 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
+import { glob } from 'glob'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { findWdioConfig } from '../../src/config/find.js'
-import { log } from '../../src/utils/logger.js'
 
 // Mock dependencies
 vi.mock('node:fs/promises')
+vi.mock('glob')
 vi.mock('../../src/utils/logger', () => ({
     log: {
         debug: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('../../src/utils/logger', () => ({
 
 describe('findWdioConfig', () => {
     const mockWorkspaceRoot = '/mock/workspace'
+    const defaultConfigFilePattern = ['wdio.conf.js', 'wdio.conf.ts']
 
     beforeEach(() => {
         vi.resetAllMocks()
@@ -25,77 +27,106 @@ describe('findWdioConfig', () => {
         vi.clearAllMocks()
     })
 
-    it('should find JS config file when it exists', async () => {
+    it('should find config files when they exist', async () => {
         // Setup
-        const expectedPath = path.join(mockWorkspaceRoot, 'wdio.conf.js')
+        const mockConfigFiles = ['wdio.conf.js', 'wdio.conf.ts']
+        const expectedPaths = mockConfigFiles.map((file) => path.join(mockWorkspaceRoot, file))
 
-        // Mock fs.access to succeed for JS file and fail for TS file
-        vi.mocked(fs.access).mockImplementation(async (path) => {
-            if (path === expectedPath) {
+        // Mock glob to return the config files
+        vi.mocked(glob).mockResolvedValue(mockConfigFiles)
+
+        // Mock fs.access to succeed for all files
+        vi.mocked(fs.access).mockResolvedValue(undefined)
+
+        // Execute
+        const result = await findWdioConfig(mockWorkspaceRoot, defaultConfigFilePattern)
+
+        // Verify
+        expect(result).toEqual(expectedPaths)
+        expect(glob).toHaveBeenCalledWith(defaultConfigFilePattern, {
+            cwd: mockWorkspaceRoot,
+            withFileTypes: false,
+            ignore: '**/node_modules/**',
+        })
+        expect(fs.access).toHaveBeenCalledTimes(2)
+    })
+
+    it('should filter out inaccessible files', async () => {
+        // Setup
+        const mockConfigFiles = ['wdio.conf.js', 'wdio.conf.ts']
+        const accessibleFile = path.join(mockWorkspaceRoot, 'wdio.conf.js')
+
+        // Mock glob to return the config files
+        vi.mocked(glob).mockResolvedValue(mockConfigFiles)
+
+        // Mock fs.access to succeed only for the JS file
+        vi.mocked(fs.access).mockImplementation(async (filePath) => {
+            if (filePath === accessibleFile) {
                 return Promise.resolve()
             }
             return Promise.reject(new Error('File not found'))
         })
 
         // Execute
-        const result = await findWdioConfig(mockWorkspaceRoot)
+        const result = await findWdioConfig(mockWorkspaceRoot, defaultConfigFilePattern)
 
         // Verify
-        expect(result).toBe(expectedPath)
-        expect(fs.access).toHaveBeenCalledTimes(2)
-        expect(log.debug).toHaveBeenCalledWith(`Target workspace path: ${mockWorkspaceRoot}`)
-        expect(log.debug).toHaveBeenCalledWith('Detecting the configuration file for WebdriverIO...')
-        expect(log.debug).toHaveBeenCalledWith(`Detected file: ${expectedPath}`)
-    })
-
-    it('should find TS config file when it exists', async () => {
-        // Setup
-        const expectedPath = path.join(mockWorkspaceRoot, 'wdio.conf.ts')
-
-        // Mock fs.access to fail for JS file and succeed for TS file
-        vi.mocked(fs.access).mockImplementation(async (path) => {
-            if (path === expectedPath) {
-                return Promise.resolve()
-            }
-            return Promise.reject(new Error('File not found'))
-        })
-
-        // Execute
-        const result = await findWdioConfig(mockWorkspaceRoot)
-
-        // Verify
-        expect(result).toBe(expectedPath)
+        expect(result).toEqual([accessibleFile])
         expect(fs.access).toHaveBeenCalledTimes(2)
     })
 
-    it('should handle both config files existing', async () => {
+    it('should return empty array when no config files are accessible', async () => {
         // Setup
-        const jsPath = path.join(mockWorkspaceRoot, 'wdio.conf.js')
-        // const tsPath = path.join(mockWorkspaceRoot, 'wdio.conf.ts')
+        const mockConfigFiles = ['wdio.conf.js', 'wdio.conf.ts']
 
-        // Mock fs.access to succeed for both files
-        vi.mocked(fs.access).mockResolvedValue()
+        // Mock glob to return the config files
+        vi.mocked(glob).mockResolvedValue(mockConfigFiles)
 
-        // Execute
-        const result = await findWdioConfig(mockWorkspaceRoot)
-
-        // Verify
-        expect(result).toBe(jsPath) // Should return the first one (JS)
-        expect(fs.access).toHaveBeenCalledTimes(2)
-        expect(log.debug).toHaveBeenCalledWith(`${2} configuration files were detected. Use first one. `)
-    })
-
-    it('should handle no config files existing', async () => {
-        // Setup
-        // Mock fs.access to fail for both files
+        // Mock fs.access to fail for all files
         vi.mocked(fs.access).mockRejectedValue(new Error('File not found'))
 
         // Execute
-        const result = await findWdioConfig(mockWorkspaceRoot)
+        const result = await findWdioConfig(mockWorkspaceRoot, defaultConfigFilePattern)
 
         // Verify
-        expect(result).toBeUndefined()
+        expect(result).toEqual([])
         expect(fs.access).toHaveBeenCalledTimes(2)
-        expect(log.debug).toHaveBeenCalledWith('There is no configuration file.')
+    })
+
+    it('should handle empty glob results', async () => {
+        // Setup
+        // Mock glob to return no files
+        vi.mocked(glob).mockResolvedValue([])
+
+        // Execute
+        const result = await findWdioConfig(mockWorkspaceRoot, defaultConfigFilePattern)
+
+        // Verify
+        expect(result).toEqual([])
+        expect(fs.access).not.toHaveBeenCalled()
+    })
+
+    it('should use custom config file pattern when provided', async () => {
+        // Setup
+        const customConfigPattern = ['custom.wdio.conf.js']
+        const mockConfigFiles = ['custom.wdio.conf.js']
+        const expectedPaths = mockConfigFiles.map((file) => path.join(mockWorkspaceRoot, file))
+
+        // Mock glob to return the config files
+        vi.mocked(glob).mockResolvedValue(mockConfigFiles)
+
+        // Mock fs.access to succeed
+        vi.mocked(fs.access).mockResolvedValue(undefined)
+
+        // Execute
+        const result = await findWdioConfig(mockWorkspaceRoot, customConfigPattern)
+
+        // Verify
+        expect(result).toEqual(expectedPaths)
+        expect(glob).toHaveBeenCalledWith(customConfigPattern, {
+            cwd: mockWorkspaceRoot,
+            withFileTypes: false,
+            ignore: '**/node_modules/**',
+        })
     })
 })

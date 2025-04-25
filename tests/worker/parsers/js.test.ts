@@ -1,12 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-import { parseTestCases } from '../../src/test/jsParser.js'
-import type { TestData } from '../../src/test/types.js'
+import { parseTestCases } from '../../../src/worker/parsers/js.js'
+
+import type { TestData } from '../../../src/test/types.js'
+import type { WorkerMetaContext } from '../../../src/worker/types.js'
 
 // Mock vscode dependencies only
-vi.mock('vscode', () => import('../__mocks__/vscode.js'))
+vi.mock('vscode', () => import('../../__mocks__/vscode.js'))
 
 describe('Test Parser', () => {
+    // Create mock WorkerMetaContext for the parseTestCases function
+    const mockContext: WorkerMetaContext = {
+        log: {
+            debug: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+        },
+    } as unknown as WorkerMetaContext
+
     // Sample test contents with different test patterns
     const basicTestContent = `
         describe('Basic Test Suite', () => {
@@ -101,7 +113,7 @@ describe('Test Parser', () => {
     describe('parseTestCases', () => {
         it('should parse basic test cases correctly', () => {
             // Execute
-            const testCases = parseTestCases(basicTestContent, 'test-file.ts')
+            const testCases = parseTestCases.call(mockContext, basicTestContent, 'test-file.ts')
 
             // Verify
             expect(testCases.length).toBe(1)
@@ -127,7 +139,7 @@ describe('Test Parser', () => {
 
         it('should parse nested test suites correctly', () => {
             // Execute
-            const testCases = parseTestCases(nestedTestContent, 'nested-test.ts')
+            const testCases = parseTestCases.call(mockContext, nestedTestContent, 'nested-test.ts')
 
             // Verify
             expect(testCases.length).toBe(1)
@@ -157,7 +169,7 @@ describe('Test Parser', () => {
 
         it('should handle test.skip and test.only syntax', () => {
             // Execute
-            const testCases = parseTestCases(testWithSkipAndOnly, 'skip-only-test.ts')
+            const testCases = parseTestCases.call(mockContext, testWithSkipAndOnly, 'skip-only-test.ts')
 
             // Verify
             expect(testCases.length).toBe(2)
@@ -180,7 +192,7 @@ describe('Test Parser', () => {
 
         it('should handle dynamic test names appropriately', () => {
             // Execute
-            const testCases = parseTestCases(testWithDynamicNames, 'dynamic-names.ts')
+            const testCases = parseTestCases.call(mockContext, testWithDynamicNames, 'dynamic-names.ts')
 
             // Verify
             expect(testCases.length).toBe(1)
@@ -202,7 +214,7 @@ describe('Test Parser', () => {
 
         it('should handle complex TypeScript syntax correctly', () => {
             // Execute
-            const testCases = parseTestCases(testWithComplexContent, 'complex-ts.ts')
+            const testCases = parseTestCases.call(mockContext, testWithComplexContent, 'complex-ts.ts')
 
             // Verify
             expect(testCases.length).toBe(1)
@@ -220,16 +232,23 @@ describe('Test Parser', () => {
 
         it('should include proper source ranges for each test', () => {
             // Execute
-            const testCases = parseTestCases(basicTestContent, 'ranges-test.ts')
+            const testCases = parseTestCases.call(mockContext, basicTestContent, 'ranges-test.ts')
 
             // Verify all test cases have range information
             function verifyRanges(testCase: TestData) {
                 expect(testCase.range).toBeDefined()
                 expect(testCase.range.start).toBeDefined()
                 expect(testCase.range.end).toBeDefined()
-                expect(typeof testCase.range.start.offset).toBe('number')
-                expect(typeof testCase.range.end.offset).toBe('number')
-                expect(testCase.range.start.offset).toBeLessThan(testCase.range.end.offset)
+                expect(typeof testCase.range.start.line).toBe('number')
+                expect(typeof testCase.range.start.column).toBe('number')
+                expect(typeof testCase.range.end.line).toBe('number')
+                expect(typeof testCase.range.end.column).toBe('number')
+
+                // Verify line and column are logical
+                expect(testCase.range.start.line).toBeLessThanOrEqual(testCase.range.end.line)
+                if (testCase.range.start.line === testCase.range.end.line) {
+                    expect(testCase.range.start.column).toBeLessThan(testCase.range.end.column)
+                }
 
                 // Verify all children have ranges too
                 testCase.children.forEach(verifyRanges)
@@ -240,9 +259,17 @@ describe('Test Parser', () => {
 
         it('should throw an error with invalid syntax', () => {
             // Execute & Verify
-            expect(() => parseTestCases(testWithInvalidSyntax, 'invalid-test.ts')).toThrow(
+            expect(() => parseTestCases.call(mockContext, testWithInvalidSyntax, 'invalid-test.ts')).toThrow(
                 'Failed to parse test file invalid-test.ts'
             )
+        })
+
+        it('should log debug information', () => {
+            // Execute
+            parseTestCases.call(mockContext, basicTestContent, 'test-file.ts')
+
+            // Verify debug log was called
+            expect(mockContext.log.debug).toHaveBeenCalledWith('Javascript/Typescript parser is used.')
         })
     })
 })

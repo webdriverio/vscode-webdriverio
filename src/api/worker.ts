@@ -6,14 +6,13 @@ import * as v8 from 'node:v8'
 
 import { createBirpc } from 'birpc'
 import getPort from 'get-port'
-import { WebSocketServer } from 'ws'
 
-import { LOG_LEVEL } from '../constants.js'
+import { createWss, loggingFn } from './utils.js'
 import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
+import type { WebSocketServer } from 'ws'
 import type { ExtensionApi, WdioExtensionWorkerInterface, WorkerApi } from './types.js'
-import type { NumericLogLevel } from '../types.js'
 
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
 export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWorkerInterface {
@@ -32,7 +31,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
         this.cid = cid
         this._cwd = cwd
 
-        process.on('exit', () => {
+        const psListener = () => {
             if (this._workerProcess && !this._workerProcess.killed) {
                 log.debug('Extension host exiting - ensuring worker process is terminated')
                 try {
@@ -41,6 +40,13 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                     console.log(e)
                 }
             }
+        }
+        process.on('exit', psListener)
+
+        this._disposables.push({
+            dispose: () => {
+                process.removeListener('exit', psListener)
+            },
         })
     }
 
@@ -58,7 +64,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             this._workerPort = await getPort()
             this._server = createHttpServer().listen(this._workerPort)
             this._server.unref()
-            this._wss = new WebSocketServer({ server: this._server })
+            this._wss = createWss(this._server)
 
             log.debug(`Starting WebdriverIO worker on port ${this._workerPort}`)
             log.debug(`Worker path: ${WORKER_PATH}`)
@@ -70,9 +76,8 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                 WDIO_EXTENSION_WORKER_CID: this.cid,
                 WDIO_EXTENSION_WORKER_WS_URL: wsUrl,
                 FORCE_COLOR: '1',
+                ELECTRON_RUN_AS_NODE: undefined,
             }
-            // @ts-expect-error
-            delete env.ELECTRON_RUN_AS_NODE
 
             // Start worker process
             this._workerProcess = spawn('node', [WORKER_PATH], {
@@ -82,12 +87,6 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             })
 
             this.setListeners(this._workerProcess)
-
-            // Connect to worker via WebSocket
-            await this.connectToWorker(this._wss)
-
-            this.startHealthCheck()
-            log.debug('Worker process started successfully')
         } catch (error) {
             log.debug(`Failed to start worker: ${error instanceof Error ? error.message : String(error)}`)
             this.stop()
@@ -119,18 +118,24 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
     /**
      * Connect to worker via WebSocket
      */
-    private async connectToWorker(wss: WebSocketServer): Promise<void> {
+
+    public async waitForStart(): Promise<void> {
         if (!this._workerPort) {
             throw new Error('Worker port not set')
         }
 
-        return await new Promise<void>((resolve, reject) => {
+        return new Promise<void>((resolve, reject) => {
+            if (!this._wss) {
+                reject(new Error('Server is not started. Call the `start()` first.'))
+                return
+            }
+
             // Add timeout to prevent connection hanging indefinitely
             const timeout = setTimeout(() => {
                 reject(new Error('Worker connection timeout'))
-            }, 10000) // 10 seconds timeout
+            }, 10000) // 10 seconds timeout)
 
-            wss.once('connection', (ws) => {
+            this._wss.once('connection', (ws) => {
                 clearTimeout(timeout)
                 const server = createRpcServer()
                 this._workerRpc = createBirpc<WorkerApi, ExtensionApi>(server, {
@@ -141,9 +146,10 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                 })
                 this._workerConnected = true
 
-                ws.on('error', (error) => {
-                    log.error(`WebSocket error: ${error.message}`)
-                    reject(error)
+                ws.on('error', async (error) => {
+                    const errorMessage = `WebSocket error: ${error.message}`
+                    log.error(errorMessage)
+                    await this.stop()
                 })
 
                 ws.on('close', () => {
@@ -162,6 +168,9 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
 
                 resolve()
             })
+        }).then(() => {
+            this.startHealthCheck()
+            log.debug('Worker process started successfully')
         })
     }
     /**
@@ -196,8 +205,9 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                 this._workerProcess.kill('SIGTERM')
 
                 // Wait a short time before checking if process is still alive
-                await new Promise<void>((resolve) => setTimeout(resolve, 1000))
-
+                if (!process.env.WDIO_UNIT_TESTING) {
+                    await new Promise<void>((resolve) => setTimeout(resolve, 1000))
+                }
                 // If process is still running, force kill with SIGKILL
                 if (this._workerProcess.exitCode === null && !this._workerProcess.killed) {
                     log.debug('Forcing worker process termination with SIGKILL')
@@ -290,44 +300,10 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             dispose: () => clearInterval(interval),
         })
     }
-
-    // emit<K extends keyof WdioExtensionWorkerEvents>(event: K, data: WdioExtensionWorkerEvents[K]): boolean {
-    //     return super.emit(event, data)
-    // }
-
-    // on<K extends keyof WdioExtensionWorkerEvents>(
-    //     event: K,
-    //     listener: (data: WdioExtensionWorkerEvents[K]) => void
-    // ): this {
-    //     return super.on(event, listener)
-    // }
 }
 
 function createRpcServer(): ExtensionApi {
     return {
         log: loggingFn,
-    }
-}
-
-async function loggingFn(_logLevel: NumericLogLevel, message: string) {
-    switch (_logLevel) {
-        case LOG_LEVEL.TRACE:
-            log.trace(message)
-            break
-        case LOG_LEVEL.DEBUG:
-            log.debug(message)
-            break
-        case LOG_LEVEL.ERROR:
-            log.error(message)
-            break
-        case LOG_LEVEL.WARN:
-            log.warn(message)
-            break
-        case LOG_LEVEL.INFO:
-            log.info(message)
-            break
-        default:
-            log.debug(message)
-            break
     }
 }

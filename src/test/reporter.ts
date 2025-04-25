@@ -11,11 +11,11 @@ import type { ResultSet, TestSuite, Test } from '../reporter/types.js'
 export class TestReporter {
     /**
      * Creates a new instance of TestReporter
-     * @param _registry The test registry containing all TestItems
+     * @param _repository The test repository containing all TestItems
      * @param _run The current test run
      */
     constructor(
-        private readonly _registry: TestRepository,
+        private readonly _repository: TestRepository,
         private readonly _run: vscode.TestRun
     ) {}
 
@@ -39,7 +39,7 @@ export class TestReporter {
 
                 for (const specPath of specPaths) {
                     // Get the spec file TestItem
-                    const specTestItem = this._registry.getSpecByFilePath(specPath)
+                    const specTestItem = this._repository.getSpecByFilePath(specPath)
 
                     if (!specTestItem) {
                         log.debug(`Spec file TestItem not found for path: ${specPath}`)
@@ -75,8 +75,8 @@ export class TestReporter {
      * @param parentItem The parent TestItem (spec file or parent suite)
      */
     private processHierarchicalSuite(suite: TestSuite, parentItem: vscode.TestItem): void {
-        // Find the suite TestItem in the registry
-        const suiteItem = this._registry.searchSuite(suite.name, parentItem)
+        // Find the suite TestItem in the repository
+        const suiteItem = this._repository.searchSuite(suite.name, parentItem)
 
         if (!suiteItem) {
             log.debug(`Suite TestItem not found for suite: ${suite.name}`)

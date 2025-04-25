@@ -7,15 +7,9 @@ import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 import { log } from '../utils/logger.js'
 
 import type { WebdriverIOConfig } from '../types.js'
+import type { ConfigPropertyNames, WorkspaceData } from './types.js'
 
-type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
-
-type WorkspaceData = {
-    workspaceFolder: vscode.WorkspaceFolder
-    wdioConfigFiles: string[]
-}
-
-class WdioConfig extends EventEmitter implements vscode.Disposable {
+export class ExtensionConfigManager extends EventEmitter implements vscode.Disposable {
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebdriverIOConfig
@@ -130,7 +124,6 @@ class WdioConfig extends EventEmitter implements vscode.Disposable {
     }
 }
 
-export const configManager = new WdioConfig()
 // TODO: Add Install command
 // To add install command, the following code seems to be used.
 // https://github.com/webdriverio/vscode-webdriverio/issues/8

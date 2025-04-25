@@ -21,11 +21,13 @@ export default class VscodeJsonReporter extends WDIOReporter {
     private _suiteRules: Record<string, string> = {}
 
     constructor(options: Reporters.Options) {
+        const outputDir = options.outputDir
+        options.outputDir = undefined
         super(options)
         if (!options.outputDir) {
             options.stdout = false
         }
-        this._outputDir = options.outputDir
+        this._outputDir = outputDir
     }
 
     // Track suite start to capture nesting information
@@ -61,7 +63,7 @@ export default class VscodeJsonReporter extends WDIOReporter {
     }
 
     onRunnerEnd(runner: RunnerStats) {
-        const json = this.#prepareJson(runner)
+        const json = this.prepareJson(runner)
 
         this.writeFile(runner.cid, JSON.stringify(json, null, 2))
     }
@@ -251,7 +253,7 @@ export default class VscodeJsonReporter extends WDIOReporter {
         return topLevelSuites
     }
 
-    #prepareJson(runner: RunnerStats) {
+    private prepareJson(runner: RunnerStats) {
         const resultSet: ResultSet = {
             start: runner.start,
             end: runner.end,

@@ -57,12 +57,14 @@ export type VscodeTestData = Omit<TestData, 'range' | 'children'> & {
 
 type RequireUri<T extends vscode.TestItem> = Omit<T, 'uri'> & Required<Pick<T, 'uri'>>
 
+export type BaseTestItemMetadata = {
+    isWorkspace: boolean
+    isConfigFile: boolean
+    isSpecFile: boolean
+}
+
 export interface WdioTestItem extends RequireUri<vscode.TestItem> {
-    metadata: {
-        isWorkspace: boolean
-        isConfigFile: boolean
-        isSpecFile: boolean
-    }
+    metadata: BaseTestItemMetadata
 }
 
 export interface WorkspaceTestItem extends WdioTestItem {

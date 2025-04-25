@@ -1,0 +1,36 @@
+name: Unit tests
+
+on:
+    workflow_call:
+        # Make this a reusable workflow, no value needed
+        # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+
+jobs:
+    unit:
+        name: Unit Tests (${{ matrix.os }}.${{ matrix.node-version }})
+        strategy:
+            fail-fast: false
+            matrix:
+                node-version: ['20']
+                os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+        runs-on: ${{ matrix.os }}
+        steps:
+            - name: 👷 Checkout
+              uses: actions/checkout@v4
+              with:
+                  ssh-key: ${{ secrets.DEPLOY_KEY }}
+
+            - name: 🛠️ Setup workspace
+              uses: ./.github/workflows/actions/setup-workspace
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: 🧪 Run the unit test
+              run: pnpm run test:unit
+              shell: bash
+
+            - name: 🐛 Debug Build
+              uses: stateful/vscode-server-action@v1.1.0
+              if: failure()
+              with:
+                  timeout: '180000'
