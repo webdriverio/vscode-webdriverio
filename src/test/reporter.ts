@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import type { TestRepository } from './repository.js'
+
 import { log } from '../utils/logger.js'
+import type { TestRepository } from './repository.js'
 import type { ResultSet, TestSuite, Test } from '../reporter/types.js'
 
 /**

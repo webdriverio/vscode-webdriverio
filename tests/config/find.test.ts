@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import path from 'node:path'
 import fs from 'node:fs/promises'
+import path from 'node:path'
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
 import { findWdioConfig } from '../../src/config/find.js'
 import { log } from '../../src/utils/logger.js'
 

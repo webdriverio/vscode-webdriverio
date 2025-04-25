@@ -1,6 +1,7 @@
-import * as vscode from 'vscode'
-import * as path from 'node:path'
 import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+import * as vscode from 'vscode'
 
 /**
  * Configure WebdriverIO test settings

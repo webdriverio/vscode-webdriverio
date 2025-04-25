@@ -1,11 +1,12 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import WDIOReporter, { type RunnerStats, type SuiteStats } from '@wdio/reporter'
-import type { Reporters } from '@wdio/types'
 
-import type { ResultSet, TestSuite } from './types.js'
+import WDIOReporter, { type RunnerStats, type SuiteStats } from '@wdio/reporter'
 
 import { mapHooks, mapTests } from './utils.js'
+
+import type { Reporters } from '@wdio/types'
+import type { ResultSet, TestSuite } from './types.js'
 
 export default class VscodeJsonReporter extends WDIOReporter {
     // Track suite order and nesting, similar to spec reporter

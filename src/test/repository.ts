@@ -1,11 +1,11 @@
-import * as path from 'node:path'
 import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { log } from '../utils/logger.js'
 import { convertPathToUri, convertTestData } from './converter.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
 import { filterSpecsByPaths } from './utils.js'
+import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTestItem } from './types.js'

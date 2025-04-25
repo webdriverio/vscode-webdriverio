@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
+
+import { serverManager } from './api/index.js'
 import { configureTests } from './commands/configureTests.js'
 import { configManager } from './config/index.js'
-import { serverManager } from './api/index.js'
 import { TestfileWatcher, repositoryManager } from './test/index.js'
 import { log } from './utils/logger.js'
 

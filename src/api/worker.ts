@@ -1,14 +1,14 @@
-import * as v8 from 'node:v8'
-import { resolve } from 'node:path'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createServer as createHttpServer, type Server } from 'node:http'
+import { resolve } from 'node:path'
+import * as v8 from 'node:v8'
 
-import getPort from 'get-port'
 import { createBirpc } from 'birpc'
+import getPort from 'get-port'
 import { WebSocketServer } from 'ws'
 
-import { log } from '../utils/logger.js'
 import { LOG_LEVEL } from '../constants.js'
+import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 import type { ExtensionApi, WorkerApi } from './types.js'

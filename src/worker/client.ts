@@ -1,11 +1,13 @@
 import v8 from 'node:v8'
-import { WebSocket } from 'ws'
+
 import { createBirpc } from 'birpc'
+import { WebSocket } from 'ws'
+
 import { createWorker } from './handler.js'
 import { getLogger } from './logger.js'
 
-import type { NumericLogLevel } from '../types.js'
 import type { ExtensionApi, WorkerApi } from '../api/index.js'
+import type { NumericLogLevel } from '../types.js'
 
 export function createRpcClient(cid: string, url: string) {
     let rpc: ExtensionApi | null = null

@@ -1,17 +1,18 @@
+import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
-import * as path from 'node:path'
-import * as fs from 'node:fs/promises'
 
-import { TestRepository } from '../../src/test/repository.js'
-import { parseAndConvertTestData } from '../../src/test/converter.js'
-import { TEST_ID_SEPARATOR } from '../../src/constants.js'
-import { log } from '../../src/utils/logger.js'
 import { configManager } from '../../src/config/index.js'
-import type { VscodeTestData } from '../../src/test/types.js'
+import { TEST_ID_SEPARATOR } from '../../src/constants.js'
+import { parseAndConvertTestData } from '../../src/test/converter.js'
+import { TestRepository } from '../../src/test/repository.js'
+import { log } from '../../src/utils/logger.js'
 import type { ConfigParser } from '@wdio/config/node'
 import type * as ConverterModule from '../../src/test/converter.js'
-import { fileURLToPath } from 'node:url'
+import type { VscodeTestData } from '../../src/test/types.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../__mocks__/vscode.js'))

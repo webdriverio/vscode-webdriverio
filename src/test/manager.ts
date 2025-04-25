@@ -1,16 +1,17 @@
 import { basename, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
 import * as vscode from 'vscode'
 
 import { convertPathToUri } from './converter.js'
 import { TestRepository } from './repository.js'
-import { configManager, testControllerId } from '../config/index.js'
+import { runHandler } from './runHandler.js'
 import { serverManager } from '../api/manager.js'
+import { configManager } from '../config/index.js'
+import { EXTENSION_ID, TEST_ID_SEPARATOR } from '../constants.js'
 import { log } from '../utils/logger.js'
 
 import type { WdioConfigTestItem, WorkspaceTestItem } from './types.js'
-import { runHandler } from './runHandler.js'
-import { TEST_ID_SEPARATOR } from '../constants.js'
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
@@ -22,7 +23,7 @@ class RepositoryManager implements vscode.Disposable {
     private _wdioConfigTestItems: WdioConfigTestItem[] = []
 
     constructor() {
-        this.controller = vscode.tests.createTestController(testControllerId, 'WebdriverIO')
+        this.controller = vscode.tests.createTestController(EXTENSION_ID, 'WebdriverIO')
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true

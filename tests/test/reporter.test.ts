@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
+
 import { TestReporter } from '../../src/test/reporter.js'
 import { log } from '../../src/utils/logger.js'
 
-import type { TestRepository } from '../../src/test/repository.js'
 import type { ResultSet, TestSuite, Test } from '../../src/reporter/types.js'
+import type { TestRepository } from '../../src/test/repository.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => {

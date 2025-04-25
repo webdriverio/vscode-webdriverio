@@ -1,9 +1,10 @@
+import { ConfigParser } from '@wdio/config/node'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
-import { ConfigParser } from '@wdio/config/node'
+
+import { findWdioConfig } from '../../src/config/find.js'
 import { configManager } from '../../src/config/index.js'
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../../src/constants.js'
-import { findWdioConfig } from '../../src/config/find.js'
 import { log } from '../../src/utils/logger.js'
 
 // Mock dependencies

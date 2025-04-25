@@ -1,7 +1,7 @@
+import { repositoryManager } from './manager.js'
 import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
 import { FileWatcherManager } from '../utils/watcher.js'
-import { repositoryManager } from './manager.js'
 
 import type * as vscode from 'vscode'
 

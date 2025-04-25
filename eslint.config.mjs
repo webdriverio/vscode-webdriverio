@@ -1,5 +1,6 @@
-import wdioEslint from '@wdio/eslint'
 import vitest from '@vitest/eslint-plugin'
+import wdioEslint from '@wdio/eslint'
+import * as pluginImportX from 'eslint-plugin-import-x'
 
 export default wdioEslint.config([
     {
@@ -12,6 +13,9 @@ export default wdioEslint.config([
         files: ['**/*.ts'],
     },
     {
+        plugins: {
+            'import-x': pluginImportX,
+        },
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/naming-convention': [
@@ -23,6 +27,16 @@ export default wdioEslint.config([
             ],
             '@stylistic/indent': ['error', 4, { SwitchCase: 1 }],
             'no-throw-literal': 'warn',
+            'import-x/order': [
+                'error',
+                {
+                    groups: ['builtin', 'external', ['sibling', 'parent'], 'type'],
+                    alphabetize: { order: 'asc' },
+                    sortTypesGroup: true,
+                    'newlines-between': 'always',
+                    'newlines-between-types': 'ignore',
+                },
+            ],
         },
     },
     {

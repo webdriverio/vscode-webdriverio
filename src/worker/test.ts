@@ -4,8 +4,8 @@ import { join, resolve } from 'node:path'
 import { Launcher } from './cli.js'
 
 import type { RunCommandArguments } from '@wdio/cli'
-import type { RunTestOptions, TestResult } from '../api/index.js'
 import type { WorkerMetaContext } from './types.js'
+import type { RunTestOptions, TestResult } from '../api/index.js'
 import type { LoggerInterface } from '../types.js'
 
 const VSCODE_REPORTER_PATH = resolve(__dirname, '../reporter/index.cjs')

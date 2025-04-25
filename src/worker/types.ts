@@ -1,6 +1,6 @@
-import type { LoggerInterface } from '../types.js'
-import type { SourceRange, TestData } from '../api/index.js'
 import type { WebSocket } from 'ws'
+import type { SourceRange, TestData } from '../api/index.js'
+import type { LoggerInterface } from '../types.js'
 
 export type TestCodeParser = (fileContent: string, uri: string) => TestData[]
 

@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
-import type { NumericLogLevel } from '../types.js'
 import type { TestData } from '../test/index.js'
+import type { NumericLogLevel } from '../types.js'
 
 export type WdioConfig = {
     specs: string[]

@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from './find.js'
@@ -6,8 +7,6 @@ import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 import { log } from '../utils/logger.js'
 
 import type { WebdriverIOConfig } from '../types.js'
-
-export const testControllerId = EXTENSION_ID
 
 type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
 

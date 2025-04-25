@@ -1,6 +1,6 @@
 import { LOG_LEVEL } from '../constants.js'
-import type { LoggerInterface, NumericLogLevel } from '../types.js'
 import type { ExtensionApi } from '../api/index.js'
+import type { LoggerInterface, NumericLogLevel } from '../types.js'
 
 const weakLoggers = new WeakMap<ExtensionApi, LoggerInterface>()
 

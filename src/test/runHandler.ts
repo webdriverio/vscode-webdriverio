@@ -1,18 +1,12 @@
 import * as vscode from 'vscode'
 
-import { log } from '../utils/logger.js'
+import { repositoryManager } from './manager.js'
+import { TestReporter } from './reporter.js'
+import { isConfig, isSpec, isTestcase, isWorkspace } from './utils.js'
 import { runWdio } from '../api/index.js'
-import {
-    repositoryManager,
-    TestReporter,
-    isConfig,
-    isSpec,
-    isTestcase,
-    isWorkspace,
-    type SpecFileTestItem,
-    type TestcaseTestItem,
-    type WdioConfigTestItem,
-} from './index.js'
+import { log } from '../utils/logger.js'
+
+import type { SpecFileTestItem, TestcaseTestItem, WdioConfigTestItem } from './types.js'
 
 // export function createRunHandler() {
 export async function runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {

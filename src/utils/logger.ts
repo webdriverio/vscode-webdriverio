@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import type { LoggerInterface, WdioLogLevel } from '../types.js'
+
 import { EXTENSION_ID, LOG_LEVEL } from '../constants.js'
+import type { LoggerInterface, WdioLogLevel } from '../types.js'
 
 export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
     [LOG_LEVEL.TRACE]: 'TRACE',

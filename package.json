@@ -127,6 +127,7 @@
         "chai": "^5.2.0",
         "esbuild": "^0.25.1",
         "eslint": "^9.23.0",
+        "eslint-plugin-import-x": "^4.10.6",
         "glob": "^11.0.1",
         "husky": "^9.1.7",
         "jest-mock-vscode": "^4.3.1",
@@ -155,7 +156,8 @@
     "pnpm": {
         "onlyBuiltDependencies": [
             "edgedriver",
-            "geckodriver"
+            "geckodriver",
+            "unrs-resolver"
         ]
     },
     "lint-staged": {

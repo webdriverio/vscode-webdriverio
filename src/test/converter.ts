@@ -1,6 +1,8 @@
-import * as vscode from 'vscode'
-import type { TestData, SourceRange, VscodeTestData } from './types.js'
 import path from 'node:path'
+
+import * as vscode from 'vscode'
+
+import type { TestData, SourceRange, VscodeTestData } from './types.js'
 import type { ReadSpecsResult } from '../api/index.js'
 /**
  * Convert the parser's TestData to VSCode compatible TestData

@@ -1,8 +1,7 @@
-import * as os from 'node:os'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { log } from '../utils/logger.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
 import {
     isConfig,
@@ -13,10 +12,11 @@ import {
     type WdioConfigTestItem,
     type TestcaseTestItem,
 } from '../test/index.js'
+import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
-import type { ResultSet } from '../reporter/types.js'
 import type { RunTestOptions } from './types.js'
+import type { ResultSet } from '../reporter/types.js'
 
 export async function runWdio(test: vscode.TestItem) {
     if (!isWdioTestItem(test)) {

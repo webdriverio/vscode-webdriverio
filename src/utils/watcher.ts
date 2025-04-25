@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+
 import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
 

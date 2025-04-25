@@ -1,6 +1,6 @@
 import { loadWdioConfig } from './cli.js'
-import { runTest } from './test.js'
 import { parse } from './parsers/index.js'
+import { runTest } from './test.js'
 
 import type { WorkerMetaContext } from './types.js'
 import type { WorkerApi } from '../api/index.js'
