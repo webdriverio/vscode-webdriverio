@@ -29,15 +29,13 @@ class WdioExtension implements vscode.Disposable {
         await configManager.initialize()
         const configPaths = configManager.getWdioConfigPaths()
 
-        // Start worker process
-        try {
-            await serverManager.start(configPaths)
-        } catch (error) {
+        // Start worker process asynchronously
+        serverManager.start(configPaths).catch((error) => {
             const errorMessage = `Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`
             log.error(errorMessage)
             vscode.window.showErrorMessage('Failed to start WebdriverIO worker process')
             return
-        }
+        })
 
         // Create file watchers
         const testfileWatcher = new TestfileWatcher()
