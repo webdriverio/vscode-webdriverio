@@ -69,7 +69,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                 ...process.env,
                 WDIO_EXTENSION_WORKER_CID: this.cid,
                 WDIO_EXTENSION_WORKER_WS_URL: wsUrl,
-                FORCE_COLOR: '0',
+                FORCE_COLOR: '1',
             }
             // @ts-expect-error
             delete env.ELECTRON_RUN_AS_NODE

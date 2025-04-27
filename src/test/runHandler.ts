@@ -71,11 +71,9 @@ export async function runHandler(request: vscode.TestRunRequest, token: vscode.C
                 reporter.updateTestStatus(result.detail)
             }
             if (result.log) {
-                run.appendOutput('* -- Report of the WebdriverIO ----------------------------------------------- *\r\n')
                 run.appendOutput(result.log.replace(/\n/g, '\r\n'))
             }
             if (runner.stdout && configManager.globalConfig.showOutput) {
-                run.appendOutput('* -- Output of the WebdriverIO ----------------------------------------------- *\r\n')
                 run.appendOutput(runner.stdout.replace(/\n/g, '\r\n'))
             }
         } catch (e) {
