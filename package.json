@@ -89,7 +89,7 @@
                 "webdriverio.showOutput": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Show WebdriverIO output in terminal"
+                    "description": "Show WebdriverIO output in the test result"
                 }
             }
         }

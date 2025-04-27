@@ -1,3 +1,4 @@
+import type EventEmitter from 'node:events'
 import type * as vscode from 'vscode'
 import type { TestData } from '../test/index.js'
 import type { NumericLogLevel } from '../types.js'
@@ -57,8 +58,6 @@ export type ExtensionApi = {
 
 // Test run options
 export interface RunTestOptions {
-    // Path to the test result files
-    outputDir?: string
     // Path to WebdriverIO config file
     configPath: string
     // Spec files to run (optional)
@@ -75,9 +74,12 @@ export interface TestResult {
     success: boolean
     // Test output text
     stdout: string
+    // Test stderr
     stderr?: string
     // Error message if any
     error?: string
+    // The detail test result (this is set the stringified json data)
+    json: string
 }
 
 export interface EventReady {
@@ -114,6 +116,25 @@ export interface WorkerRunnerOptions {
     meta: WorkerInitMetadata
     debug: boolean
     astCollect: boolean
+}
+
+export interface WdioExtensionWorkerInterface extends EventEmitter {
+    cid: string
+    rpc: WorkerApi
+    start(): Promise<void>
+    stop(): Promise<void>
+    isConnected(): boolean
+    ensureConnected(): Promise<void>
+    emit<K extends keyof WdioExtensionWorkerEvents>(event: K, data: WdioExtensionWorkerEvents[K]): boolean
+    on<K extends keyof WdioExtensionWorkerEvents>(
+        event: K,
+        listener: (data: WdioExtensionWorkerEvents[K]) => void
+    ): this
+}
+
+export interface WdioExtensionWorkerEvents {
+    stdout: string
+    stderr: string
 }
 
 export type { TestData }

@@ -52,7 +52,7 @@ class ServerManager implements vscode.Disposable {
     private async startWorker(id: number, configPaths: string) {
         const strId = `#${String(id)}`
         const server = new WdioExtensionWorker(strId, configPaths)
-        await server._start()
+        await server.start()
         log.debug(`[server manager] server was resisted: ${configPaths}`)
         this._serverPool.set(configPaths, server)
         return server

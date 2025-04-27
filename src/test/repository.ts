@@ -9,7 +9,7 @@ import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTestItem } from './types.js'
-import type { WdioExtensionWorker } from '../api/index.js'
+import type { WdioExtensionWorkerInterface } from '../api/index.js'
 
 /**
  * TestRepository class that manages all WebdriverIO tests at
@@ -22,7 +22,7 @@ export class TestRepository implements vscode.Disposable {
     private _framework: string | undefined = undefined
     constructor(
         public readonly controller: vscode.TestController,
-        public readonly worker: WdioExtensionWorker,
+        public readonly worker: WdioExtensionWorkerInterface,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: WdioConfigTestItem
     ) {}

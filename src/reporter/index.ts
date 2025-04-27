@@ -23,7 +23,7 @@ export default class VscodeJsonReporter extends WDIOReporter {
     constructor(options: Reporters.Options) {
         super(options)
         if (!options.outputDir) {
-            options.stdout = true
+            options.stdout = false
         }
         this._outputDir = options.outputDir
     }
@@ -63,7 +63,6 @@ export default class VscodeJsonReporter extends WDIOReporter {
     onRunnerEnd(runner: RunnerStats) {
         const json = this.#prepareJson(runner)
 
-        this.write(JSON.stringify(json))
         this.writeFile(runner.cid, JSON.stringify(json, null, 2))
     }
 

@@ -49,7 +49,6 @@ class WdioExtension implements vscode.Disposable {
             configManager,
         ]
 
-        // await new Promise((resolve) => setTimeout(resolve, 3000))
         await repositoryManager.initialize()
         Promise.all(
             repositoryManager.repos.map(async (repo) => {

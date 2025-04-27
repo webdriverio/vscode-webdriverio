@@ -3,7 +3,8 @@ import * as vscode from 'vscode'
 import { repositoryManager } from './manager.js'
 import { TestReporter } from './reporter.js'
 import { isConfig, isSpec, isTestcase, isWorkspace } from './utils.js'
-import { runWdio } from '../api/index.js'
+import { TestRunner } from '../api/index.js'
+import { configManager } from '../config/index.js'
 import { log } from '../utils/logger.js'
 
 import type { SpecFileTestItem, TestcaseTestItem, WdioConfigTestItem } from './types.js'
@@ -62,11 +63,20 @@ export async function runHandler(request: vscode.TestRunRequest, token: vscode.C
         markTestsAsRunning(run, _test)
 
         try {
-            const result = await runWdio(_test)
+            const runner = new TestRunner(_test.metadata.repository.worker)
+            const result = await runner.run(_test)
 
             if (result.detail && result.detail.length > 0) {
                 // Update test status based on actual test results
                 reporter.updateTestStatus(result.detail)
+            }
+            if (result.log) {
+                run.appendOutput('* -- Report of the WebdriverIO ----------------------------------------------- *\r\n')
+                run.appendOutput(result.log.replace(/\n/g, '\r\n'))
+            }
+            if (runner.stdout && configManager.globalConfig.showOutput) {
+                run.appendOutput('* -- Output of the WebdriverIO ----------------------------------------------- *\r\n')
+                run.appendOutput(runner.stdout.replace(/\n/g, '\r\n'))
             }
         } catch (e) {
             // Runtime error handling

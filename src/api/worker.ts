@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process'
+import EventEmitter from 'node:events'
 import { createServer as createHttpServer, type Server } from 'node:http'
 import { resolve } from 'node:path'
 import * as v8 from 'node:v8'
@@ -11,15 +12,11 @@ import { LOG_LEVEL } from '../constants.js'
 import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
-import type { ExtensionApi, WorkerApi } from './types.js'
+import type { ExtensionApi, WdioExtensionWorkerInterface, WorkerApi } from './types.js'
 import type { NumericLogLevel } from '../types.js'
 
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
-
-/**
- * Manages the WebdriverIO worker process
- */
-export class WdioExtensionWorker {
+export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWorkerInterface {
     public cid: string
     private _workerProcess: ChildProcess | null = null
     private _workerRpc: WorkerApi | null = null
@@ -31,6 +28,7 @@ export class WdioExtensionWorker {
     private _cwd: string
 
     constructor(cid: string = '#0', cwd: string) {
+        super()
         this.cid = cid
         this._cwd = cwd
 
@@ -49,7 +47,7 @@ export class WdioExtensionWorker {
     /**
      * Start the worker process
      */
-    async _start(): Promise<void> {
+    public async start(): Promise<void> {
         if (this._workerProcess) {
             log.debug('Worker already running')
             return
@@ -99,13 +97,9 @@ export class WdioExtensionWorker {
 
     private setListeners(wp: ChildProcess) {
         // Handle process output
-        wp.stdout?.on('data', (data) => {
-            log.debug(`[Worker stdout] ${data.toString().trim()}`)
-        })
+        wp.stdout?.on('data', (data) => this.workerOutHandler('stdout', data))
 
-        wp.stderr?.on('data', (data) => {
-            log.debug(`[Worker stderr] ${data.toString().trim()}`)
-        })
+        wp.stderr?.on('data', (data) => this.workerOutHandler('stderr', data))
 
         // Handle process exit
         wp.on('exit', (code) => {
@@ -114,6 +108,12 @@ export class WdioExtensionWorker {
             this._workerRpc = null
             this._workerConnected = false
         })
+    }
+
+    private workerOutHandler(event: 'stdout' | 'stderr', data: any) {
+        const payload = data.toString().trim()
+        log.debug(`[Worker${this.cid} ${event}] ${payload}`)
+        this.emit(event, payload)
     }
 
     /**
@@ -167,7 +167,7 @@ export class WdioExtensionWorker {
     /**
      * Stop the worker process
      */
-    async stop(): Promise<void> {
+    public async stop(): Promise<void> {
         let shutdownSucceeded = false
 
         // Set a timeout for graceful shutdown
@@ -241,7 +241,7 @@ export class WdioExtensionWorker {
     /**
      * Get worker RPC interface
      */
-    get rpc(): WorkerApi {
+    public get rpc(): WorkerApi {
         if (!this._workerRpc || !this._workerConnected) {
             throw new Error('Worker not connected')
         }
@@ -251,17 +251,17 @@ export class WdioExtensionWorker {
     /**
      * Check if worker is connected
      */
-    isConnected(): boolean {
+    public isConnected(): boolean {
         return this._workerConnected
     }
 
     /**
      * Restart worker if it's not connected
      */
-    async ensureConnected(): Promise<void> {
+    public async ensureConnected(): Promise<void> {
         if (!this.isConnected()) {
             await this.stop()
-            await this._start()
+            await this.start()
         }
     }
 
@@ -278,7 +278,7 @@ export class WdioExtensionWorker {
                     log.warn('Worker health check failed: unexpected response')
                     await this.ensureConnected()
                 } else {
-                    log.trace('Worker health check success!')
+                    log.trace(`[${this.cid}] Worker health check success!`)
                 }
             } catch (error) {
                 log.warn(`Worker health check failed: ${error instanceof Error ? error.message : String(error)}`)
@@ -290,6 +290,17 @@ export class WdioExtensionWorker {
             dispose: () => clearInterval(interval),
         })
     }
+
+    // emit<K extends keyof WdioExtensionWorkerEvents>(event: K, data: WdioExtensionWorkerEvents[K]): boolean {
+    //     return super.emit(event, data)
+    // }
+
+    // on<K extends keyof WdioExtensionWorkerEvents>(
+    //     event: K,
+    //     listener: (data: WdioExtensionWorkerEvents[K]) => void
+    // ): this {
+    //     return super.on(event, listener)
+    // }
 }
 
 function createRpcServer(): ExtensionApi {
