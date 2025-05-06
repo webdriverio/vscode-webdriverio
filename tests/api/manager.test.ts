@@ -2,13 +2,15 @@ import { dirname, join, normalize } from 'node:path'
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-import { ServerManager } from '../../src/api/manager'
-import { WdioExtensionWorker } from '../../src/api/worker'
+import { ServerManager } from '../../src/api/manager.js'
+import { WdioExtensionWorker } from '../../src/api/worker.js'
 
 // Mock the worker.js module
 vi.mock('../../src/api/worker.js', () => {
     const WdioExtensionWorker = vi.fn(function (cid, configPath) {
+        // @ts-ignore
         this.cid = cid
+        // @ts-ignore
         this.configPath = configPath
     })
     WdioExtensionWorker.prototype.start = vi.fn().mockResolvedValue(undefined)

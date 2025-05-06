@@ -3,8 +3,8 @@ import { join } from 'node:path'
 import * as chai from 'chai'
 import * as vscode from 'vscode'
 
-import { convertTestData, convertPathToUri, isCucumberFeatureFile } from '../../src/test/converter'
-import type { ReadSpecsResult } from '../../src/api/index'
+import { convertTestData, convertPathToUri, isCucumberFeatureFile } from '../../src/test/converter.js'
+import type { ReadSpecsResult } from '../../src/api/index.js'
 
 const expect = chai.expect
 

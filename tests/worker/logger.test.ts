@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { LOG_LEVEL } from '../../src/constants.js'
-import { getLogger } from '../../src/worker/logger'
+import { getLogger } from '../../src/worker/logger.js'
 import type { ExtensionApi } from '../../src/api/index.js'
 
 describe('Logger', () => {

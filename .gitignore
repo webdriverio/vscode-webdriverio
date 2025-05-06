@@ -1,6 +1,8 @@
 out
 dist
 node_modules
-.vscode-test/
+.vscode-test
+.wdio-vscode-service
 *.vsix
 coverage
+e2e/logs

@@ -348,7 +348,7 @@ describe('WdioExtensionWorker', () => {
             expect(workerOutSpy).toHaveBeenCalledWith('stderr', 'stderr data')
 
             // Simulate exit event
-            mockChildProcess.on.mock.calls.find((call) => call[0] === 'exit')[1](0)
+            mockChildProcess.on.mock.calls.find((call: string[]) => call[0] === 'exit')[1](0)
 
             // Verify worker state was reset
             expect((worker as any)._workerProcess).toBe(null)

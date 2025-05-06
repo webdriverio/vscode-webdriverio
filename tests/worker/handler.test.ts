@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { Launcher } from '../../src/worker/cli.js'
-import { createWorker } from '../../src/worker/handler'
+import { createWorker } from '../../src/worker/handler.js'
 import * as parsers from '../../src/worker/parsers/index.js'
 import * as test from '../../src/worker/test.js'
 

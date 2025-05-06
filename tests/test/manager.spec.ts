@@ -4,13 +4,13 @@ import * as chai from 'chai'
 import * as sinon from 'sinon'
 import * as vscode from 'vscode'
 
-import { ServerManager } from '../../src/api/index.ts'
-import { ExtensionConfigManager } from '../../src/config/index'
-import { EXTENSION_ID, TEST_ID_SEPARATOR } from '../../src/constants'
-import { RepositoryManager } from '../../src/test/manager'
-import { TestRepository } from '../../src/test/repository.ts'
-import type { WorkspaceData } from '../../src/config/types.ts'
-import type { WdioConfigTestItem, WorkspaceTestItem } from '../../src/test/types.ts'
+import { ServerManager } from '../../src/api/index.js'
+import { ExtensionConfigManager } from '../../src/config/index.js'
+import { EXTENSION_ID, TEST_ID_SEPARATOR } from '../../src/constants.js'
+import { RepositoryManager } from '../../src/test/manager.js'
+import { TestRepository } from '../../src/test/repository.js'
+import type { WorkspaceData } from '../../src/config/types.js'
+import type { WdioConfigTestItem, WorkspaceTestItem } from '../../src/test/types.js'
 
 const expect = chai.expect
 
@@ -25,7 +25,7 @@ describe('RepositoryManager', () => {
 
     const configManager = new ExtensionConfigManager()
     const serverManager = new ServerManager()
-    let repositoryManager
+    let repositoryManager: RepositoryManager
 
     const workspacePath = join(process.cwd(), 'fake', 'workspace')
     const configPath = join(workspacePath, 'wdio.conf.ts')

@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { WebSocket } from 'ws'
 
 import { LOG_LEVEL } from '../../src/constants.js'
-import { createRpcClient } from '../../src/worker/client'
+import { createRpcClient } from '../../src/worker/client.js'
 import * as handler from '../../src/worker/handler.js'
 import * as logger from '../../src/worker/logger.js'
 

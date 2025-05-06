@@ -4,10 +4,11 @@ import { join } from 'node:path'
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Import the module we're testing
-import { Launcher } from '../../src/worker/cli.ts'
-import { runTest } from '../../src/worker/test'
+import { Launcher } from '../../src/worker/cli.js'
+import { runTest } from '../../src/worker/test.js'
+
 import type { Dirent } from 'node:fs'
+import type { WorkerMetaContext } from '../../src/worker/types.js'
 
 // Mock dependencies
 vi.mock('node:fs/promises')
@@ -30,7 +31,7 @@ describe('runTest', () => {
 
     const mockContext = {
         log: mockLog,
-    }
+    } as unknown as WorkerMetaContext
 
     const mockOptions = {
         configPath: '/path/to/wdio.conf.js',

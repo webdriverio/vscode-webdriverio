@@ -1,28 +1,5 @@
 {
-    "compilerOptions": {
-        "module": "NodeNext",
-        "target": "es2022",
-        "moduleResolution": "node16",
+    "extends": "./tsconfig.base.json",
 
-        "lib": ["ES2022"],
-        "sourceMap": true,
-        "strict": true /* enable all strict type-checking options */,
-        "skipLibCheck": true
-        /* Additional Checks */
-        // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-        // "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-        // "noUnusedParameters": true,  /* Report errors on unused parameters. */
-    },
-    "exclude": [
-        "tests", // temporary excluded
-        "coverage",
-        "examples",
-        "node_modules",
-        "**/node_modules/*",
-        "__mocks__",
-        "**/*.spec.ts",
-        "*.js",
-        "*.cjs",
-        "*.mjs"
-    ]
+    "exclude": ["e2e"]
 }
