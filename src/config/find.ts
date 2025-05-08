@@ -4,6 +4,7 @@ import path from 'node:path'
 import { glob } from 'glob'
 
 import { log } from '../utils/logger.js'
+import { normalizePath } from '../utils/normalize.js'
 
 export async function findWdioConfig(workSpaceRoot: string, configFilePattern: string[]) {
     log.debug(`Target workspace path: ${workSpaceRoot}`)
@@ -22,7 +23,7 @@ export async function findWdioConfig(workSpaceRoot: string, configFilePattern: s
                 log.debug(`Checking the path: ${wdioConfigPath}`)
                 try {
                     await fs.access(wdioConfigPath, fs.constants.R_OK)
-                    return wdioConfigPath
+                    return normalizePath(wdioConfigPath)
                 } catch {
                     return undefined
                 }

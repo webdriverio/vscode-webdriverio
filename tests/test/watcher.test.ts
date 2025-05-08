@@ -1,8 +1,10 @@
+import { normalize } from 'node:path'
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { TestfileWatcher } from '../../src/test/watcher.js'
 import { log } from '../../src/utils/logger.js'
-
+import { FileWatcherManager } from '../../src/utils/watcher.js'
 import type * as vscode from 'vscode'
 import type { ExtensionConfigManager } from '../../src/config/index.js'
 import type { RepositoryManager } from '../../src/test/manager.js'
@@ -23,6 +25,7 @@ vi.mock('../../src/utils/watcher.js', () => {
     FileWatcherManager.prototype.onFileChange = vi.fn()
     FileWatcherManager.prototype.onFileDelete = vi.fn()
     FileWatcherManager.prototype.refreshWatchers = vi.fn()
+    FileWatcherManager.prototype.createWatchers = vi.fn()
     return { FileWatcherManager }
 })
 
@@ -47,14 +50,12 @@ describe('TestfileWatcher', () => {
             getSpecByFilePath: vi.fn(),
             reloadSpecFiles: vi.fn().mockResolvedValue(undefined),
             removeSpecFile: vi.fn(),
-            normalizePath: vi.fn().mockImplementation((path) => path),
         }
 
         mockRepo2 = {
             getSpecByFilePath: vi.fn(),
             reloadSpecFiles: vi.fn().mockResolvedValue(undefined),
             removeSpecFile: vi.fn(),
-            normalizePath: vi.fn().mockImplementation((path) => path),
         }
 
         // Create mock repository manager
@@ -77,18 +78,15 @@ describe('TestfileWatcher', () => {
 
     describe('enable', () => {
         it('should register event handlers', () => {
+            const mock = vi.fn()
+            FileWatcherManager.prototype['createWatchers'] = mock
+
             watcher = new TestfileWatcher(mockConfigManager, mockRepositoryManager)
-            // Setup
-            const onFileCreateSpy = vi.spyOn(watcher as any, 'onFileCreate')
-            const onFileChangeSpy = vi.spyOn(watcher as any, 'onFileChange')
-            const onFileDeleteSpy = vi.spyOn(watcher as any, 'onFileDelete')
 
             // Execute
             watcher.enable()
             // Verify
-            expect(onFileCreateSpy).toHaveBeenCalled()
-            expect(onFileChangeSpy).toHaveBeenCalled()
-            expect(onFileDeleteSpy).toHaveBeenCalled()
+            expect(mock).toHaveBeenCalled()
             expect(mockConfigManager.on).toHaveBeenCalledWith('update:testFilePattern', expect.any(Function))
         })
     })
@@ -96,13 +94,13 @@ describe('TestfileWatcher', () => {
     describe('handleFileChange', () => {
         it('should process file creation correctly', async () => {
             // Execute
-            await (watcher as any).handleFileChange(mockUri, true)
+            await watcher['handleFileCreate'](mockUri)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file created: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 2 repositories')
-            expect(mockRepo1.reloadSpecFiles).toHaveBeenCalledWith(['/path/to/test/file.spec.js'])
-            expect(mockRepo2.reloadSpecFiles).toHaveBeenCalledWith(['/path/to/test/file.spec.js'])
+            expect(mockRepo1.reloadSpecFiles).toHaveBeenCalledWith([normalize('/path/to/test/file.spec.js')])
+            expect(mockRepo2.reloadSpecFiles).toHaveBeenCalledWith([normalize('/path/to/test/file.spec.js')])
         })
 
         it('should process file modification correctly', async () => {
@@ -111,12 +109,12 @@ describe('TestfileWatcher', () => {
             mockRepo2.getSpecByFilePath.mockReturnValue(false)
 
             // Execute
-            await (watcher as any).handleFileChange(mockUri, false)
+            await watcher['handleFileChange'](mockUri)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file changed: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 1 repositories')
-            expect(mockRepo1.reloadSpecFiles).toHaveBeenCalledWith(['/path/to/test/file.spec.js'])
+            expect(mockRepo1.reloadSpecFiles).toHaveBeenCalledWith([normalize('/path/to/test/file.spec.js')])
             expect(mockRepo2.reloadSpecFiles).not.toHaveBeenCalled()
         })
 
@@ -126,28 +124,13 @@ describe('TestfileWatcher', () => {
             mockRepo2.getSpecByFilePath.mockReturnValue(false)
 
             // Execute
-            await (watcher as any).handleFileChange(mockUri, false)
+            await watcher['handleFileChange'](mockUri)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file changed: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 0 repositories')
             expect(mockRepo1.reloadSpecFiles).not.toHaveBeenCalled()
             expect(mockRepo2.reloadSpecFiles).not.toHaveBeenCalled()
-        })
-
-        it('should normalize paths when reloading spec files', async () => {
-            // Setup
-            mockRepo1.normalizePath.mockReturnValue('/normalized/path1')
-            mockRepo2.normalizePath.mockReturnValue('/normalized/path2')
-            mockRepo1.getSpecByFilePath.mockReturnValue(true)
-            mockRepo2.getSpecByFilePath.mockReturnValue(true)
-
-            // Execute
-            await (watcher as any).handleFileChange(mockUri, false)
-
-            // Verify
-            expect(mockRepo1.reloadSpecFiles).toHaveBeenCalledWith(['/normalized/path1'])
-            expect(mockRepo2.reloadSpecFiles).toHaveBeenCalledWith(['/normalized/path2'])
         })
     })
 
@@ -158,12 +141,12 @@ describe('TestfileWatcher', () => {
             mockRepo2.getSpecByFilePath.mockReturnValue(false)
 
             // Execute
-            await (watcher as any).handleFileDelete(mockUri)
+            await watcher['handleFileDelete'](mockUri)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file deleted: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 1 repositories')
-            expect(mockRepo1.removeSpecFile).toHaveBeenCalledWith('/path/to/test/file.spec.js')
+            expect(mockRepo1.removeSpecFile).toHaveBeenCalledWith(normalize('/path/to/test/file.spec.js'))
             expect(mockRepo2.removeSpecFile).not.toHaveBeenCalled()
         })
 
@@ -173,28 +156,13 @@ describe('TestfileWatcher', () => {
             mockRepo2.getSpecByFilePath.mockReturnValue(false)
 
             // Execute
-            await (watcher as any).handleFileDelete(mockUri)
+            await watcher['handleFileDelete'](mockUri)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file deleted: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 0 repositories')
             expect(mockRepo1.removeSpecFile).not.toHaveBeenCalled()
             expect(mockRepo2.removeSpecFile).not.toHaveBeenCalled()
-        })
-
-        it('should normalize paths when removing spec files', async () => {
-            // Setup
-            mockRepo1.normalizePath.mockReturnValue('/normalized/path1')
-            mockRepo2.normalizePath.mockReturnValue('/normalized/path2')
-            mockRepo1.getSpecByFilePath.mockReturnValue(true)
-            mockRepo2.getSpecByFilePath.mockReturnValue(true)
-
-            // Execute
-            await (watcher as any).handleFileDelete(mockUri)
-
-            // Verify
-            expect(mockRepo1.removeSpecFile).toHaveBeenCalledWith('/normalized/path1')
-            expect(mockRepo2.removeSpecFile).toHaveBeenCalledWith('/normalized/path2')
         })
     })
 })

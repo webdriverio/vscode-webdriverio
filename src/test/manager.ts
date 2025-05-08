@@ -23,7 +23,7 @@ import type { ExtensionConfigManager } from '../config/index.js'
 const LOADING_TEST_ITEM_ID = '_resolving'
 
 export class RepositoryManager implements vscode.Disposable {
-    public readonly repos: TestRepository[] = []
+    private readonly _repos = new Set<TestRepository>()
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: WorkspaceTestItem[] = []
     private _wdioConfigTestItems: WdioConfigTestItem[] = []
@@ -41,6 +41,10 @@ export class RepositoryManager implements vscode.Disposable {
             log.info('Refreshing WebdriverIO tests...')
             await this.refreshTests()
         }
+    }
+
+    public get repos() {
+        return Array.from(this._repos)
     }
 
     public async initialize() {
@@ -71,6 +75,55 @@ export class RepositoryManager implements vscode.Disposable {
             })
         )
         log.debug('Finish initialize the RepositoryManager')
+    }
+
+    public async addWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string) {
+        const affectedWorkspaceItems = this._workspaceTestItems.filter((item) => {
+            return item.uri?.fsPath === workspaceUri.fsPath
+        })
+        for (const workspaceTestItem of affectedWorkspaceItems) {
+            const configTestItem = await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigPath)
+
+            // Create run profile
+            createRunProfile(this, wdioConfigPath, false)
+
+            await configTestItem.metadata.repository.discoverAllTests()
+            if (!this.configManager.isMultiWorkspace) {
+                this.controller.items.add(configTestItem)
+            }
+        }
+    }
+
+    public removeWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string) {
+        const affectedWorkspaceItems = this._workspaceTestItems.filter((item) => {
+            return item.uri?.fsPath === workspaceUri.fsPath
+        })
+        log.debug(`Remove the config file from ${affectedWorkspaceItems.length} workspace(s)`)
+        const configUri = convertPathToUri(wdioConfigPath)
+        for (const workspaceItem of affectedWorkspaceItems) {
+            const config = workspaceItem.children.get(
+                this.generateConfigTestItemId(workspaceItem, configUri)
+            ) as WdioConfigTestItem
+            if (!config) {
+                continue
+            }
+            log.debug(`Remove the TestItem: ${config.id}`)
+            const targetRepo = config.metadata.repository
+            targetRepo.dispose()
+            this._repos.delete(targetRepo)
+
+            workspaceItem.children.delete(config.id)
+            if (this.configManager.isMultiWorkspace) {
+                if (workspaceItem.children.size < 1) {
+                    log.debug(`Remove Workspace from the controller: ${workspaceItem.id}`)
+                    this.controller.items.delete(workspaceItem.id)
+                }
+            } else {
+                const targetId = this.generateConfigTestItemId(workspaceItem, configUri)
+                log.debug(`Remove Configuration from the controller: ${targetId}`)
+                this.controller.items.delete(targetId)
+            }
+        }
     }
 
     /**
@@ -104,7 +157,7 @@ export class RepositoryManager implements vscode.Disposable {
     private async createWdioConfigTestItem(workspaceTestItem: WorkspaceTestItem, wdioConfigPath: string) {
         const configUri = convertPathToUri(wdioConfigPath)
         const configItem = this.controller.createTestItem(
-            [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR),
+            this.generateConfigTestItemId(workspaceTestItem, configUri),
             basename(wdioConfigPath),
             configUri
         ) as WdioConfigTestItem
@@ -114,7 +167,7 @@ export class RepositoryManager implements vscode.Disposable {
 
         const worker = await this.serverManager.getConnection(wdioConfigPath)
         const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem)
-        this.repos.push(repo)
+        this._repos.add(repo)
 
         configItem['metadata'] = {
             isWorkspace: false,
@@ -124,6 +177,10 @@ export class RepositoryManager implements vscode.Disposable {
         }
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
         return configItem
+    }
+
+    private generateConfigTestItemId(workspaceTestItem: WorkspaceTestItem, configUri: vscode.Uri) {
+        return [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR)
     }
 
     /**
@@ -138,7 +195,7 @@ export class RepositoryManager implements vscode.Disposable {
             },
             async () => {
                 try {
-                    for (const repo of this.repos) {
+                    for (const repo of this._repos) {
                         // Clear existing tests
                         repo.clearTests()
                         // Discover tests again
@@ -156,7 +213,7 @@ export class RepositoryManager implements vscode.Disposable {
     }
 
     public dispose() {
-        this.repos.splice(0)
+        this._repos.clear()
         this._workspaceTestItems = []
         this._wdioConfigTestItems = []
     }

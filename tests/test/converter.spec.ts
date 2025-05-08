@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import * as chai from 'chai'
 import * as vscode from 'vscode'
 
-import { convertTestData, convertPathToUri, isCucumberFeatureFile } from '../../src/test/converter.js'
+import { convertTestData, convertPathToUri, isCucumberFeatureFile, convertUriToPath } from '../../src/test/converter.js'
 import type { ReadSpecsResult } from '../../src/api/index.js'
 
 const expect = chai.expect
@@ -86,6 +86,20 @@ describe('Converter', () => {
             expect(result).to.be.an.instanceOf(vscode.Uri)
             expect(result.scheme).to.equal('file')
             expect(result.fsPath).to.equal(vscode.Uri.file(filePath).fsPath)
+        })
+    })
+
+    describe('convertUriToPath', () => {
+        it('should convert file path to VSCode URI - Windows', () => {
+            const filePath = join(process.cwd(), 'path', 'to', 'spec.js')
+            const uri = vscode.Uri.file(filePath)
+            const result = convertUriToPath(uri)
+
+            expect(result).to.equal(filePath)
+            if (process.platform === 'win32') {
+                expect(filePath).to.match(/^([A-Z]):/)
+                expect(result).to.match(/^([A-Z]):/)
+            }
         })
     })
 

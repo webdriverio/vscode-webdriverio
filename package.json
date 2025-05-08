@@ -159,7 +159,6 @@
         "@cucumber/gherkin": "^32.1.0",
         "@cucumber/messages": "^27.2.0",
         "@types/shelljs": "^0.8.15",
-        "@wdio/config": "^9.12.5",
         "@wdio/reporter": "^9.12.3",
         "birpc": "^2.3.0",
         "get-port": "^7.1.0",

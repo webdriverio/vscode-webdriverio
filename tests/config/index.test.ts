@@ -20,6 +20,9 @@ vi.mock('vscode', () => {
     }
 })
 vi.mock('../../src/config/find.js')
+vi.mock('../../src/config/watcher.js', () => {
+    return {}
+})
 vi.mock('../../src/utils/logger.js', () => ({
     log: {
         debug: vi.fn(),
@@ -190,7 +193,7 @@ describe('ExtensionConfigManager', () => {
     describe('initialize', () => {
         it('should return empty array when no workspace folders', async () => {
             // Setup
-            ;(vscode.workspace.workspaceFolders as any) = undefined
+            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [] })
 
             // Execute
             const result = await configManager.initialize()
@@ -206,7 +209,9 @@ describe('ExtensionConfigManager', () => {
             const mockWorkspaceFolder1 = { uri: { fsPath: '/workspace1' } } as vscode.WorkspaceFolder
             const mockWorkspaceFolder2 = { uri: { fsPath: '/workspace2' } } as vscode.WorkspaceFolder
 
-            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder1, mockWorkspaceFolder2]
+            Object.defineProperty(vscode.workspace, 'workspaceFolders', {
+                value: [mockWorkspaceFolder1, mockWorkspaceFolder2],
+            })
 
             const wdioConfigFiles1 = ['/workspace1/wdio.conf.js', '/workspace1/wdio.e2e.conf.js']
             const wdioConfigFiles2 = ['/workspace2/wdio.conf.js']
@@ -237,7 +242,7 @@ describe('ExtensionConfigManager', () => {
         it('should handle workspaces with no config files', async () => {
             // Setup
             const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
             vi.mocked(findWdioConfig).mockResolvedValueOnce([])
 
             // Execute
@@ -263,7 +268,7 @@ describe('ExtensionConfigManager', () => {
         it('should return all config paths after initialization', async () => {
             // Setup
             const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
 
             const wdioConfigFiles = ['/workspace/wdio.conf.js', '/workspace/wdio.e2e.conf.js']
             vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)
@@ -288,7 +293,7 @@ describe('ExtensionConfigManager', () => {
         it('should clear workspaces data', async () => {
             // Setup
             const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            ;(vscode.workspace.workspaceFolders as any) = [mockWorkspaceFolder]
+            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
 
             const wdioConfigFiles = ['/workspace/wdio.conf.js']
             vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)

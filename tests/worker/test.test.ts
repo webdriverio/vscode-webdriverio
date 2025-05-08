@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-import { Launcher } from '../../src/worker/cli.js'
+import { getLauncherInstance } from '../../src/worker/cli.js'
 import { runTest } from '../../src/worker/test.js'
 
 import type { Dirent } from 'node:fs'
@@ -14,11 +14,12 @@ import type { WorkerMetaContext } from '../../src/worker/types.js'
 vi.mock('node:fs/promises')
 vi.mock('node:os')
 vi.mock('../../src/worker/cli.js', () => {
-    const Launcher = vi.fn()
-    Launcher.prototype.run = vi.fn(() => 0)
-    return {
-        Launcher,
-    }
+    const getLauncherInstance = vi.fn(() =>
+        Promise.resolve({
+            run: vi.fn(() => 0),
+        })
+    )
+    return { getLauncherInstance }
 })
 
 describe('runTest', () => {
@@ -123,7 +124,9 @@ describe('runTest', () => {
 
     it('should handle test failure', async () => {
         // Arrange - Mock Launcher to return non-zero exit code
-        vi.mocked(Launcher.prototype.run).mockResolvedValue(1)
+        vi.mocked(getLauncherInstance).mockResolvedValue({
+            run: vi.fn(() => Promise.resolve(1)),
+        } as any)
 
         // Act
         const result = await runTest.call(mockContext, mockOptions)
@@ -199,7 +202,9 @@ describe('runTest', () => {
 
     it('should handle error in Launcher', async () => {
         // Arrange - Mock Launcher to throw an error
-        vi.mocked(Launcher.prototype.run).mockRejectedValue(new Error('Launcher error'))
+        vi.mocked(getLauncherInstance).mockResolvedValue({
+            run: vi.fn(() => Promise.reject(new Error('Launcher error'))),
+        } as any)
 
         // Act
         const result = await runTest.call(mockContext, mockOptions)
@@ -216,12 +221,14 @@ describe('runTest', () => {
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
         // Simulate console output during test run
-        vi.mocked(Launcher.prototype.run).mockImplementation(() => {
-            console.log('Test output 1')
-            console.log('Test output 2')
-            console.error('Test error 1')
-            return Promise.resolve(0)
-        })
+        vi.mocked(getLauncherInstance).mockResolvedValue({
+            run: vi.fn(() => {
+                console.log('Test output 1')
+                console.log('Test output 2')
+                console.error('Test error 1')
+                return Promise.resolve(0)
+            }),
+        } as any)
 
         // Act
         const result = await runTest.call(mockContext, mockOptions)

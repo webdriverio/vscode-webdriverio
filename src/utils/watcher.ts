@@ -1,30 +1,30 @@
 import * as vscode from 'vscode'
 
 import { log } from '../utils/logger.js'
-import type { ExtensionConfigManager } from '../config/index.js'
 
 /**
  * Manages file watchers for WebdriverIO test files
  */
-export class FileWatcherManager implements vscode.Disposable {
+export abstract class FileWatcherManager implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
-    private _fileCreateHandlers: ((uri: vscode.Uri) => void)[] = []
-    private _fileChangeHandlers: ((uri: vscode.Uri) => void)[] = []
-    private _fileDeleteHandlers: ((uri: vscode.Uri) => void)[] = []
+    private _fileCreateHandlers: ((uri: vscode.Uri) => void)[] = [this.handleFileCreate.bind(this)]
+    private _fileChangeHandlers: ((uri: vscode.Uri) => void)[] = [this.handleFileChange.bind(this)]
+    private _fileDeleteHandlers: ((uri: vscode.Uri) => void)[] = [this.handleFileDelete.bind(this)]
 
-    /**
-     * Create a new FileWatcherManager
-     */
-    constructor(protected configManager: ExtensionConfigManager) {
-        this.createWatchers()
-    }
+    protected abstract getFilePatterns(): string[]
+
+    protected abstract handleFileCreate(uri: vscode.Uri): void | Promise<void>
+
+    protected abstract handleFileChange(uri: vscode.Uri): void | Promise<void>
+
+    protected abstract handleFileDelete(uri: vscode.Uri): void | Promise<void>
 
     /**
      * Add a handler for file create events
      * @param handler The handler function to call when a file changes
      * @returns This FileWatcherManager instance for chaining
      */
-    protected onFileCreate(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    public onFileCreate(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileCreateHandlers.push(handler)
         return this
     }
@@ -34,7 +34,7 @@ export class FileWatcherManager implements vscode.Disposable {
      * @param handler The handler function to call when a file changes
      * @returns This FileWatcherManager instance for chaining
      */
-    protected onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    public onFileChange(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileChangeHandlers.push(handler)
         return this
     }
@@ -44,7 +44,7 @@ export class FileWatcherManager implements vscode.Disposable {
      * @param handler The handler function to call when a file is deleted
      * @returns This FileWatcherManager instance for chaining
      */
-    protected onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
+    public onFileDelete(handler: (uri: vscode.Uri) => void): FileWatcherManager {
         this._fileDeleteHandlers.push(handler)
         return this
     }
@@ -61,9 +61,9 @@ export class FileWatcherManager implements vscode.Disposable {
     /**
      * Create file watchers for all configured test patterns
      */
-    private createWatchers(): void {
+    protected createWatchers(): void {
         // Get test file pattern from configuration
-        const patterns = this.configManager.globalConfig.testFilePattern || []
+        const patterns = this.getFilePatterns()
 
         // Split pattern by comma and create watchers for each
         log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)
@@ -72,9 +72,9 @@ export class FileWatcherManager implements vscode.Disposable {
             const watcher = vscode.workspace.createFileSystemWatcher(pattern)
 
             // Add event handlers
-            watcher.onDidCreate((uri) => this._handleFileCreate(uri))
-            watcher.onDidChange((uri) => this._handleFileChange(uri))
-            watcher.onDidDelete((uri) => this._handleFileDelete(uri))
+            watcher.onDidCreate(this._handleFileCreate.bind(this))
+            watcher.onDidChange(this._handleFileChange.bind(this))
+            watcher.onDidDelete(this._handleFileDelete.bind(this))
 
             this._watchers.push(watcher)
         }
@@ -86,7 +86,7 @@ export class FileWatcherManager implements vscode.Disposable {
      */
     private _handleFileCreate(uri: vscode.Uri): void {
         log.debug(`File created: ${uri.fsPath}`)
-        for (const handler of this._fileChangeHandlers) {
+        for (const handler of this._fileCreateHandlers) {
             handler(uri)
         }
     }

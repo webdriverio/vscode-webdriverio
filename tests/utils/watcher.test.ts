@@ -1,262 +1,242 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
-import { log } from '../../src/utils/logger.js'
 import { FileWatcherManager } from '../../src/utils/watcher.js'
 
-import type { ExtensionConfigManager } from '../../src/config/index.js'
-
 // Mock vscode module
-vi.mock('vscode', () => ({
-    workspace: {
-        createFileSystemWatcher: vi.fn(),
-    },
-}))
+vi.mock('vscode', () => {
+    return {
+        workspace: {
+            createFileSystemWatcher: vi.fn(() => ({
+                onDidCreate: vi.fn(),
+                onDidChange: vi.fn(),
+                onDidDelete: vi.fn(),
+                dispose: vi.fn(),
+            })),
+        },
+        Uri: {
+            file: (path: string) => ({ fsPath: path }),
+        },
+    }
+})
 
 // Mock logger module
-vi.mock('../../src/utils/logger.js', () => ({
-    log: {
-        debug: vi.fn(),
-    },
-}))
+vi.mock('../../src/utils/logger.js', () => {
+    return {
+        log: {
+            debug: vi.fn(),
+        },
+    }
+})
+
+// Create a concrete implementation of FileWatcherManager for testing
+class TestFileWatcherManager extends FileWatcherManager {
+    public handleFileCreateCalls = 0
+    public handleFileChangeCalls = 0
+    public handleFileDeleteCalls = 0
+    public lastHandledUri: vscode.Uri | null = null
+    public filePatterns = ['**/*.test.ts']
+    constructor() {
+        super()
+    }
+
+    protected getFilePatterns(): string[] {
+        return this.filePatterns
+    }
+
+    protected handleFileCreate(uri: vscode.Uri): void {
+        this.handleFileCreateCalls++
+        this.lastHandledUri = uri
+    }
+
+    protected handleFileChange(uri: vscode.Uri): void {
+        this.handleFileChangeCalls++
+        this.lastHandledUri = uri
+    }
+
+    protected handleFileDelete(uri: vscode.Uri): void {
+        this.handleFileDeleteCalls++
+        this.lastHandledUri = uri
+    }
+
+    // Expose private methods for testing
+    public exposeCreateWatchers(): void {
+        this.createWatchers()
+    }
+
+    public exposeHandleFileCreate(uri: vscode.Uri): void {
+        this['_handleFileCreate'](uri)
+    }
+
+    public exposeHandleFileChange(uri: vscode.Uri): void {
+        this['_handleFileChange'](uri)
+    }
+
+    public exposeHandleFileDelete(uri: vscode.Uri): void {
+        this['_handleFileDelete'](uri)
+    }
+
+    // Get access to internal watchers for verification
+    public getWatchers(): vscode.Disposable[] {
+        return this['_watchers']
+    }
+}
 
 describe('FileWatcherManager', () => {
-    let watcher: FileWatcherManager
-    let mockConfigManager: ExtensionConfigManager
-    let mockWatcher: any
-    let mockUri: vscode.Uri
+    let fileWatcherManager: TestFileWatcherManager
+    const testUri = { fsPath: '/path/to/test.ts' } as vscode.Uri
 
     beforeEach(() => {
-        vi.clearAllMocks()
-
-        // Create mock URI
-        mockUri = {
-            fsPath: '/path/to/test/file.spec.js',
-        } as unknown as vscode.Uri
-
-        // Create mock vscode file watcher
-        mockWatcher = {
-            onDidCreate: vi.fn(),
-            onDidChange: vi.fn(),
-            onDidDelete: vi.fn(),
-            dispose: vi.fn(),
-        }
-
-        // Mock VSCode file system watcher
-        vi.mocked(vscode.workspace.createFileSystemWatcher).mockImplementation(() => mockWatcher)
-
-        // Create mock config manager
-        mockConfigManager = {
-            globalConfig: {
-                testFilePattern: ['**/*.spec.js', '**/*.test.ts'],
-            },
-        } as unknown as ExtensionConfigManager
-
-        // Create watcher instance
-        watcher = new FileWatcherManager(mockConfigManager)
+        // Reset all mocks before each test
+        vi.resetAllMocks()
+        fileWatcherManager = new TestFileWatcherManager()
     })
 
     afterEach(() => {
-        watcher.dispose()
-        vi.resetAllMocks()
+        // Clean up after each test
+        fileWatcherManager.dispose()
     })
 
-    describe('constructor', () => {
-        it('should create watchers for all test patterns', () => {
-            expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledTimes(2)
-            expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('**/*.spec.js')
-            expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalledWith('**/*.test.ts')
-            expect(mockWatcher.onDidCreate).toHaveBeenCalledTimes(2)
-            expect(mockWatcher.onDidChange).toHaveBeenCalledTimes(2)
-            expect(mockWatcher.onDidDelete).toHaveBeenCalledTimes(2)
-            expect(log.debug).toHaveBeenCalledWith('Creating file watchers for patterns: **/*.spec.js, **/*.test.ts')
-        })
-
-        it('should handle empty test patterns array', () => {
-            const emptyConfigManager = {
-                globalConfig: {
-                    testFilePattern: [],
-                },
-            } as unknown as ExtensionConfigManager
-
-            vi.clearAllMocks()
-            const emptyWatcher = new FileWatcherManager(emptyConfigManager)
-
-            expect(vscode.workspace.createFileSystemWatcher).not.toHaveBeenCalled()
-            expect(log.debug).toHaveBeenCalledWith('Creating file watchers for patterns: ')
-
-            emptyWatcher.dispose()
-        })
-
-        it('should handle undefined test patterns', () => {
-            const undefinedConfigManager = {
-                globalConfig: {},
-            } as unknown as ExtensionConfigManager
-
-            vi.clearAllMocks()
-            const undefinedWatcher = new FileWatcherManager(undefinedConfigManager)
-
-            expect(vscode.workspace.createFileSystemWatcher).not.toHaveBeenCalled()
-            expect(log.debug).toHaveBeenCalledWith('Creating file watchers for patterns: ')
-
-            undefinedWatcher.dispose()
-        })
-    })
-
-    describe('file event handlers', () => {
-        let createHandler: (uri: vscode.Uri) => void
-        let changeHandler: (uri: vscode.Uri) => void
-        let deleteHandler: (uri: vscode.Uri) => void
-
-        beforeEach(() => {
-            // Capture the handlers passed to event listeners
-            createHandler = mockWatcher.onDidCreate.mock.calls[0][0]
-            changeHandler = mockWatcher.onDidChange.mock.calls[0][0]
-            deleteHandler = mockWatcher.onDidDelete.mock.calls[0][0]
-        })
-
-        describe('_handleFileCreate', () => {
-            it('should call handlers correctly', () => {
-                // Using type assertion to access protected methods
-                const spy = vi.spyOn(watcher as any, '_handleFileCreate')
-
-                createHandler(mockUri)
-
-                expect(log.debug).toHaveBeenCalledWith(`File created: ${mockUri.fsPath}`)
-                expect(spy).toHaveBeenCalled()
-            })
-        })
-
-        describe('_handleFileChange', () => {
-            it('should log debug message correctly', () => {
-                changeHandler(mockUri)
-
-                expect(log.debug).toHaveBeenCalledWith(`File changed: ${mockUri.fsPath}`)
-            })
-        })
-
-        describe('_handleFileDelete', () => {
-            it('should log debug message correctly', () => {
-                deleteHandler(mockUri)
-
-                expect(log.debug).toHaveBeenCalledWith(`File deleted: ${mockUri.fsPath}`)
-            })
-        })
-    })
-
-    describe('handler methods', () => {
-        it('should allow adding file create handler', () => {
+    describe('Event handlers registration', () => {
+        it('should register file create event handlers', () => {
             const handler = vi.fn()
-            const result = (watcher as any).onFileCreate(handler)
+            fileWatcherManager.onFileCreate(handler)
 
-            expect(result).toBe(watcher)
+            // Trigger the event
+            fileWatcherManager['_handleFileCreate'](testUri)
 
-            // Ensure the handler array has the expected handler
-            expect((watcher as any)._fileCreateHandlers).toContain(handler)
+            // Verify both default and custom handlers were called
+            expect(fileWatcherManager.handleFileCreateCalls).toBe(1)
+            expect(handler).toHaveBeenCalledWith(testUri)
         })
 
-        it('should allow adding file change handler', () => {
+        it('should register file change event handlers', () => {
             const handler = vi.fn()
-            const result = (watcher as any).onFileChange(handler)
+            fileWatcherManager.onFileChange(handler)
 
-            expect(result).toBe(watcher)
+            // Trigger the event
+            fileWatcherManager.exposeHandleFileChange(testUri)
 
-            // Ensure the handler array has the expected handler
-            expect((watcher as any)._fileChangeHandlers).toContain(handler)
+            // Verify both default and custom handlers were called
+            expect(fileWatcherManager.handleFileChangeCalls).toBe(1)
+            expect(handler).toHaveBeenCalledWith(testUri)
         })
 
-        it('should allow adding file delete handler', () => {
+        it('should register file delete event handlers', () => {
             const handler = vi.fn()
-            const result = (watcher as any).onFileDelete(handler)
+            fileWatcherManager.onFileDelete(handler)
 
-            expect(result).toBe(watcher)
+            // Trigger the event
+            fileWatcherManager.exposeHandleFileDelete(testUri)
 
-            // Ensure the handler array has the expected handler
-            expect((watcher as any)._fileDeleteHandlers).toContain(handler)
+            // Verify both default and custom handlers were called
+            expect(fileWatcherManager.handleFileDeleteCalls).toBe(1)
+            expect(handler).toHaveBeenCalledWith(testUri)
+        })
+
+        it('should support method chaining for event registration', () => {
+            const result = fileWatcherManager.onFileCreate(vi.fn()).onFileChange(vi.fn()).onFileDelete(vi.fn())
+
+            expect(result).toBe(fileWatcherManager)
         })
     })
 
-    describe('refreshWatchers', () => {
-        it('should dispose old watchers and create new ones', () => {
-            const disposeSpy = vi.spyOn(watcher as any, 'disposeWatchers')
-            const createSpy = vi.spyOn(watcher as any, 'createWatchers')
+    describe('Watcher management', () => {
+        it('should create watchers for all file patterns', () => {
+            const mockCreateFileSystemWatcher = vscode.workspace.createFileSystemWatcher
+            fileWatcherManager.filePatterns = ['**/*.test.ts', '**/*.spec.ts']
 
-            watcher.refreshWatchers()
+            fileWatcherManager.exposeCreateWatchers()
 
-            expect(log.debug).toHaveBeenCalledWith('Refreshing file watchers based on current configuration')
-            expect(disposeSpy).toHaveBeenCalled()
-            expect(createSpy).toHaveBeenCalled()
+            expect(mockCreateFileSystemWatcher).toHaveBeenCalledTimes(2)
+            expect(mockCreateFileSystemWatcher).toHaveBeenCalledWith('**/*.test.ts')
+            expect(mockCreateFileSystemWatcher).toHaveBeenCalledWith('**/*.spec.ts')
+        })
+
+        it('should dispose all watchers when refreshing', () => {
+            // Create some watchers first
+            fileWatcherManager.exposeCreateWatchers()
+            const watchers = fileWatcherManager.getWatchers()
+            const mockDispose = watchers[0].dispose
+
+            fileWatcherManager.refreshWatchers()
+
+            expect(mockDispose).toHaveBeenCalled()
+            expect(vscode.workspace.createFileSystemWatcher).toHaveBeenCalled()
+        })
+
+        it('should dispose all watchers when disposing the manager', () => {
+            // Create some watchers first
+            fileWatcherManager.exposeCreateWatchers()
+            const watchers = fileWatcherManager.getWatchers()
+            const mockDispose = watchers[0].dispose
+
+            fileWatcherManager.dispose()
+
+            expect(mockDispose).toHaveBeenCalled()
+            expect(fileWatcherManager.getWatchers().length).toBe(0)
         })
     })
 
-    describe('dispose', () => {
-        it('should dispose all watchers and clear arrays', () => {
-            const addedHandler1 = vi.fn()
-            const addedHandler2 = vi.fn()
-            const addedHandler3 = vi.fn()
+    describe('Event handlers', () => {
+        it('should call registered handlers for file create events', () => {
+            const mockOnDidCreate = vi.fn()
+            vi.mocked(vscode.workspace.createFileSystemWatcher).mockReturnValue({
+                onDidCreate: mockOnDidCreate,
+                onDidChange: vi.fn(),
+                onDidDelete: vi.fn(),
+                dispose: vi.fn(),
+            } as unknown as vscode.FileSystemWatcher)
 
-            // Add some handlers
-            ;(watcher as any).onFileCreate(addedHandler1)
-            ;(watcher as any).onFileChange(addedHandler2)
-            ;(watcher as any).onFileDelete(addedHandler3)
+            fileWatcherManager.exposeCreateWatchers()
 
-            watcher.dispose()
+            // Get the callback that was registered with onDidCreate
+            const callback = vi.mocked(mockOnDidCreate).mock.calls[0][0]
 
-            expect(mockWatcher.dispose).toHaveBeenCalledTimes(2)
-            expect((watcher as any)._fileChangeHandlers).toEqual([])
-            expect((watcher as any)._fileDeleteHandlers).toEqual([])
+            // Call the callback directly with a test URI
+            callback(testUri)
+
+            expect(fileWatcherManager.handleFileCreateCalls).toBe(1)
         })
 
-        it('should not throw when dispose is called multiple times', () => {
-            expect(() => {
-                watcher.dispose()
-                watcher.dispose()
-            }).not.toThrow()
-        })
-    })
+        it('should call registered handlers for file change events', () => {
+            const mockOnDidChange = vi.fn()
+            vi.mocked(vscode.workspace.createFileSystemWatcher).mockReturnValue({
+                onDidCreate: vi.fn(),
+                onDidChange: mockOnDidChange,
+                onDidDelete: vi.fn(),
+                dispose: vi.fn(),
+            } as unknown as vscode.FileSystemWatcher)
 
-    describe('event handler execution', () => {
-        it('should execute change handlers when file is created', () => {
-            const createHandler = vi.fn()
-            const changeHandler = vi.fn()
+            fileWatcherManager.exposeCreateWatchers()
 
-            // Set up custom handlers
-            ;(watcher as any).onFileCreate(createHandler)
-            ;(watcher as any).onFileChange(changeHandler)
+            // Get the callback that was registered with onDidCreate
+            const callback = vi.mocked(mockOnDidChange).mock.calls[0][0]
 
-            // Trigger create event
-            const createEventHandler = mockWatcher.onDidCreate.mock.calls[0][0]
-            createEventHandler(mockUri)
+            // Call the callback directly with a test URI
+            callback(testUri)
 
-            // Verify both create and change handlers are called
-            expect(createHandler).not.toHaveBeenCalled() // _handleFileCreate only triggers change handlers
-            expect(changeHandler).toHaveBeenCalledWith(mockUri)
+            expect(fileWatcherManager.handleFileChangeCalls).toBe(1)
         })
 
-        it('should execute change handlers when file is changed', () => {
-            const changeHandler = vi.fn()
+        it('should call registered handlers for file delete events', () => {
+            const mockOnDidDelete = vi.fn()
+            vi.mocked(vscode.workspace.createFileSystemWatcher).mockReturnValue({
+                onDidCreate: vi.fn(),
+                onDidChange: vi.fn(),
+                onDidDelete: mockOnDidDelete,
+                dispose: vi.fn(),
+            } as unknown as vscode.FileSystemWatcher)
 
-            // Set up custom handler
-            ;(watcher as any).onFileChange(changeHandler)
+            fileWatcherManager.exposeCreateWatchers()
 
-            // Trigger change event
-            const changeEventHandler = mockWatcher.onDidChange.mock.calls[0][0]
-            changeEventHandler(mockUri)
+            // Get the callback that was registered with onDidCreate
+            const callback = vi.mocked(mockOnDidDelete).mock.calls[0][0]
 
-            expect(changeHandler).toHaveBeenCalledWith(mockUri)
-        })
+            // Call the callback directly with a test URI
+            callback(testUri)
 
-        it('should execute delete handlers when file is deleted', () => {
-            const deleteHandler = vi.fn()
-
-            // Set up custom handler
-            ;(watcher as any).onFileDelete(deleteHandler)
-
-            // Trigger delete event
-            const deleteEventHandler = mockWatcher.onDidDelete.mock.calls[0][0]
-            deleteEventHandler(mockUri)
-
-            expect(deleteHandler).toHaveBeenCalledWith(mockUri)
+            expect(fileWatcherManager.handleFileDeleteCalls).toBe(1)
         })
     })
 })

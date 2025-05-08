@@ -1,6 +1,7 @@
-import { Launcher } from './cli.js'
+import { getLauncherInstance,  } from './cli.js'
 import { parse } from './parsers/index.js'
 import { runTest } from './test.js'
+import { normalizePath } from '../utils/normalize.js'
 
 import type { WorkerMetaContext } from './types.js'
 import type { LoadConfigOptions, WdioConfig, WorkerApi } from '../api/index.js'
@@ -55,14 +56,20 @@ export function createWorker(context: WorkerMetaContext): WorkerApi {
 
 export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfigOptions): Promise<WdioConfig> {
     this.log.debug(`Loading the config file: ${options.configFilePath}`)
+
     // Create launcher instance
-    const launcher = new Launcher(options.configFilePath)
+    const launcher = await getLauncherInstance(options.configFilePath)
     await launcher.initialize()
 
     const configParser = await launcher.getProperty('configParser')
-    const specs = configParser.getSpecs().flatMap((specs) => (Array.isArray(specs) ? specs : [specs]))
+    const specs = configParser.getSpecs().flatMap((specs) => {
+        return Array.isArray(specs)
+            ? specs.map((spec)=>normalizePath(spec))
+            : [normalizePath(specs)]
+    })
     const framework = configParser.getConfig().framework
     this.log.debug(`Successfully loaded the config file: ${options.configFilePath} (${specs.length} specs)`)
+
     return {
         framework,
         specs,

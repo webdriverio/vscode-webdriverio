@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 import { findWdioConfig } from './find.js'
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../constants.js'
 import { log } from '../utils/logger.js'
-
+import { normalizePath } from '../utils/normalize.js'
 import type { WebdriverIOConfig } from '../types.js'
 import type { ConfigPropertyNames, WorkspaceData } from './types.js'
 
@@ -13,7 +13,9 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebdriverIOConfig
-    private _workspaceConfigMap = new Map<string, vscode.WorkspaceFolder>()
+    // private _workspaceConfigMap = new Map<string, vscode.WorkspaceFolder>()
+    private _workspaceConfigMap2 = new WeakMap<vscode.WorkspaceFolder, Set<string>>()
+    private _wdioConfigPathSet = new Set<string>()
     private _workspaces: WorkspaceData[] | undefined
 
     constructor() {
@@ -75,8 +77,8 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
     }
 
     public async initialize() {
-        const workspaceFolders = vscode.workspace.workspaceFolders
-        if (!workspaceFolders || workspaceFolders.length === 0) {
+        const workspaceFolders = this.getWorkspaces()
+        if (workspaceFolders.length === 0) {
             log.debug('No workspace is detected.')
             return []
         }
@@ -95,7 +97,14 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
                     }
                 }
                 for (const wdioConfigFile of wdioConfigFiles) {
-                    this._workspaceConfigMap.set(wdioConfigFile, workspaceFolder)
+                    // this._workspaceConfigMap.set(wdioConfigFile, workspaceFolder)
+                    const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+                    if (workspaceInfo) {
+                        workspaceInfo.add(wdioConfigFile)
+                    } else {
+                        this._workspaceConfigMap2.set(workspaceFolder, new Set([wdioConfigFile]))
+                    }
+                    this._wdioConfigPathSet.add(wdioConfigFile)
                 }
                 return {
                     workspaceFolder,
@@ -106,23 +115,65 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
         this._isInitialized = true
     }
 
+    public async addWdioConfig(configPath: string) {
+        await this.initialize()
+        const normalizedConfigPath = normalizePath(configPath)
+        const workspaceFolders = this.getWorkspaces()
+
+        const result: vscode.Uri[] = []
+        for (const workspaceFolder of workspaceFolders) {
+            const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+            if (workspaceInfo && workspaceInfo.has(normalizedConfigPath)) {
+                log.debug(`detected workspace "${workspaceFolder.uri.fsPath}"`)
+                result.push(workspaceFolder.uri)
+            }
+        }
+        return result
+    }
+
+    private getWorkspaces() {
+        const workspaceFolders = vscode.workspace.workspaceFolders
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            log.debug('No workspace is detected.')
+            return []
+        }
+        return workspaceFolders
+    }
+
+    public removeWdioConfig(configPath: string) {
+        const normalizedConfigPath = normalizePath(configPath)
+        const result: vscode.Uri[] = []
+        const workspaceFolders = this.getWorkspaces()
+        for (const workspaceFolder of workspaceFolders) {
+            const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+            if (workspaceInfo && workspaceInfo.delete(normalizedConfigPath)) {
+                log.debug(`Remove the config file "${normalizedConfigPath}" from "${workspaceFolder.uri.fsPath}"`)
+                result.push(workspaceFolder.uri)
+            }
+        }
+        this._wdioConfigPathSet.delete(normalizedConfigPath)
+        return result
+    }
+
     public getWdioConfigPaths() {
         if (!this._isInitialized) {
             throw new Error('Configuration manager is not initialized')
         }
-        return Array.from(this._workspaceConfigMap.keys())
+        return Array.from(this._wdioConfigPathSet)
     }
 
     private resolveBooleanConfig(config: vscode.WorkspaceConfiguration, key: string, defaultValue: boolean) {
-        const value = config.get<boolean>('showOutput')
+        const value = config.get<boolean>(key)
         return typeof value === 'boolean' ? value : defaultValue
     }
 
     public dispose() {
-        this._workspaceConfigMap.clear()
+        this._wdioConfigPathSet.clear()
         this._workspaces = undefined
     }
 }
+
+export { ConfigFileWatcher } from './watcher.js'
 
 // TODO: Add Install command
 // To add install command, the following code seems to be used.

@@ -1,4 +1,5 @@
 import { log } from '../utils/logger.js'
+import { normalizePath } from '../utils/normalize.js'
 import { FileWatcherManager } from '../utils/watcher.js'
 
 import type * as vscode from 'vscode'
@@ -10,20 +11,28 @@ export class TestfileWatcher extends FileWatcherManager {
         public readonly configManager: ExtensionConfigManager,
         private readonly repositoryManager: RepositoryManager
     ) {
-        super(configManager)
+        super()
     }
 
     public enable() {
-        this.onFileCreate((uri) => this.handleFileChange(uri, true))
-        this.onFileChange((uri) => this.handleFileChange(uri, false))
-        this.onFileDelete((uri) => this.handleFileDelete(uri))
+        this.createWatchers()
         this.configManager.on('update:testFilePattern', () => this.refreshWatchers())
+    }
+
+    protected getFilePatterns(): string[] {
+        return this.configManager.globalConfig.testFilePattern || []
+    }
+    protected async handleFileCreate(uri: vscode.Uri): Promise<void> {
+        await this._handleFileCreateAndChange(uri, true)
+    }
+    protected async handleFileChange(uri: vscode.Uri): Promise<void> {
+        await this._handleFileCreateAndChange(uri, false)
     }
 
     /**
      * Handle file changes (create or modify)
      */
-    protected async handleFileChange(uri: vscode.Uri, isCreated: boolean = false): Promise<void> {
+    private async _handleFileCreateAndChange(uri: vscode.Uri, isCreated: boolean = false): Promise<void> {
         const specFilePath = uri.fsPath
         log.debug(`Test file ${isCreated ? 'created' : 'changed'}: ${specFilePath}`)
 
@@ -34,7 +43,7 @@ export class TestfileWatcher extends FileWatcherManager {
             : this.repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
 
         log.debug(`Affected repository are ${repos.length} repositories`)
-        await Promise.all(repos.map(async (repo) => await repo.reloadSpecFiles([repo.normalizePath(specFilePath)])))
+        await Promise.all(repos.map(async (repo) => await repo.reloadSpecFiles([normalizePath(specFilePath)])))
     }
 
     /**
@@ -48,7 +57,7 @@ export class TestfileWatcher extends FileWatcherManager {
         log.debug(`Affected repository are ${repos.length} repositories`)
 
         repos.map(async (repo) => {
-            repo.removeSpecFile(repo.normalizePath(specFilePath))
+            repo.removeSpecFile(normalizePath(specFilePath))
         })
     }
 }

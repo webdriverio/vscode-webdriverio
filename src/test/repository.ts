@@ -1,11 +1,11 @@
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { convertPathToUri, convertTestData } from './converter.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
 import { filterSpecsByPaths } from './utils.js'
 import { log } from '../utils/logger.js'
+import { normalizePath } from '../utils/normalize.js'
 
 import type * as vscode from 'vscode'
 import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTestItem } from './types.js'
@@ -69,12 +69,7 @@ export class TestRepository implements vscode.Disposable {
      * Reload tests for specific files
      * @param filePaths Paths of files to reload
      */
-    public async reloadSpecFiles(filePaths: string[]): Promise<void> {
-        if (!filePaths || filePaths.length === 0) {
-            log.debug('No files specified for reload')
-            return
-        }
-
+    public async reloadSpecFiles(filePaths: string[] = []): Promise<void> {
         try {
             const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
             if (!config) {
@@ -85,8 +80,16 @@ export class TestRepository implements vscode.Disposable {
 
             // Get specs from configuration
             const allConfigSpecs = this.convertPathString(config.specs)
+            if (allConfigSpecs.length === 0) {
+                for (const [fileId] of this._fileMap.entries()) {
+                    this.removeSpecFileById(fileId)
+                }
+                return
+            }
             // Filter specs to only include those that match the provided file paths
-            const specsToReload = filterSpecsByPaths(allConfigSpecs, filePaths)
+            const specsToReload =
+                !filePaths || filePaths.length === 0 ? allConfigSpecs : filterSpecsByPaths(allConfigSpecs, filePaths)
+
             if (specsToReload.length === 0) {
                 // TODO: If there is information in the Repository but it cannot be retrieved from the actual configuration file, there may be a discrepancy in the configuration.
                 // In this case, consider using a reload of the entire file.
@@ -137,6 +140,9 @@ export class TestRepository implements vscode.Disposable {
         }
     }
 
+    private getTestFileId(wdioConfigTestItem: WdioConfigTestItem, testFilePath: string) {
+        return [wdioConfigTestItem.id, testFilePath].join(TEST_ID_SEPARATOR)
+    }
     /**
      * Register spec files with the test controller
      * @param specs Paths to spec files
@@ -155,7 +161,7 @@ export class TestRepository implements vscode.Disposable {
                 testData.map(async (test) => {
                     try {
                         // Create TestItem testFile by testFile
-                        const fileId = [this._wdioConfigTestItem.id, test.spec].join(TEST_ID_SEPARATOR)
+                        const fileId = this.getTestFileId(this._wdioConfigTestItem, test.spec)
                         // const fileContent = await this.readSpecFile(spec)
                         const testCases = await convertTestData(test)
 
@@ -242,9 +248,13 @@ export class TestRepository implements vscode.Disposable {
      * @param specPath Path to the spec file to remove
      */
     public removeSpecFile(specPath: string): void {
-        const normalizedPath = this.normalizePath(specPath)
-        const fileId = [this._wdioConfigTestItem.id, normalizedPath].join(TEST_ID_SEPARATOR)
+        const normalizedPath = normalizePath(specPath)
+        const fileId = this.getTestFileId(this._wdioConfigTestItem, normalizedPath)
+        this.removeSpecFileById(fileId, specPath)
+    }
 
+    private removeSpecFileById(fileId: string, _specPath?: string): void {
+        const specPath = _specPath ? _specPath : fileId.split(TEST_ID_SEPARATOR)[2]
         // Get the TestItem for this spec file
         const fileItem = this._fileMap.get(fileId)
         if (!fileItem) {
@@ -274,9 +284,7 @@ export class TestRepository implements vscode.Disposable {
      * Convert spec paths from WebdriverIO config to file system paths
      */
     private convertPathString(specs: (string | string[])[]) {
-        return specs.flatMap((spec) =>
-            Array.isArray(spec) ? spec.map((path) => fileURLToPath(path)) : [fileURLToPath(spec)]
-        )
+        return specs.flatMap((spec) => (Array.isArray(spec) ? spec.map((path) => path) : [spec]))
     }
 
     /**
@@ -341,16 +349,6 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Convert a path to an ID
-     * @param specPath Path to convert
-     * @returns Normalized path as ID
-     */
-    public normalizePath(specPath: string) {
-        const _specPath = specPath.startsWith('file://') ? fileURLToPath(specPath) : specPath
-        return path.normalize(_specPath)
-    }
-
-    /**
      * Search for a suite by name
      * @param suiteName Suite name to search for
      * @param parent Parent test item
@@ -376,7 +374,7 @@ export class TestRepository implements vscode.Disposable {
      * @returns TestItem for the spec file
      */
     public getSpecByFilePath(specPath: string) {
-        const normalizedSpecFilePath = this.normalizePath(specPath)
+        const normalizedSpecFilePath = normalizePath(specPath)
         log.trace(`searching the file :${normalizedSpecFilePath}`)
         for (const [key, value] of this._fileMap.entries()) {
             // The path of the Spec file is the third one, as it is the next level after Workspace,WdioConfig.

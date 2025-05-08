@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { Launcher } from './cli.js'
+import { getLauncherInstance } from './cli.js'
 import type { RunCommandArguments } from '@wdio/cli'
 import type { WorkerMetaContext } from './types.js'
 import type { RunTestOptions, TestResult } from '../api/index.js'
@@ -49,7 +49,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
         }
 
         // Create launcher instance
-        const launcher = new Launcher(options.configPath, wdioArgs)
+        const launcher = await getLauncherInstance(options.configPath, wdioArgs)
 
         // Setup console capture
         const originalConsoleLog = console.log

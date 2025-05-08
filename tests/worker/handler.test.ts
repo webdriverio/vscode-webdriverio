@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-import { Launcher } from '../../src/worker/cli.js'
+import { getLauncherInstance } from '../../src/worker/cli.js'
 import { createWorker } from '../../src/worker/handler.js'
 import * as parsers from '../../src/worker/parsers/index.js'
 import * as test from '../../src/worker/test.js'
@@ -13,26 +13,18 @@ import type { WorkerMetaContext } from '../../src/worker/types.js'
 vi.mock('../../src/worker/parsers/index.js')
 vi.mock('../../src/worker/test.js')
 vi.mock('../../src/worker/cli.js', () => {
-    const Launcher = vi.fn()
-    Launcher.prototype.run = vi.fn()
-    Launcher.prototype.initialize = vi.fn()
-    Launcher.prototype.getProperty = vi.fn(() => {
-        return {
-            // configParser: {
-            getSpecs: vi.fn(() => ['spec1.js', ['spec2.js', 'spec3.js']]),
-            getConfig: vi.fn(() => {
-                return { framework: 'mocha' }
-            }),
-            // }
-        }
-    })
-    // Launcher.prototype.configParser={
-    //     getSpecs:vi.fn(()=>['spec1.js', ['spec2.js', 'spec3.js']]),
-    //     getConfig:vi.fn(()=>{
-    //         return { framework: 'mocha' }
-    //     })
-    // }
-    return { Launcher }
+    const getLauncherInstance = vi.fn(() =>
+        Promise.resolve({
+            initialize: vi.fn(),
+            getProperty: vi.fn(() => ({
+                getSpecs: vi.fn(() => ['spec1.js', ['spec2.js', 'spec3.js']]),
+                getConfig: vi.fn(() => {
+                    return { framework: 'mocha' }
+                }),
+            })),
+        })
+    )
+    return { getLauncherInstance }
 })
 
 describe('handler', () => {
@@ -208,6 +200,17 @@ describe('handler', () => {
         }
 
         it('should load WebdriverIO config and return framework and specs', async () => {
+            // Arrange
+            const mockInitialize = vi.fn()
+            vi.mocked(getLauncherInstance).mockResolvedValue({
+                initialize: mockInitialize,
+                getProperty: vi.fn(() => ({
+                    getSpecs: vi.fn(() => ['spec1.js', ['spec2.js', 'spec3.js']]),
+                    getConfig: vi.fn(() => {
+                        return { framework: 'mocha' }
+                    }),
+                })),
+            } as any)
             // Act
             const result = await workerApi.loadWdioConfig.call(mockContext, mockOptions)
 
@@ -216,8 +219,8 @@ describe('handler', () => {
                 framework: 'mocha',
                 specs: ['spec1.js', 'spec2.js', 'spec3.js'],
             })
-            expect(Launcher.prototype.initialize).toHaveBeenCalled()
-            expect(Launcher.prototype.getProperty).toHaveBeenCalled()
+            expect(getLauncherInstance).toHaveBeenCalled()
+            expect(mockInitialize).toHaveBeenCalled()
         })
     })
 })

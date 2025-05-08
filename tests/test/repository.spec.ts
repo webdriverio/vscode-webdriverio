@@ -1,6 +1,4 @@
-import * as path from 'node:path'
 import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 
 import * as chai from 'chai'
 import * as sinon from 'sinon'
@@ -30,6 +28,7 @@ describe('TestRepository', () => {
     let testRepository: TestRepository
     let mockWorker: WdioExtensionWorkerInterface
     let readFile: sinon.SinonStub
+    let readSpecsStub: sinon.SinonStub
 
     beforeEach(() => {
         sandbox = sinon.createSandbox()
@@ -57,16 +56,17 @@ describe('TestRepository', () => {
         }
 
         // Setup worker mock
+        readSpecsStub = sandbox.stub().resolves([
+            { spec: mockSpecPath, data: 'test content 1' },
+            { spec: mockSpecPath2, data: 'test content 2' },
+        ])
         mockWorker = {
             rpc: {
                 loadWdioConfig: sandbox.stub().resolves({
                     framework: 'mocha',
-                    specs: [pathToFileURL(mockSpecPath), pathToFileURL(mockSpecPath2)],
+                    specs: [mockSpecPath, mockSpecPath2],
                 }),
-                readSpecs: sandbox.stub().resolves([
-                    { spec: mockSpecPath, data: 'test content 1' },
-                    { spec: mockSpecPath2, data: 'test content 2' },
-                ]),
+                readSpecs: readSpecsStub,
             },
         } as unknown as WdioExtensionWorkerInterface
 
@@ -223,6 +223,7 @@ describe('TestRepository', () => {
 
             // Verify
             expect(mockWorker.rpc.loadWdioConfig).to.have.been.calledWith({ configFilePath: mockWdioConfigPath })
+            expect(readSpecsStub).to.have.been.calledWithExactly({ specs: [mockSpecPath] })
             expect(removeSpecFileSpy).to.have.been.calledWith(mockSpecPath)
             expect(log.debug).to.have.been.calledWith('Reloading 1 spec files')
             expect(log.debug).to.have.been.calledWith('Successfully reloaded 1 spec files')
@@ -280,7 +281,7 @@ describe('TestRepository', () => {
             // Setup
             ;(mockWorker.rpc.loadWdioConfig as sinon.SinonStub).resolves({
                 framework: 'mocha',
-                specs: [pathToFileURL(join(process.cwd(), 'some', 'other', 'file.js'))],
+                specs: [join(process.cwd(), 'some', 'other', 'file.js')],
             })
 
             // Execute
@@ -291,32 +292,23 @@ describe('TestRepository', () => {
         })
 
         it('should handle empty file paths array', async () => {
+            // Setup
+            const removeSpecFileSpy = sandbox.spy(testRepository, 'removeSpecFile')
+
             // Execute
             await testRepository.reloadSpecFiles([])
 
             // Verify
-            expect(log.debug).to.have.been.calledWith('No files specified for reload')
-            expect(mockWorker.rpc.loadWdioConfig).to.not.have.been.called
+            expect(readSpecsStub).to.have.been.calledWithExactly({ specs: [mockSpecPath, mockSpecPath2] })
+            expect(removeSpecFileSpy).to.have.been.calledWith(mockSpecPath)
+            expect(removeSpecFileSpy).to.have.been.calledWith(mockSpecPath2)
+            expect(log.debug).to.have.been.calledWith('Reloading 2 spec files')
+            expect(log.debug).to.have.been.calledWith('Successfully reloaded 2 spec files')
         })
     })
 
     // Group 4: Search and Reference
     describe('Search and Reference Functions', () => {
-        it('should normalize paths correctly', () => {
-            // Setup
-            const filePath = `${process.cwd()}\\path\\to\\file`
-            const fileUrl = pathToFileURL(join(process.cwd(), 'path', 'to', 'file')).toString()
-            const normalizedPath = path.normalize(join(process.cwd(), 'path', 'to', 'file'))
-
-            // Execute
-            const result1 = testRepository.normalizePath(filePath)
-            const result2 = testRepository.normalizePath(fileUrl)
-
-            // Verify
-            expect(result1).to.equal(path.normalize(filePath))
-            expect(result2).to.equal(normalizedPath)
-        })
-
         it('should find suite by name in parent', () => {
             // Setup
             const suiteName = 'test suite'
@@ -404,9 +396,9 @@ describe('TestRepository', () => {
         it('should convert array of specs correctly', () => {
             // Setup
             const specs = [
-                pathToFileURL(join(process.cwd(), 'path', 'to', 'spec1.js')).toString(),
-                pathToFileURL(join(process.cwd(), 'path', 'to', 'spec2.js')).toString(),
-                pathToFileURL(join(process.cwd(), 'path', 'to', 'spec3.js')).toString(),
+                join(process.cwd(), 'path', 'to', 'spec1.js').toString(),
+                join(process.cwd(), 'path', 'to', 'spec2.js').toString(),
+                join(process.cwd(), 'path', 'to', 'spec3.js').toString(),
             ]
 
             // Execute
