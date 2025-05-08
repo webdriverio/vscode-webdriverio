@@ -80,11 +80,10 @@ export class TestRepository implements vscode.Disposable {
 
             // Get specs from configuration
             const allConfigSpecs = this.convertPathString(config.specs)
-            if (allConfigSpecs.length === 0) {
+            if (!filePaths || filePaths.length === 0) {
                 for (const [fileId] of this._fileMap.entries()) {
                     this.removeSpecFileById(fileId)
                 }
-                return
             }
             // Filter specs to only include those that match the provided file paths
             const specsToReload =

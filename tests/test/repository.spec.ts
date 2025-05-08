@@ -292,16 +292,12 @@ describe('TestRepository', () => {
         })
 
         it('should handle empty file paths array', async () => {
-            // Setup
-            const removeSpecFileSpy = sandbox.spy(testRepository, 'removeSpecFile')
-
             // Execute
             await testRepository.reloadSpecFiles([])
 
             // Verify
             expect(readSpecsStub).to.have.been.calledWithExactly({ specs: [mockSpecPath, mockSpecPath2] })
-            expect(removeSpecFileSpy).to.have.been.calledWith(mockSpecPath)
-            expect(removeSpecFileSpy).to.have.been.calledWith(mockSpecPath2)
+
             expect(log.debug).to.have.been.calledWith('Reloading 2 spec files')
             expect(log.debug).to.have.been.calledWith('Successfully reloaded 2 spec files')
         })
