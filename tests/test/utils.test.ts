@@ -1,12 +1,10 @@
-import * as path from 'node:path'
-
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import * as utils from '../../src/test/utils.js'
 
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../../src/test/manager.js'
-import type { WdioTestItem } from '../../src/test/types.js'
+import type { WdioConfigTestItem, WdioTestItem } from '../../src/test/types.js'
 
 vi.mock('vscode', async () => {
     return {
@@ -239,13 +237,18 @@ describe('Test Utils', () => {
         })
 
         it('should create a run profile with correct parameters', () => {
-            const wdioConfigFile = '/path/to/wdio.conf.js'
+            const wdioConfigFile = {
+                uri: {
+                    fsPath: 'file:///path/to/wdio.conf.js',
+                },
+                description: 'path/to',
+            } as unknown as WdioConfigTestItem
             const isDefaultProfile = true
 
-            utils.createRunProfile(repositoryManager, wdioConfigFile, isDefaultProfile)
+            utils.createRunProfile.call(repositoryManager, wdioConfigFile, isDefaultProfile)
 
             expect(mockController.createRunProfile).toHaveBeenCalledWith(
-                path.basename(wdioConfigFile),
+                'wdio.conf.js (path/to)',
                 expect.any(Number),
                 expect.any(Function),
                 isDefaultProfile

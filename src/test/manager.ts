@@ -27,6 +27,7 @@ export class RepositoryManager implements vscode.Disposable {
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: WorkspaceTestItem[] = []
     private _wdioConfigTestItems: WdioConfigTestItem[] = []
+    private isCreatedDefaultProfile = false
 
     constructor(
         public readonly controller: vscode.TestController,
@@ -63,13 +64,10 @@ export class RepositoryManager implements vscode.Disposable {
         this._workspaceTestItems = await Promise.all(
             workspaces.map(async (workspace) => {
                 const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
-                let isCreatedDefaultProfile = false
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
                     await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigFile)
 
-                    // Create run profile
-                    createRunProfile(this, wdioConfigFile, !isCreatedDefaultProfile)
-                    isCreatedDefaultProfile = true
+                    this.isCreatedDefaultProfile = true
                 }
                 return workspaceTestItem
             })
@@ -83,9 +81,6 @@ export class RepositoryManager implements vscode.Disposable {
         })
         for (const workspaceTestItem of affectedWorkspaceItems) {
             const configTestItem = await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigPath)
-
-            // Create run profile
-            createRunProfile(this, wdioConfigPath, false)
 
             await configTestItem.metadata.repository.discoverAllTests()
             if (!this.configManager.isMultiWorkspace) {
@@ -169,13 +164,14 @@ export class RepositoryManager implements vscode.Disposable {
         const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem)
         this._repos.add(repo)
 
+        configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
         configItem['metadata'] = {
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
             repository: repo,
+            runProfile: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
         }
-        configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
         return configItem
     }
 

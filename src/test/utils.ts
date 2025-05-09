@@ -60,14 +60,24 @@ export const isTestcase = (testItem: vscode.TestItem): testItem is TestcaseTestI
     !testItem.metadata.isSpecFile
 
 export function createRunProfile(
-    repositoryManager: RepositoryManager,
-    wdioConfigFile: string,
+    this: RepositoryManager,
+    wdioConfigFileTestItem: WdioConfigTestItem,
     isDefaultProfile: boolean
 ) {
-    repositoryManager.controller.createRunProfile(
-        path.basename(wdioConfigFile),
-        vscode.TestRunProfileKind.Run,
-        createHandler(repositoryManager.configManager, repositoryManager),
-        isDefaultProfile
-    )
+    const description = wdioConfigFileTestItem.description ? ` (${wdioConfigFileTestItem.description})` : ''
+    return [
+        this.controller.createRunProfile(
+            `${path.basename(wdioConfigFileTestItem.uri!.fsPath)}${description}`,
+            vscode.TestRunProfileKind.Run,
+            createHandler(this.configManager, this),
+            isDefaultProfile
+        ),
+        //TODO: support debug
+        // this.controller.createRunProfile(
+        //     `${path.basename(wdioConfigFileTestItem.uri!.fsPath)}${description}`,
+        //     vscode.TestRunProfileKind.Debug,
+        //     createHandler(this.configManager, this),
+        //     isDefaultProfile
+        // ),
+    ]
 }

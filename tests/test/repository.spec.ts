@@ -29,6 +29,7 @@ describe('TestRepository', () => {
     let mockWorker: WdioExtensionWorkerInterface
     let readFile: sinon.SinonStub
     let readSpecsStub: sinon.SinonStub
+    let runProfileDisposeStub: sinon.SinonStub
 
     beforeEach(() => {
         sandbox = sinon.createSandbox()
@@ -48,11 +49,16 @@ describe('TestRepository', () => {
             mockWdioConfigUri.fsPath,
             mockWdioConfigUri
         ) as WdioConfigTestItem
+        runProfileDisposeStub = sandbox.stub()
+
         wdioConfigTestItem.metadata = {
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
             repository: {} as any,
+            runProfile: {
+                dispose: runProfileDisposeStub,
+            } as unknown as vscode.TestRunProfile,
         }
 
         // Setup worker mock
@@ -102,8 +108,9 @@ describe('TestRepository', () => {
 
             // Execute
             testRepository.dispose()
-
+            runProfileDisposeStub
             // Verify
+            expect(runProfileDisposeStub).to.have.been.called
             expect(spyOnSuiteMapClear).to.have.been.called
             expect(spyOnFileMapClear).to.have.been.called
         })

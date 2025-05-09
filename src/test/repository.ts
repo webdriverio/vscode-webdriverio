@@ -90,7 +90,8 @@ export class TestRepository implements vscode.Disposable {
                 !filePaths || filePaths.length === 0 ? allConfigSpecs : filterSpecsByPaths(allConfigSpecs, filePaths)
 
             if (specsToReload.length === 0) {
-                // TODO: If there is information in the Repository but it cannot be retrieved from the actual configuration file, there may be a discrepancy in the configuration.
+                // TODO: If there is information in the Repository but it cannot be retrieved from the actual configuration file,
+                // there may be a discrepancy in the configuration.
                 // In this case, consider using a reload of the entire file.
                 log.debug('No matching spec files found for reload')
                 return
@@ -161,7 +162,7 @@ export class TestRepository implements vscode.Disposable {
                     try {
                         // Create TestItem testFile by testFile
                         const fileId = this.getTestFileId(this._wdioConfigTestItem, test.spec)
-                        // const fileContent = await this.readSpecFile(spec)
+
                         const testCases = await convertTestData(test)
 
                         const fileTestItem = this.resisterSpecFile(fileId, convertPathToUri(test.spec))
@@ -390,6 +391,7 @@ export class TestRepository implements vscode.Disposable {
      * Dispose of resources
      */
     public dispose() {
+        this._wdioConfigTestItem.metadata.runProfile.dispose()
         this._suiteMap.clear()
         this._fileMap.clear()
     }
