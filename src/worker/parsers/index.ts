@@ -13,15 +13,23 @@ export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) 
             const normalizeSpecPath = path.normalize(spec)
             this.log.debug(`Parse spec file: ${normalizeSpecPath}`)
             const contents = await fs.readFile(normalizeSpecPath, { encoding: 'utf8' })
+            try {
+                const testCases = isCucumberFeatureFile(normalizeSpecPath)
+                    ? parseCucumberFeature.call(this, contents, normalizeSpecPath) // Parse Cucumber feature file
+                    : parseTestCases.call(this, contents, normalizeSpecPath) // Parse JavaScript/TypeScript test file
 
-            const testCases = isCucumberFeatureFile(normalizeSpecPath)
-                ? parseCucumberFeature.call(this, contents, normalizeSpecPath) // Parse Cucumber feature file
-                : parseTestCases.call(this, contents, normalizeSpecPath) // Parse JavaScript/TypeScript test file
-
-            this.log.debug(`Successfully parsed: ${normalizeSpecPath}`)
-            return {
-                spec: normalizeSpecPath,
-                tests: testCases,
+                this.log.debug(`Successfully parsed: ${normalizeSpecPath}`)
+                return {
+                    spec: normalizeSpecPath,
+                    tests: testCases,
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ?error.message : String(error)
+                this.log.error(`Parse error: ${errorMessage}`)
+                return {
+                    spec: normalizeSpecPath,
+                    tests: [],
+                }
             }
         })
     )
