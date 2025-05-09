@@ -81,7 +81,7 @@ export interface WdioConfigTestItem extends WdioTestItem {
         isConfigFile: true
         isSpecFile: false
         repository: TestRepository
-        runProfile: vscode.TestRunProfile
+        runProfiles: vscode.TestRunProfile[]
     }
 }
 

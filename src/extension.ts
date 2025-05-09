@@ -4,7 +4,7 @@ import { ServerManager } from './api/index.js'
 import { configureTests } from './commands/configureTests.js'
 import { ConfigFileWatcher, ExtensionConfigManager } from './config/index.js'
 import { EXTENSION_ID } from './constants.js'
-import { TestfileWatcher, RepositoryManager } from './test/index.js'
+import { RepositoryManager } from './test/index.js'
 import { log } from './utils/logger.js'
 
 let extension: WdioExtension | null = null
@@ -46,12 +46,10 @@ class WdioExtension implements vscode.Disposable {
         // Create Manages and watchers
         const repositoryManager = new RepositoryManager(this.controller, this.configManager, this.serverManager)
         const configFileWatcher = new ConfigFileWatcher(this.configManager, this.serverManager, repositoryManager)
-        const testfileWatcher = new TestfileWatcher(this.configManager, repositoryManager)
 
         this._disposables = [
             vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
             vscode.workspace.onDidChangeConfiguration((event) => this.configManager.listener(event)),
-            testfileWatcher,
             configFileWatcher,
             repositoryManager,
             this.serverManager,
@@ -67,11 +65,12 @@ class WdioExtension implements vscode.Disposable {
                 repositoryManager.repos.map(async (repo) => {
                     await repo.discoverAllTests()
                 })
-            ).then(() => repositoryManager.registerToTestController())
+            ).then(() => {
+                repositoryManager.registerToTestController()
+                // Enable watchers
+                configFileWatcher.enable()
+            })
 
-            // Enable watchers
-            configFileWatcher.enable()
-            testfileWatcher.enable()
         } catch (error) {
             console.log(error)
         }

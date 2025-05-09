@@ -56,9 +56,9 @@ describe('TestRepository', () => {
             isConfigFile: true,
             isSpecFile: false,
             repository: {} as any,
-            runProfile: {
+            runProfiles: [{
                 dispose: runProfileDisposeStub,
-            } as unknown as vscode.TestRunProfile,
+            } as unknown as vscode.TestRunProfile],
         }
 
         // Setup worker mock

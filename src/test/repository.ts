@@ -16,8 +16,8 @@ import type { WdioExtensionWorkerInterface } from '../api/index.js'
  * the single WebdriverIO configuration file
  */
 export class TestRepository implements vscode.Disposable {
-    // Mapping for the id and TestItem
-    private _suiteMap = new Map<string, TestcaseTestItem>()
+    private _specPatterns:string[] = []
+    private _suiteMap = new Map<string, TestcaseTestItem>() // Mapping for the id and TestItem
     private _fileMap = new Map<string, SpecFileTestItem>()
     private _framework: string | undefined = undefined
     constructor(
@@ -26,6 +26,10 @@ export class TestRepository implements vscode.Disposable {
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: WdioConfigTestItem
     ) {}
+
+    public get specPatterns(){
+        return this._specPatterns
+    }
 
     public get framework() {
         if (!this._framework) {
@@ -46,6 +50,7 @@ export class TestRepository implements vscode.Disposable {
             }
 
             this._framework = config.framework
+            this._specPatterns = config.specPatterns
 
             // Get specs from configuration
             const allSpecs = this.convertPathString(config.specs)
@@ -77,6 +82,7 @@ export class TestRepository implements vscode.Disposable {
             }
 
             this._framework = config.framework
+            this._specPatterns = config.specPatterns
 
             // Get specs from configuration
             const allConfigSpecs = this.convertPathString(config.specs)
@@ -338,6 +344,7 @@ export class TestRepository implements vscode.Disposable {
     private resisterSpecFile(id: string, spec: vscode.Uri) {
         log.trace(`[repository] spec file was registered: ${id}`)
         const fileTestItem = this.controller.createTestItem(id, path.basename(spec.fsPath), spec) as SpecFileTestItem
+        fileTestItem.sortText = spec.fsPath
         fileTestItem['metadata'] = {
             isWorkspace: false,
             isConfigFile: false,
@@ -391,7 +398,7 @@ export class TestRepository implements vscode.Disposable {
      * Dispose of resources
      */
     public dispose() {
-        this._wdioConfigTestItem.metadata.runProfile.dispose()
+        this._wdioConfigTestItem.metadata.runProfiles.forEach((p)=>p.dispose())
         this._suiteMap.clear()
         this._fileMap.clear()
     }

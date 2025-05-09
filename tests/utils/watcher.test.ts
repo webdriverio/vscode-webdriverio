@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
-import { FileWatcherManager } from '../../src/utils/watcher.js'
+import { FileWatcherManager, type WatchPattern } from '../../src/utils/watcher.js'
 
 // Mock vscode module
 vi.mock('vscode', () => {
@@ -14,6 +14,7 @@ vi.mock('vscode', () => {
                 dispose: vi.fn(),
             })),
         },
+        RelativePattern: vi.fn(),
         Uri: {
             file: (path: string) => ({ fsPath: path }),
         },
@@ -35,12 +36,14 @@ class TestFileWatcherManager extends FileWatcherManager {
     public handleFileChangeCalls = 0
     public handleFileDeleteCalls = 0
     public lastHandledUri: vscode.Uri | null = null
-    public filePatterns = ['**/*.test.ts']
+    public filePatterns:WatchPattern[] = [{
+        pattern: '**/*.test.ts'
+    }]
     constructor() {
         super()
     }
 
-    protected getFilePatterns(): string[] {
+    protected getFilePatterns(): WatchPattern[] {
         return this.filePatterns
     }
 
@@ -144,13 +147,31 @@ describe('FileWatcherManager', () => {
     describe('Watcher management', () => {
         it('should create watchers for all file patterns', () => {
             const mockCreateFileSystemWatcher = vscode.workspace.createFileSystemWatcher
-            fileWatcherManager.filePatterns = ['**/*.test.ts', '**/*.spec.ts']
+            fileWatcherManager.filePatterns = [{ pattern: '**/*.test.ts' }, { pattern:'**/*.spec.ts' }]
 
             fileWatcherManager.exposeCreateWatchers()
 
             expect(mockCreateFileSystemWatcher).toHaveBeenCalledTimes(2)
             expect(mockCreateFileSystemWatcher).toHaveBeenCalledWith('**/*.test.ts')
             expect(mockCreateFileSystemWatcher).toHaveBeenCalledWith('**/*.spec.ts')
+        })
+
+        it('should create watchers for all file patterns with base directory path', () => {
+            const mockCreateFileSystemWatcher = vscode.workspace.createFileSystemWatcher
+            fileWatcherManager.filePatterns = [
+                {
+                    pattern: '**/*.test.ts',
+                    base: { fsPath:'/path/to' } as vscode.Uri,
+                }, {
+                    pattern:'**/*.spec.ts',
+                    base: { fsPath:'/path/to' } as vscode.Uri,
+                }
+            ]
+
+            fileWatcherManager.exposeCreateWatchers()
+
+            expect(mockCreateFileSystemWatcher).toHaveBeenCalledTimes(2)
+            expect(vscode.RelativePattern).toHaveBeenCalledTimes(2)
         })
 
         it('should dispose all watchers when refreshing', () => {

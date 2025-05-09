@@ -6,6 +6,7 @@ import type { NumericLogLevel } from '../types.js'
 
 export type WdioConfig = {
     specs: string[]
+    specPatterns: string[]
     framework: string
 }
 

@@ -170,7 +170,7 @@ export class RepositoryManager implements vscode.Disposable {
             isConfigFile: true,
             isSpecFile: false,
             repository: repo,
-            runProfile: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
+            runProfiles: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
         }
         return configItem
     }

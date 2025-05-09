@@ -62,17 +62,6 @@
                     ],
                     "description": "Glob pattern for WebdriverIO configuration file"
                 },
-                "webdriverio.testFilePattern": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "default": [
-                        "**/*.{spec,test}.{ts,js}",
-                        "**/*.feature"
-                    ],
-                    "description": "Glob pattern for test files"
-                },
                 "webdriverio.logLevel": {
                     "type": "string",
                     "enum": [

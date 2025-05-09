@@ -23,17 +23,12 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
 
         const configFilePattern = config.get<string[]>('configFilePattern')
-        const testFilePattern = config.get<string[]>('testFilePattern')
 
         this._globalConfig = {
             configFilePattern:
                 configFilePattern && configFilePattern.length > 0
                     ? configFilePattern
                     : [...DEFAULT_CONFIG_VALUES.configFilePattern],
-            testFilePattern:
-                testFilePattern && testFilePattern.length > 0
-                    ? testFilePattern
-                    : [...DEFAULT_CONFIG_VALUES.testFilePattern],
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
             logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }

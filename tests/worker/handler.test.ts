@@ -19,7 +19,10 @@ vi.mock('../../src/worker/cli.js', () => {
             getProperty: vi.fn(() => ({
                 getSpecs: vi.fn(() => ['spec1.js', ['spec2.js', 'spec3.js']]),
                 getConfig: vi.fn(() => {
-                    return { framework: 'mocha' }
+                    return {
+                        framework: 'mocha',
+                        specs: ['./e2e/*.spec.ts']
+                    }
                 }),
             })),
         })
@@ -207,7 +210,8 @@ describe('handler', () => {
                 getProperty: vi.fn(() => ({
                     getSpecs: vi.fn(() => ['spec1.js', ['spec2.js', 'spec3.js']]),
                     getConfig: vi.fn(() => {
-                        return { framework: 'mocha' }
+                        return { framework: 'mocha',
+                            specs: ['./e2e/*.spec.ts'] }
                     }),
                 })),
             } as any)
@@ -218,6 +222,7 @@ describe('handler', () => {
             expect(result).toEqual({
                 framework: 'mocha',
                 specs: ['spec1.js', 'spec2.js', 'spec3.js'],
+                specPatterns: ['./e2e/*.spec.ts'],
             })
             expect(getLauncherInstance).toHaveBeenCalled()
             expect(mockInitialize).toHaveBeenCalled()

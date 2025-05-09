@@ -2,6 +2,11 @@ import * as vscode from 'vscode'
 
 import { log } from '../utils/logger.js'
 
+export type WatchPattern ={
+    base?: vscode.Uri,
+    pattern: string
+}
+
 /**
  * Manages file watchers for WebdriverIO test files
  */
@@ -11,7 +16,7 @@ export abstract class FileWatcherManager implements vscode.Disposable {
     private _fileChangeHandlers: ((uri: vscode.Uri) => void)[] = [this.handleFileChange.bind(this)]
     private _fileDeleteHandlers: ((uri: vscode.Uri) => void)[] = [this.handleFileDelete.bind(this)]
 
-    protected abstract getFilePatterns(): string[]
+    protected abstract getFilePatterns(): WatchPattern[]
 
     protected abstract handleFileCreate(uri: vscode.Uri): void | Promise<void>
 
@@ -66,10 +71,12 @@ export abstract class FileWatcherManager implements vscode.Disposable {
         const patterns = this.getFilePatterns()
 
         // Split pattern by comma and create watchers for each
-        log.debug(`Creating file watchers for patterns: ${patterns.join(', ')}`)
 
-        for (const pattern of patterns) {
-            const watcher = vscode.workspace.createFileSystemWatcher(pattern)
+        for (const p of patterns) {
+            log.debug(`Creating file watchers for patterns: ${p.pattern}`)
+            const watcher = p.base
+                ? vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(p.base, p.pattern))
+                : vscode.workspace.createFileSystemWatcher(p.pattern)
 
             // Add event handlers
             watcher.onDidCreate(this._handleFileCreate.bind(this))

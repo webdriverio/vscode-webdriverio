@@ -53,9 +53,6 @@ describe('ExtensionConfigManager', () => {
             if (key === 'configFilePattern') {
                 return DEFAULT_CONFIG_VALUES.configFilePattern
             }
-            if (key === 'testFilePattern') {
-                return DEFAULT_CONFIG_VALUES.testFilePattern
-            }
             if (key === 'showOutput') {
                 return DEFAULT_CONFIG_VALUES.showOutput
             }
@@ -83,16 +80,12 @@ describe('ExtensionConfigManager', () => {
         it('should use custom config values when provided', () => {
             // Setup
             const customConfigFilePattern = ['custom/path/wdio.*.conf.ts']
-            const customTestFilePattern = ['**/*.custom.spec.ts']
             const customShowOutput = false
             const customLogLevel = 'warn'
 
             mockConfiguration.get.mockImplementation((key, defaultValue) => {
                 if (key === 'configFilePattern') {
                     return customConfigFilePattern
-                }
-                if (key === 'testFilePattern') {
-                    return customTestFilePattern
                 }
                 if (key === 'showOutput') {
                     return customShowOutput
@@ -109,7 +102,6 @@ describe('ExtensionConfigManager', () => {
             // Verify
             expect(instance.globalConfig).toEqual({
                 configFilePattern: customConfigFilePattern,
-                testFilePattern: customTestFilePattern,
                 showOutput: customShowOutput,
                 logLevel: customLogLevel,
             })
@@ -121,9 +113,6 @@ describe('ExtensionConfigManager', () => {
                 if (key === 'configFilePattern') {
                     return []
                 }
-                if (key === 'testFilePattern') {
-                    return []
-                }
                 return defaultValue
             })
 
@@ -132,7 +121,6 @@ describe('ExtensionConfigManager', () => {
 
             // Verify
             expect(instance.globalConfig.configFilePattern).toEqual(DEFAULT_CONFIG_VALUES.configFilePattern)
-            expect(instance.globalConfig.testFilePattern).toEqual(DEFAULT_CONFIG_VALUES.testFilePattern)
         })
     })
 

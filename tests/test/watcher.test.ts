@@ -6,10 +6,15 @@ import { TestfileWatcher } from '../../src/test/watcher.js'
 import { log } from '../../src/utils/logger.js'
 import { FileWatcherManager } from '../../src/utils/watcher.js'
 import type * as vscode from 'vscode'
-import type { ExtensionConfigManager } from '../../src/config/index.js'
 import type { RepositoryManager } from '../../src/test/manager.js'
 
-vi.mock('vscode')
+vi.mock('vscode', ()=>{
+    return {
+        Uri:{
+            file:vi.fn((f)=>({ fsPath:f }))
+        }
+    }
+})
 
 // Mock dependencies
 vi.mock('../../src/utils/logger.js', () => ({
@@ -31,7 +36,6 @@ vi.mock('../../src/utils/watcher.js', () => {
 
 describe('TestfileWatcher', () => {
     let watcher: TestfileWatcher
-    let mockConfigManager: ExtensionConfigManager
     let mockRepositoryManager: RepositoryManager
     let mockRepo1: any
     let mockRepo2: any
@@ -63,13 +67,8 @@ describe('TestfileWatcher', () => {
             repos: [mockRepo1, mockRepo2],
         } as unknown as RepositoryManager
 
-        // Create mock config manager
-        mockConfigManager = {
-            on: vi.fn(),
-        } as unknown as ExtensionConfigManager
-
         // Create the watcher instance
-        watcher = new TestfileWatcher(mockConfigManager, mockRepositoryManager)
+        watcher = new TestfileWatcher( mockRepositoryManager)
     })
 
     afterEach(() => {
@@ -81,13 +80,12 @@ describe('TestfileWatcher', () => {
             const mock = vi.fn()
             FileWatcherManager.prototype['createWatchers'] = mock
 
-            watcher = new TestfileWatcher(mockConfigManager, mockRepositoryManager)
+            watcher = new TestfileWatcher( mockRepositoryManager)
 
             // Execute
             watcher.enable()
             // Verify
             expect(mock).toHaveBeenCalled()
-            expect(mockConfigManager.on).toHaveBeenCalledWith('update:testFilePattern', expect.any(Function))
         })
     })
 

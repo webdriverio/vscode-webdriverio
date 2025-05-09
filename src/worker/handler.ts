@@ -62,6 +62,7 @@ export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfi
     await launcher.initialize()
 
     const configParser = await launcher.getProperty('configParser')
+    const specPatterns = configParser.getConfig().specs.flatMap((p)=>p)
     const specs = configParser.getSpecs().flatMap((specs) => {
         return Array.isArray(specs)
             ? specs.map((spec)=>normalizePath(spec))
@@ -73,5 +74,6 @@ export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfi
     return {
         framework,
         specs,
+        specPatterns,
     }
 }

@@ -1,14 +1,15 @@
+import { dirname } from 'node:path'
+
+import * as vscode from 'vscode'
+
 import { log } from '../utils/logger.js'
 import { normalizePath } from '../utils/normalize.js'
-import { FileWatcherManager } from '../utils/watcher.js'
+import { FileWatcherManager, type WatchPattern } from '../utils/watcher.js'
 
-import type * as vscode from 'vscode'
 import type { RepositoryManager } from './manager.js'
-import type { ExtensionConfigManager } from '../config/index.js'
 
 export class TestfileWatcher extends FileWatcherManager {
     constructor(
-        public readonly configManager: ExtensionConfigManager,
         private readonly repositoryManager: RepositoryManager
     ) {
         super()
@@ -16,15 +17,25 @@ export class TestfileWatcher extends FileWatcherManager {
 
     public enable() {
         this.createWatchers()
-        this.configManager.on('update:testFilePattern', () => this.refreshWatchers())
     }
 
-    protected getFilePatterns(): string[] {
-        return this.configManager.globalConfig.testFilePattern || []
+    protected getFilePatterns(): WatchPattern[] {
+        return this.repositoryManager.repos.reduce((patterns, repo)=>{
+            const configDirPath =  dirname(repo.wdioConfigPath)
+            for (const pattern of repo.specPatterns) {
+                patterns.push({
+                    base: vscode.Uri.file(configDirPath),
+                    pattern
+                })
+            }
+            return patterns
+        }, [] as WatchPattern[])
     }
+
     protected async handleFileCreate(uri: vscode.Uri): Promise<void> {
         await this._handleFileCreateAndChange(uri, true)
     }
+
     protected async handleFileChange(uri: vscode.Uri): Promise<void> {
         await this._handleFileCreateAndChange(uri, false)
     }
@@ -38,12 +49,15 @@ export class TestfileWatcher extends FileWatcherManager {
 
         // If a Spec file is newly created, attempt to read in all repositories,
         // as it is unclear which configuration file should be reflected.
-        const repos = isCreated
-            ? this.repositoryManager.repos
-            : this.repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
-
-        log.debug(`Affected repository are ${repos.length} repositories`)
-        await Promise.all(repos.map(async (repo) => await repo.reloadSpecFiles([normalizePath(specFilePath)])))
+        const promises = this.repositoryManager.repos.reduce((repos, repo)=>{
+            if (!isCreated && !repo.getSpecByFilePath(specFilePath)) {
+                return repos
+            }
+            repos.push(repo.reloadSpecFiles([normalizePath(specFilePath)]))
+            return repos
+        }, [] as Promise<void>[])
+        log.debug(`Affected repository are ${promises.length} repositories`)
+        await Promise.all(promises)
     }
 
     /**
@@ -52,12 +66,13 @@ export class TestfileWatcher extends FileWatcherManager {
     protected async handleFileDelete(uri: vscode.Uri): Promise<void> {
         const specFilePath = uri.fsPath
         log.debug(`Test file deleted: ${specFilePath}`)
-
-        const repos = this.repositoryManager.repos.filter((repo) => repo.getSpecByFilePath(uri.fsPath))
-        log.debug(`Affected repository are ${repos.length} repositories`)
-
-        repos.map(async (repo) => {
-            repo.removeSpecFile(normalizePath(specFilePath))
-        })
+        const count = this.repositoryManager.repos.reduce((counter, repo)=>{
+            if (!repo.getSpecByFilePath(specFilePath)) {
+                return counter
+            }
+            repo.removeSpecFile(specFilePath)
+            return ++counter
+        }, 0)
+        log.debug(`Affected repository are ${count} repositories`)
     }
 }

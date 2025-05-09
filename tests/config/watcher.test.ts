@@ -19,9 +19,15 @@ vi.mock('../../src/utils/logger.js', () => ({
 }))
 
 // Mock functions from test/index.js
-vi.mock('../../src/test/index.js', () => ({
-    convertUriToPath: vi.fn((uri) => uri.fsPath),
-}))
+vi.mock('../../src/test/index.js', () => {
+    const TestfileWatcher=vi.fn()
+    TestfileWatcher.prototype.enable = vi.fn()
+    TestfileWatcher.prototype.refreshWatchers = vi.fn()
+    return ({
+        TestfileWatcher,
+        convertUriToPath: vi.fn((uri) => uri.fsPath),
+    })
+})
 
 // Mock normalizePath function
 vi.mock('../../src/utils/normalize.js', () => ({
@@ -144,7 +150,7 @@ describe('ConfigFileWatcher', () => {
             const result = watcher['getFilePatterns']()
 
             // Verify
-            expect(result).toEqual(expectedPatterns)
+            expect(result).toEqual([{ pattern:'**/wdio.conf.{js,ts}' }])
         })
 
         it('should return empty array if no patterns are defined', () => {
