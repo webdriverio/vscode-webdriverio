@@ -111,7 +111,8 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
 
     private workerOutHandler(event: 'stdout' | 'stderr', data: any) {
         const payload = data.toString().trim()
-        log.debug(`[Worker${this.cid} ${event}] ${payload}`)
+        // eslint-disable-next-line no-control-regex
+        log.debug(`[Worker${this.cid} ${event}] ${payload.replace(/\x1b\[[0-9;]*m/g, '')}`)
         this.emit(event, payload)
     }
 
