@@ -8,11 +8,11 @@ import { FileWatcherManager } from '../../src/utils/watcher.js'
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../../src/test/manager.js'
 
-vi.mock('vscode', ()=>{
+vi.mock('vscode', () => {
     return {
-        Uri:{
-            file:vi.fn((f)=>({ fsPath:f }))
-        }
+        Uri: {
+            file: vi.fn((f) => ({ fsPath: f })),
+        },
     }
 })
 
@@ -68,7 +68,7 @@ describe('TestfileWatcher', () => {
         } as unknown as RepositoryManager
 
         // Create the watcher instance
-        watcher = new TestfileWatcher( mockRepositoryManager)
+        watcher = new TestfileWatcher(mockRepositoryManager)
     })
 
     afterEach(() => {
@@ -80,7 +80,7 @@ describe('TestfileWatcher', () => {
             const mock = vi.fn()
             FileWatcherManager.prototype['createWatchers'] = mock
 
-            watcher = new TestfileWatcher( mockRepositoryManager)
+            watcher = new TestfileWatcher(mockRepositoryManager)
 
             // Execute
             watcher.enable()
@@ -144,7 +144,7 @@ describe('TestfileWatcher', () => {
             // Verify
             expect(log.debug).toHaveBeenCalledWith('Test file deleted: /path/to/test/file.spec.js')
             expect(log.debug).toHaveBeenCalledWith('Affected repository are 1 repositories')
-            expect(mockRepo1.removeSpecFile).toHaveBeenCalledWith(normalize('/path/to/test/file.spec.js'))
+            expect(mockRepo1.removeSpecFile).toHaveBeenCalledWith('/path/to/test/file.spec.js')
             expect(mockRepo2.removeSpecFile).not.toHaveBeenCalled()
         })
 
