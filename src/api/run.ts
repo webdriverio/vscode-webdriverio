@@ -1,11 +1,11 @@
 import { getGrep, getRange, getCucumberSpec, getSpec } from './utils.js'
-import { isConfig, isSpec, isTestcase, isWdioTestItem } from '../test/index.js'
+import { RepositoryManager } from '../test/index.js'
 import { log } from '../utils/logger.js'
 
 import type * as vscode from 'vscode'
 import type { RunTestOptions } from './types.js'
 import type { WdioExtensionWorkerInterface } from './types.js'
-import type { SpecFileTestItem, WdioConfigTestItem, TestcaseTestItem } from '../test/index.js'
+import type { TestItemMetadata, TestItemMetadataWithRepository } from '../test/index.js'
 
 type Listeners = {
     stdout: (data: string) => void
@@ -31,11 +31,12 @@ export class TestRunner {
      * Run a test based on the provided TestItem
      */
     public async run(test: vscode.TestItem) {
+        const metadata = RepositoryManager.getMetadata(test)
         // Validate test item
-        this.validateTestItem(test)
+        this.validateTestItem(metadata)
 
         // Create test execution options
-        const testOptions = this.createTestOptions(test)
+        const testOptions = this.createTestOptions(test, metadata)
 
         try {
             // Execute test and process results
@@ -53,14 +54,8 @@ export class TestRunner {
     /**
      * Validates that the provided TestItem is a valid WebdriverIO test
      */
-    private validateTestItem(
-        test: vscode.TestItem
-    ): asserts test is TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem {
-        if (!isWdioTestItem(test)) {
-            throw new Error("The metadata for TestItem is not set. This is extension's bug.")
-        }
-
-        if (!isConfig(test) && !isSpec(test) && !isTestcase(test)) {
+    private validateTestItem(metadata: TestItemMetadata): asserts metadata is TestItemMetadataWithRepository {
+        if ('repository' in metadata && typeof metadata.repository !== 'object') {
             throw new Error('Workspace TestItem is not valid.')
         }
     }
@@ -68,20 +63,20 @@ export class TestRunner {
     /**
      * Creates RunTestOptions based on the test type and framework
      */
-    private createTestOptions(test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem): RunTestOptions {
-        const isCucumberFramework = this.isCucumberFramework(test)
+    private createTestOptions(test: vscode.TestItem, metadata: TestItemMetadataWithRepository): RunTestOptions {
+        const isCucumberFramework = this.isCucumberFramework(metadata)
 
         // Get appropriate specs based on the test framework and type
-        const specs = this.determineSpecs(test, isCucumberFramework)
+        const specs = this.determineSpecs(test, isCucumberFramework, metadata)
 
         // Get grep pattern for mocha-like frameworks when testing individual test cases
-        const grep = !isCucumberFramework && isTestcase(test) ? getGrep(test) : undefined
+        const grep = !isCucumberFramework && metadata.isTestcase ? getGrep(test) : undefined
 
         // Get line range information for test file
-        const range = !isCucumberFramework && isTestcase(test) ? getRange(test) : undefined
+        const range = !isCucumberFramework && metadata.isTestcase ? getRange(test) : undefined
 
         return {
-            configPath: test.metadata.repository.wdioConfigPath,
+            configPath: metadata.repository.wdioConfigPath,
             specs,
             grep,
             range,
@@ -91,26 +86,23 @@ export class TestRunner {
     /**
      * Determines if the test is using Cucumber framework
      */
-    private isCucumberFramework(test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem): boolean {
-        return test.metadata.repository.framework === 'cucumber'
+    private isCucumberFramework(metadata: TestItemMetadataWithRepository): boolean {
+        return metadata.repository.framework === 'cucumber'
     }
 
     /**
      * Determines the specs to run based on test type and framework
      */
     private determineSpecs(
-        test: TestcaseTestItem | WdioConfigTestItem | SpecFileTestItem,
-        isCucumberFramework: boolean
+        test: vscode.TestItem,
+        isCucumberFramework: boolean,
+        metadata: TestItemMetadataWithRepository
     ): string[] | undefined {
-        if (isCucumberFramework && isTestcase(test)) {
-            return getCucumberSpec(test)
+        if (isCucumberFramework) {
+            return getCucumberSpec(test, metadata)
         }
 
-        if (isSpec(test) || isTestcase(test)) {
-            return getSpec(test)
-        }
-
-        return undefined
+        return getSpec(test)
     }
 
     /**

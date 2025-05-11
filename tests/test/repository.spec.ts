@@ -5,10 +5,10 @@ import * as sinon from 'sinon'
 import * as vscode from 'vscode'
 
 import { TEST_ID_SEPARATOR } from '../../src/constants.js'
+import { RepositoryManager } from '../../src/test/manager.js'
 import { TestRepository } from '../../src/test/repository.js'
 import { log } from '../../src/utils/logger.js'
 import type { WdioExtensionWorkerInterface } from '../../src/api/index.js'
-import type { TestcaseTestItem, SpecFileTestItem, WdioConfigTestItem } from '../../src/test/types.js'
 
 const expect = chai.expect
 
@@ -24,7 +24,7 @@ describe('TestRepository', () => {
 
     // Mock objects
     let testController: vscode.TestController
-    let wdioConfigTestItem: WdioConfigTestItem
+    let wdioConfigTestItem: vscode.TestItem
     let testRepository: TestRepository
     let mockWorker: WdioExtensionWorkerInterface
     let readFile: sinon.SinonStub
@@ -48,18 +48,22 @@ describe('TestRepository', () => {
             `workspace:${mockWorkspaceUri.fsPath}${TEST_ID_SEPARATOR}config:${mockWdioConfigUri.fsPath}`,
             mockWdioConfigUri.fsPath,
             mockWdioConfigUri
-        ) as WdioConfigTestItem
+        )
         runProfileDisposeStub = sandbox.stub()
 
-        wdioConfigTestItem.metadata = {
+        RepositoryManager.setMetadata(wdioConfigTestItem, {
+            uri: mockWdioConfigUri,
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
+            isTestcase: false,
             repository: {} as any,
-            runProfiles: [{
-                dispose: runProfileDisposeStub,
-            } as unknown as vscode.TestRunProfile],
-        }
+            runProfiles: [
+                {
+                    dispose: runProfileDisposeStub,
+                } as unknown as vscode.TestRunProfile,
+            ],
+        })
 
         // Setup worker mock
         readSpecsStub = sandbox.stub().resolves([
@@ -103,7 +107,6 @@ describe('TestRepository', () => {
 
         it('should dispose resources properly', () => {
             // Setup spies
-            const spyOnSuiteMapClear = sandbox.spy((testRepository as any)._suiteMap, 'clear')
             const spyOnFileMapClear = sandbox.spy((testRepository as any)._fileMap, 'clear')
 
             // Execute
@@ -111,20 +114,17 @@ describe('TestRepository', () => {
             runProfileDisposeStub
             // Verify
             expect(runProfileDisposeStub).to.have.been.called
-            expect(spyOnSuiteMapClear).to.have.been.called
             expect(spyOnFileMapClear).to.have.been.called
         })
 
         it('should clear all tests from repository', () => {
             // Setup spies
-            const spyOnSuiteMapClear = sandbox.spy((testRepository as any)._suiteMap, 'clear')
             const spyOnFileMapClear = sandbox.spy((testRepository as any)._fileMap, 'clear')
 
             // Execute
             testRepository.clearTests()
 
             // Verify
-            expect(spyOnSuiteMapClear).to.have.been.called
             expect(spyOnFileMapClear).to.have.been.called
         })
 
@@ -247,7 +247,7 @@ describe('TestRepository', () => {
                         callback({ id: `${fileId}${TEST_ID_SEPARATOR}suite1` })
                     }),
                 },
-            } as unknown as SpecFileTestItem
+            } as unknown as vscode.TestItem
 
             ;(testRepository as any)._fileMap.set(fileId, mockSpecItem)
 
@@ -272,7 +272,7 @@ describe('TestRepository', () => {
                         callback({ id: `${fileId}${TEST_ID_SEPARATOR}suite1` })
                     }),
                 },
-            } as unknown as SpecFileTestItem
+            } as unknown as vscode.TestItem
 
             ;(testRepository as any)._fileMap.set(fileId, mockSpecItem)
 
@@ -312,66 +312,10 @@ describe('TestRepository', () => {
 
     // Group 4: Search and Reference
     describe('Search and Reference Functions', () => {
-        it('should find suite by name in parent', () => {
-            // Setup
-            const suiteName = 'test suite'
-            const parentId = 'parent-id'
-            const suiteId = `${parentId}${TEST_ID_SEPARATOR}${suiteName}`
-            const mockParent = { id: parentId } as vscode.TestItem
-            const mockSuite = { id: suiteId } as TestcaseTestItem
-
-            // Set the suite in the map
-            ;(testRepository as any)._suiteMap.set(suiteId, mockSuite)
-
-            // Execute
-            const result = testRepository.searchSuite(suiteName, mockParent)
-
-            // Verify
-            expect(result).to.equal(mockSuite)
-        })
-
-        it('should search recursively in parent hierarchy', () => {
-            // Setup
-            const suiteName = 'test suite'
-            const grandParentId = 'grandparent-id'
-            const parentId = 'parent-id'
-            const suiteId = `${grandParentId}${TEST_ID_SEPARATOR}${suiteName}`
-
-            const mockGrandParent = { id: grandParentId }
-            const mockParent = {
-                id: parentId,
-                parent: mockGrandParent,
-            } as vscode.TestItem
-            const mockSuite = { id: suiteId } as TestcaseTestItem
-
-            // Set the suite in the map
-            ;(testRepository as any)._suiteMap.set(suiteId, mockSuite)
-
-            // Execute
-            const result = testRepository.searchSuite(suiteName, mockParent)
-
-            // Verify
-            expect(result).to.equal(mockSuite)
-        })
-
-        it('should return undefined if suite is not found', () => {
-            // Setup
-            const suiteName = 'not found suite'
-            const parentId = 'parent-id'
-            const mockParent = { id: parentId } as vscode.TestItem
-
-            // Execute
-            const result = testRepository.searchSuite(suiteName, mockParent)
-
-            // Verify
-            expect(result).to.be.undefined
-            expect(log.debug).to.have.been.calledWith(`proper test suite is not found: ${suiteName}`)
-        })
-
         it('should get spec file by file path', () => {
             // Setup
             const fileId = [wdioConfigTestItem.id, mockSpecPath].join(TEST_ID_SEPARATOR)
-            const mockSpec = { id: fileId } as SpecFileTestItem
+            const mockSpec = { id: fileId } as vscode.TestItem
 
             // Set the file in the map
             ;(testRepository as any)._fileMap.set(fileId, mockSpec)
@@ -386,7 +330,7 @@ describe('TestRepository', () => {
         it('should handle file URL format paths when getting spec', () => {
             // Setup
             const fileId = [wdioConfigTestItem.id, vscode.Uri.file(mockSpecPath).fsPath].join(TEST_ID_SEPARATOR)
-            const mockSpec = { id: fileId } as SpecFileTestItem
+            const mockSpec = { id: fileId } as vscode.TestItem
             ;(testRepository as any)._fileMap.set(fileId, mockSpec)
 
             // Execute
@@ -430,19 +374,11 @@ describe('TestRepository', () => {
                         callback({ id: `${fileId}${TEST_ID_SEPARATOR}suite2` })
                     }),
                 },
-            } as unknown as SpecFileTestItem
+            } as unknown as vscode.TestItem
 
             // Set up the maps
             ;(testRepository as any)._fileMap.set(fileId, mockFile)
-            ;(testRepository as any)._suiteMap.set(`${fileId}${TEST_ID_SEPARATOR}suite1`, {
-                id: `${fileId}${TEST_ID_SEPARATOR}suite1`,
-            })
-            ;(testRepository as any)._suiteMap.set(`${fileId}${TEST_ID_SEPARATOR}suite2`, {
-                id: `${fileId}${TEST_ID_SEPARATOR}suite2`,
-            })
-
             // Spy
-            const removeNestedSuitesSpy = sandbox.spy(testRepository as any, 'removeNestedSuites')
             const spy = sinon.spy(wdioConfigTestItem.children, 'delete')
 
             // Execute
@@ -450,10 +386,7 @@ describe('TestRepository', () => {
 
             // Verify
             expect(spy).to.have.been.calledWith(fileId)
-            expect(removeNestedSuitesSpy).to.have.been.calledTwice
             expect((testRepository as any)._fileMap.has(fileId)).to.be.false
-            expect((testRepository as any)._suiteMap.has(`${fileId}${TEST_ID_SEPARATOR}suite1`)).to.be.false
-            expect((testRepository as any)._suiteMap.has(`${fileId}${TEST_ID_SEPARATOR}suite2`)).to.be.false
             expect(log.debug).to.have.been.calledWith(`Removed spec file: ${mockSpecPath}`)
         })
 
@@ -466,29 +399,6 @@ describe('TestRepository', () => {
             // Verify
             expect(log.debug).to.have.been.calledWith('Spec file not found in repository: non-existent-file.js')
             expect(spy).to.not.have.been.called
-        })
-
-        it('should recursively remove nested suites', () => {
-            // Setup
-            const parentId = 'parent-suite-id'
-            const childId1 = `${parentId}${TEST_ID_SEPARATOR}child1`
-            const childId2 = `${parentId}${TEST_ID_SEPARATOR}child2`
-            const grandchildId = `${childId1}${TEST_ID_SEPARATOR}grandchild`
-
-            // Set up suites in map
-            ;(testRepository as any)._suiteMap.set(parentId, { id: parentId })
-            ;(testRepository as any)._suiteMap.set(childId1, { id: childId1 })
-            ;(testRepository as any)._suiteMap.set(childId2, { id: childId2 })
-            ;(testRepository as any)._suiteMap.set(grandchildId, { id: grandchildId })
-
-            // Execute
-            ;(testRepository as any).removeNestedSuites(parentId)
-
-            // Verify
-            expect((testRepository as any)._suiteMap.has(childId1)).to.be.false
-            expect((testRepository as any)._suiteMap.has(childId2)).to.be.false
-            expect((testRepository as any)._suiteMap.has(grandchildId)).to.be.false
-            expect((testRepository as any)._suiteMap.has(parentId)).to.be.true // Parent should still exist
         })
     })
 })

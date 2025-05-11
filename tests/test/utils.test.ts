@@ -4,7 +4,6 @@ import * as utils from '../../src/test/utils.js'
 
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../../src/test/manager.js'
-import type { WdioConfigTestItem, WdioTestItem } from '../../src/test/types.js'
 
 vi.mock('vscode', async () => {
     return {
@@ -84,144 +83,6 @@ describe('Test Utils', () => {
         })
     })
 
-    describe('Type guards', () => {
-        // Mock for vscode.TestItem
-        const createTestItem = (id: string, metadata: any = {}): vscode.TestItem => {
-            return {
-                id,
-                label: id,
-                uri: { fsPath: `/path/to/${id}` } as vscode.Uri,
-                children: {} as vscode.TestItemCollection,
-                canResolveChildren: false,
-                busy: false,
-                metadata,
-            } as unknown as vscode.TestItem
-        }
-
-        describe('isWdioTestItem', () => {
-            it('should return true if testItem has metadata not property', () => {
-                const testItem = createTestItem('wdio-item', {
-                    isWorkspace: false,
-                    isConfigFile: false,
-                    isSpecFile: false,
-                })
-                expect(utils.isWdioTestItem(testItem)).toBe(true)
-            })
-
-            it('should return false if testItem has metadata not property', () => {
-                const testItem = createTestItem('wdio-item', { some: 'data' })
-                expect(utils.isWdioTestItem(testItem)).toBe(false)
-            })
-
-            it('should return false if testItem has no metadata property', () => {
-                const testItem = createTestItem('non-wdio-item')
-                delete (testItem as any).metadata
-                expect(utils.isWdioTestItem(testItem)).toBe(false)
-            })
-        })
-
-        describe('isWorkspace', () => {
-            it('should return true if testItem is a workspace item', () => {
-                const testItem = createTestItem('workspace-item', {
-                    isWorkspace: true,
-                    isConfigFile: false,
-                    isSpecFile: false,
-                })
-                expect(utils.isWorkspace(testItem as WdioTestItem)).toBe(true)
-            })
-
-            it('should return false if testItem is not a workspace item', () => {
-                const testItem = createTestItem('non-workspace-item', { isWorkspace: false })
-                expect(utils.isWorkspace(testItem as WdioTestItem)).toBe(false)
-            })
-
-            it('should return false if testItem has no workspace flag', () => {
-                const testItem = createTestItem('item', { someOtherProp: true })
-                expect(utils.isWorkspace(testItem as WdioTestItem)).toBe(false)
-            })
-        })
-
-        describe('isConfig', () => {
-            it('should return true if testItem is a config file item', () => {
-                const testItem = createTestItem('config-item', {
-                    isWorkspace: false,
-                    isConfigFile: true,
-                    isSpecFile: false,
-                })
-                expect(utils.isConfig(testItem as WdioTestItem)).toBe(true)
-            })
-
-            it('should return false if testItem is not a config file item', () => {
-                const testItem = createTestItem('non-config-item', { isConfigFile: false })
-                expect(utils.isConfig(testItem as WdioTestItem)).toBe(false)
-            })
-
-            it('should return false if testItem has no config file flag', () => {
-                const testItem = createTestItem('item', { someOtherProp: true })
-                expect(utils.isConfig(testItem as WdioTestItem)).toBe(false)
-            })
-        })
-
-        describe('isSpec', () => {
-            it('should return true if testItem is a spec file item', () => {
-                const testItem = createTestItem('spec-item', {
-                    isWorkspace: false,
-                    isConfigFile: false,
-                    isSpecFile: true,
-                })
-                expect(utils.isSpec(testItem as WdioTestItem)).toBe(true)
-            })
-
-            it('should return false if testItem is not a spec file item', () => {
-                const testItem = createTestItem('non-spec-item', { isSpecFile: false })
-                expect(utils.isSpec(testItem as WdioTestItem)).toBe(false)
-            })
-
-            it('should return false if testItem has no spec file flag', () => {
-                const testItem = createTestItem('item', { someOtherProp: true })
-                expect(utils.isSpec(testItem as WdioTestItem)).toBe(false)
-            })
-        })
-
-        describe('isTestcase', () => {
-            it('should return true if testItem is a testcase item', () => {
-                const testItem = createTestItem('testcase-item', {
-                    isWorkspace: false,
-                    isConfigFile: false,
-                    isSpecFile: false,
-                })
-                expect(utils.isTestcase(testItem as WdioTestItem)).toBe(true)
-            })
-
-            it('should return false if testItem is a workspace item', () => {
-                const testItem = createTestItem('workspace-item', {
-                    isWorkspace: true,
-                    isConfigFile: false,
-                    isSpecFile: false,
-                })
-                expect(utils.isTestcase(testItem as WdioTestItem)).toBe(false)
-            })
-
-            it('should return false if testItem is a config file item', () => {
-                const testItem = createTestItem('config-item', {
-                    isWorkspace: false,
-                    isConfigFile: true,
-                    isSpecFile: false,
-                })
-                expect(utils.isTestcase(testItem as WdioTestItem)).toBe(false)
-            })
-
-            it('should return false if testItem is a spec file item', () => {
-                const testItem = createTestItem('spec-item', {
-                    isWorkspace: false,
-                    isConfigFile: false,
-                    isSpecFile: true,
-                })
-                expect(utils.isTestcase(testItem as WdioTestItem)).toBe(false)
-            })
-        })
-    })
-
     describe('createRunProfile', () => {
         let mockController: vscode.TestController
         let repositoryManager: RepositoryManager
@@ -242,7 +103,7 @@ describe('Test Utils', () => {
                     fsPath: 'file:///path/to/wdio.conf.js',
                 },
                 description: 'path/to',
-            } as unknown as WdioConfigTestItem
+            } as unknown as vscode.TestItem
             const isDefaultProfile = true
 
             utils.createRunProfile.call(repositoryManager, wdioConfigFile, isDefaultProfile)

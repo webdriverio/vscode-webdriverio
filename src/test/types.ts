@@ -55,52 +55,16 @@ export type VscodeTestData = Omit<TestData, 'range' | 'children'> & {
     children: VscodeTestData[]
 }
 
-type RequireUri<T extends vscode.TestItem> = Omit<T, 'uri'> & Required<Pick<T, 'uri'>>
-
-export type BaseTestItemMetadata = {
+export type TestItemMetadata = {
+    uri: vscode.Uri
     isWorkspace: boolean
     isConfigFile: boolean
     isSpecFile: boolean
+    isTestcase: boolean
+    repository?: TestRepository // only workspace dose not have repository
+    runProfiles?: vscode.TestRunProfile[]
+    type?: TestType
 }
 
-export interface WdioTestItem extends RequireUri<vscode.TestItem> {
-    metadata: BaseTestItemMetadata
-}
-
-export interface WorkspaceTestItem extends WdioTestItem {
-    metadata: {
-        isWorkspace: true
-        isConfigFile: false
-        isSpecFile: false
-    }
-}
-
-export interface WdioConfigTestItem extends WdioTestItem {
-    metadata: {
-        isWorkspace: false
-        isConfigFile: true
-        isSpecFile: false
-        repository: TestRepository
-        runProfiles: vscode.TestRunProfile[]
-    }
-}
-
-export interface SpecFileTestItem extends WdioTestItem {
-    metadata: {
-        isWorkspace: false
-        isConfigFile: false
-        isSpecFile: true
-        repository: TestRepository
-    }
-}
-
-export interface TestcaseTestItem extends WdioTestItem {
-    testCaseItem: {}
-    metadata: {
-        isWorkspace: false
-        isConfigFile: false
-        isSpecFile: false
-        repository: TestRepository
-        type: TestType
-    }
-}
+export type TestItemMetadataWithRepository = Omit<TestItemMetadata, 'repository'> &
+    Required<Pick<TestItemMetadata, 'repository'>>

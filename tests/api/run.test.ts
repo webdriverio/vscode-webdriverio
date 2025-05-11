@@ -59,6 +59,7 @@ describe('TestRunner', () => {
         it('should successfully run a TestCase test item', async () => {
             // Create a test case test item
             const testItem = createTestItem(['workspace', 'config', 'spec.js', 'MyTest'].join(TEST_ID_SEPARATOR), {
+                isTestcase: true,
                 repository: { framework: 'mocha', wdioConfigPath: '/test/path/wdio.conf.js' },
             })
 
@@ -129,7 +130,7 @@ describe('TestRunner', () => {
             // Verify RPC call was made with correct options
             expect(mockRpc.runTest).toHaveBeenCalledWith({
                 configPath: '/test/path/wdio.conf.js',
-                specs: undefined,
+                specs: ['/path/to/test.js'],
                 grep: undefined,
                 range: undefined,
             })

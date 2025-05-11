@@ -1,8 +1,9 @@
 import { vi } from 'vitest'
 
+import { RepositoryManager } from '../src/test/manager.js'
 import type * as vscode from 'vscode'
 
-export function createTestItem(id: string, metadata?: any, parent: vscode.TestItem | null = null): vscode.TestItem {
+export function createTestItem(id: string, metadata?: any, parent: vscode.TestItem | null = null) {
     const _metadata = !metadata
         ? undefined
         : Object.assign(
@@ -10,11 +11,12 @@ export function createTestItem(id: string, metadata?: any, parent: vscode.TestIt
                 isWorkspace: false,
                 isConfigFile: false,
                 isSpecFile: false,
+                isTestcase: false,
             },
             metadata
         )
 
-    return {
+    const testItem = {
         id,
         label: id,
         uri: { fsPath: '/path/to/test.js' } as vscode.Uri,
@@ -28,6 +30,8 @@ export function createTestItem(id: string, metadata?: any, parent: vscode.TestIt
             start: { line: 10, character: 0 },
             end: { line: 20, character: 0 },
         },
-        metadata: _metadata,
     } as unknown as vscode.TestItem
+
+    RepositoryManager.setMetadata(testItem, _metadata)
+    return testItem
 }

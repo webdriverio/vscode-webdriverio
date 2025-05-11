@@ -6,7 +6,6 @@ import { log } from '../../src/utils/logger.js'
 
 import type { ResultSet, TestSuite, Test } from '../../src/reporter/types.js'
 import type { TestRepository } from '../../src/test/repository.js'
-import type { SpecFileTestItem } from '../../src/test/types.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => {
@@ -86,7 +85,6 @@ describe('TestReporter', () => {
         // Setup mock repository
         mockRegistry = {
             getSpecByFilePath: vi.fn(), // Changed from getSpecById to getSpecByFilePath
-            searchSuite: vi.fn(),
         } as unknown as TestRepository
 
         // Setup mock test run
@@ -128,7 +126,7 @@ describe('TestReporter', () => {
         it('should return true when all tests passed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js') as SpecFileTestItem
+            const specTestItem = createMockTestItem(specPath, 'spec.js') as vscode.TestItem
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 2, failed: 0, skipped: 0 })
 
@@ -146,7 +144,7 @@ describe('TestReporter', () => {
         it('should return false when any test failed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js') as SpecFileTestItem
+            const specTestItem = createMockTestItem(specPath, 'spec.js') as vscode.TestItem
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 1, failed: 1, skipped: 0 })
 
@@ -204,30 +202,19 @@ describe('TestReporter', () => {
             const updateSuiteStatusSpy = vi.spyOn(testReporter as any, 'updateSuiteStatus')
 
             // Create test structure
-            const parentItem = createMockTestItem('parent', 'Parent')
-            const suiteItem = createMockTestItem('suite', 'Suite')
-            const nestedSuiteItem = createMockTestItem('nested', 'Nested')
+            const nestedSuiteItem = createMockTestItem('nested', 'nested')
+            const suiteItem = createMockTestItem('suite', 'suite', [nestedSuiteItem])
+            const parentItem = createMockTestItem('parent', 'parent', [suiteItem])
 
             const mockTest = createMockTest('Test 1')
             const mockNestedTest = createMockTest('Nested Test')
-            const mockNestedSuite = createMockTestSuite('Nested', [mockNestedTest])
-            const mockSuite = createMockTestSuite('Suite', [mockTest], [mockNestedSuite])
-
-            vi.mocked(mockRegistry.searchSuite).mockImplementation((name) => {
-                if (name === 'Suite') {
-                    return suiteItem
-                }
-                if (name === 'Nested') {
-                    return nestedSuiteItem
-                }
-                return undefined
-            })
+            const mockNestedSuite = createMockTestSuite('nested', [mockNestedTest])
+            const mockSuite = createMockTestSuite('suite', [mockTest], [mockNestedSuite])
 
             // Execute - call the private method
             ;(testReporter as any).processHierarchicalSuite(mockSuite, parentItem)
 
             // Verify
-            expect(mockRegistry.searchSuite).toHaveBeenCalledWith('Suite', parentItem)
             expect(processTestSpy).toHaveBeenCalledWith(mockTest, suiteItem)
             expect(processHierarchicalSuiteSpy).toHaveBeenCalledWith(mockNestedSuite, suiteItem)
             expect(updateSuiteStatusSpy).toHaveBeenCalledWith(suiteItem, mockSuite)
@@ -238,13 +225,10 @@ describe('TestReporter', () => {
             const parentItem = createMockTestItem('parent', 'Parent')
             const mockSuite = createMockTestSuite('Suite', [])
 
-            vi.mocked(mockRegistry.searchSuite).mockReturnValue(undefined)
-
             // Execute
             ;(testReporter as any).processHierarchicalSuite(mockSuite, parentItem)
 
             // Verify
-            expect(mockRegistry.searchSuite).toHaveBeenCalledWith('Suite', parentItem)
             expect(log.debug).toHaveBeenCalledWith(expect.stringContaining('Suite'))
         })
     })

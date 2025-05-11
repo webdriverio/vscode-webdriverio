@@ -76,7 +76,13 @@ export class TestReporter {
      */
     private processHierarchicalSuite(suite: TestSuite, parentItem: vscode.TestItem): void {
         // Find the suite TestItem in the repository
-        const suiteItem = this._repository.searchSuite(suite.name, parentItem)
+        let suiteItem: vscode.TestItem | undefined
+
+        parentItem.children.forEach((child) => {
+            if (child.label === suite.name) {
+                suiteItem = child
+            }
+        })
 
         if (!suiteItem) {
             log.debug(`Suite TestItem not found for suite: ${suite.name}`)

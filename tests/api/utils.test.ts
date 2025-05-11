@@ -4,7 +4,11 @@ import { loggingFn } from '../../src/api/utils.js'
 import { LOG_LEVEL } from '../../src/constants.js'
 import { log } from '../../src/utils/logger.js'
 
-vi.mock('../../src/utils/logger', () => ({
+vi.mock('vscode', () => {
+    return {}
+})
+
+vi.mock('../../src/utils/logger.js', () => ({
     log: {
         trace: vi.fn(),
         debug: vi.fn(),

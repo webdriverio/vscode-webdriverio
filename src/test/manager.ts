@@ -8,9 +8,32 @@ import { createRunProfile } from './utils.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
 import { log } from '../utils/logger.js'
 
-import type { WdioConfigTestItem, WorkspaceTestItem } from './types.js'
+import type { TestItemMetadata } from './types.js'
 import type { ServerManager } from '../api/manager.js'
 import type { ExtensionConfigManager } from '../config/index.js'
+
+class MetadataRepository {
+    private static testMetadataRepository = new WeakMap<vscode.TestItem, TestItemMetadata>()
+    public static getMetadata(testItem: vscode.TestItem) {
+        const metadata = this.testMetadataRepository.get(testItem)
+        if (!metadata) {
+            throw new Error("The metadata for TestItem is not set. This is extension's bug.")
+        }
+        return metadata
+    }
+
+    public static getRepository(testItem: vscode.TestItem) {
+        const metadata = this.getMetadata(testItem)
+        if (!metadata.repository) {
+            throw new Error("The metadata for TestItem is not set. This is extension's bug.")
+        }
+        return metadata.repository
+    }
+
+    public static setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata) {
+        this.testMetadataRepository.set(testItem, metadata)
+    }
+}
 
 /**
  * workspace                                        -- managed by this class
@@ -22,11 +45,11 @@ import type { ExtensionConfigManager } from '../config/index.js'
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
-export class RepositoryManager implements vscode.Disposable {
+export class RepositoryManager extends MetadataRepository implements vscode.Disposable {
     private readonly _repos = new Set<TestRepository>()
     private _loadingTestItem: vscode.TestItem
-    private _workspaceTestItems: WorkspaceTestItem[] = []
-    private _wdioConfigTestItems: WdioConfigTestItem[] = []
+    private _workspaceTestItems: vscode.TestItem[] = []
+    private _wdioConfigTestItems: vscode.TestItem[] = []
     private isCreatedDefaultProfile = false
 
     constructor(
@@ -34,6 +57,7 @@ export class RepositoryManager implements vscode.Disposable {
         public readonly configManager: ExtensionConfigManager,
         private readonly serverManager: ServerManager
     ) {
+        super()
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true
@@ -82,7 +106,8 @@ export class RepositoryManager implements vscode.Disposable {
         for (const workspaceTestItem of affectedWorkspaceItems) {
             const configTestItem = await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigPath)
 
-            await configTestItem.metadata.repository.discoverAllTests()
+            const repo = RepositoryManager.getRepository(configTestItem)
+            await repo.discoverAllTests()
             if (!this.configManager.isMultiWorkspace) {
                 this.controller.items.add(configTestItem)
             }
@@ -96,14 +121,12 @@ export class RepositoryManager implements vscode.Disposable {
         log.debug(`Remove the config file from ${affectedWorkspaceItems.length} workspace(s)`)
         const configUri = convertPathToUri(wdioConfigPath)
         for (const workspaceItem of affectedWorkspaceItems) {
-            const config = workspaceItem.children.get(
-                this.generateConfigTestItemId(workspaceItem, configUri)
-            ) as WdioConfigTestItem
+            const config = workspaceItem.children.get(this.generateConfigTestItemId(workspaceItem, configUri))
             if (!config) {
                 continue
             }
             log.debug(`Remove the TestItem: ${config.id}`)
-            const targetRepo = config.metadata.repository
+            const targetRepo = RepositoryManager.getRepository(config)
             targetRepo.dispose()
             this._repos.delete(targetRepo)
 
@@ -140,22 +163,24 @@ export class RepositoryManager implements vscode.Disposable {
             `workspace:${workspaceFolder.uri.fsPath}`,
             workspaceFolder.name,
             workspaceFolder.uri
-        ) as WorkspaceTestItem
-        workspaceItem['metadata'] = {
+        )
+        RepositoryManager.setMetadata(workspaceItem, {
+            uri: workspaceFolder.uri,
             isWorkspace: true,
             isConfigFile: false,
             isSpecFile: false,
-        }
+            isTestcase: false,
+        })
         return workspaceItem
     }
 
-    private async createWdioConfigTestItem(workspaceTestItem: WorkspaceTestItem, wdioConfigPath: string) {
-        const configUri = convertPathToUri(wdioConfigPath)
+    private async createWdioConfigTestItem(workspaceTestItem: vscode.TestItem, wdioConfigPath: string) {
+        const uri = convertPathToUri(wdioConfigPath)
         const configItem = this.controller.createTestItem(
-            this.generateConfigTestItemId(workspaceTestItem, configUri),
+            this.generateConfigTestItemId(workspaceTestItem, uri),
             basename(wdioConfigPath),
-            configUri
-        ) as WdioConfigTestItem
+            uri
+        )
 
         workspaceTestItem.children.add(configItem)
         this._wdioConfigTestItems.push(configItem)
@@ -165,17 +190,20 @@ export class RepositoryManager implements vscode.Disposable {
         this._repos.add(repo)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
-        configItem['metadata'] = {
+
+        RepositoryManager.setMetadata(configItem, {
+            uri,
             isWorkspace: false,
             isConfigFile: true,
             isSpecFile: false,
+            isTestcase: false,
             repository: repo,
             runProfiles: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
-        }
+        })
         return configItem
     }
 
-    private generateConfigTestItemId(workspaceTestItem: WorkspaceTestItem, configUri: vscode.Uri) {
+    private generateConfigTestItemId(workspaceTestItem: vscode.TestItem, configUri: vscode.Uri) {
         return [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR)
     }
 

@@ -3,12 +3,13 @@ import * as path from 'node:path'
 
 import { convertPathToUri, convertTestData } from './converter.js'
 import { TEST_ID_SEPARATOR } from '../constants.js'
+import { RepositoryManager } from './manager.js'
 import { filterSpecsByPaths } from './utils.js'
 import { log } from '../utils/logger.js'
 import { normalizePath } from '../utils/normalize.js'
 
 import type * as vscode from 'vscode'
-import type { SpecFileTestItem, TestcaseTestItem, VscodeTestData, WdioConfigTestItem } from './types.js'
+import type { VscodeTestData } from './types.js'
 import type { WdioExtensionWorkerInterface } from '../api/index.js'
 
 /**
@@ -16,18 +17,17 @@ import type { WdioExtensionWorkerInterface } from '../api/index.js'
  * the single WebdriverIO configuration file
  */
 export class TestRepository implements vscode.Disposable {
-    private _specPatterns:string[] = []
-    private _suiteMap = new Map<string, TestcaseTestItem>() // Mapping for the id and TestItem
-    private _fileMap = new Map<string, SpecFileTestItem>()
+    private _specPatterns: string[] = []
+    private _fileMap = new Map<string, vscode.TestItem>()
     private _framework: string | undefined = undefined
     constructor(
         public readonly controller: vscode.TestController,
         public readonly worker: WdioExtensionWorkerInterface,
         public readonly wdioConfigPath: string,
-        private _wdioConfigTestItem: WdioConfigTestItem
+        private _wdioConfigTestItem: vscode.TestItem
     ) {}
 
-    public get specPatterns(){
+    public get specPatterns() {
         return this._specPatterns
     }
 
@@ -146,7 +146,7 @@ export class TestRepository implements vscode.Disposable {
         }
     }
 
-    private getTestFileId(wdioConfigTestItem: WdioConfigTestItem, testFilePath: string) {
+    private getTestFileId(wdioConfigTestItem: vscode.TestItem, testFilePath: string) {
         return [wdioConfigTestItem.id, testFilePath].join(TEST_ID_SEPARATOR)
     }
     /**
@@ -156,7 +156,6 @@ export class TestRepository implements vscode.Disposable {
      */
     private async resisterSpecs(specs: string[], clearExisting: boolean = true) {
         if (clearExisting) {
-            this._suiteMap.clear()
             this._fileMap.clear()
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
@@ -176,40 +175,19 @@ export class TestRepository implements vscode.Disposable {
                         const testTreeCreator = (parentId: string, testCase: VscodeTestData) => {
                             const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
 
-                            const testCaseItem = this.controller.createTestItem(
-                                testCaseId,
-                                testCase.name,
-                                testCase.uri
-                            ) as TestcaseTestItem
+                            const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, testCase.uri)
 
-                            testCaseItem.metadata = {
+                            RepositoryManager.setMetadata(testCaseItem, {
+                                uri: testCase.uri,
                                 isWorkspace: false,
                                 isConfigFile: false,
                                 isSpecFile: false,
+                                isTestcase: true,
                                 repository: this,
                                 type: testCase.type,
-                            }
+                            })
 
                             testCaseItem.range = testCase.range
-
-                            // Add metadata as custom properties if available
-                            if (testCase.metadata) {
-                                // Use type assertion since customData isn't in TypeScript definition
-                                ;(testCaseItem as any).customData = testCase.metadata
-                            }
-
-                            if (
-                                testCase.type === 'describe' ||
-                                testCase.type === 'feature' ||
-                                testCase.type === 'scenario' ||
-                                testCase.type === 'scenarioOutline' ||
-                                testCase.type === 'background' ||
-                                testCase.type === 'rule' ||
-                                testCase.type === 'step'
-                            ) {
-                                log.trace(`[repository] test was registered: ${testCaseId}`)
-                                this._suiteMap.set(testCaseId, testCaseItem)
-                            }
 
                             for (const childTestCase of testCase.children) {
                                 testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
@@ -268,15 +246,6 @@ export class TestRepository implements vscode.Disposable {
             return
         }
 
-        // Remove all suites associated with this file
-        fileItem.children.forEach((child) => {
-            const suiteId = child.id
-            this._suiteMap.delete(suiteId)
-
-            // Also remove any nested suites
-            this.removeNestedSuites(suiteId)
-        })
-
         // Remove the file from the repository
         this._fileMap.delete(fileId)
 
@@ -294,35 +263,12 @@ export class TestRepository implements vscode.Disposable {
     }
 
     /**
-     * Recursively remove nested suites from the repository
-     * @param parentId Parent suite ID
-     */
-    private removeNestedSuites(parentId: string): void {
-        // Find all suites that have this parent as a prefix
-        const prefix = `${parentId}${TEST_ID_SEPARATOR}`
-
-        // Create a list of suites to remove
-        const suitesToRemove = Array.from(this._suiteMap.entries())
-            .filter(([id]) => id.startsWith(prefix))
-            .map(([id]) => id)
-
-        // Remove each matching suite
-        for (const suiteId of suitesToRemove) {
-            this._suiteMap.delete(suiteId)
-
-            // Recursively remove children
-            this.removeNestedSuites(suiteId)
-        }
-    }
-
-    /**
      * Clear all tests from the repository
      */
     public clearTests(): void {
         log.debug('Clearing all tests from repository')
 
         // Clear internal maps
-        this._suiteMap.clear()
         this._fileMap.clear()
     }
 
@@ -338,41 +284,24 @@ export class TestRepository implements vscode.Disposable {
     /**
      * Register a spec file with the test controller
      * @param id Spec file ID
-     * @param spec Spec file URI
+     * @param uri Spec file URI
      * @returns TestItem for the spec file
      */
-    private resisterSpecFile(id: string, spec: vscode.Uri) {
+    private resisterSpecFile(id: string, uri: vscode.Uri) {
         log.trace(`[repository] spec file was registered: ${id}`)
-        const fileTestItem = this.controller.createTestItem(id, path.basename(spec.fsPath), spec) as SpecFileTestItem
-        fileTestItem.sortText = spec.fsPath
-        fileTestItem['metadata'] = {
+        const fileTestItem = this.controller.createTestItem(id, path.basename(uri.fsPath), uri)
+        fileTestItem.sortText = uri.fsPath
+
+        RepositoryManager.setMetadata(fileTestItem, {
+            uri,
             isWorkspace: false,
             isConfigFile: false,
             isSpecFile: true,
+            isTestcase: false,
             repository: this,
-        }
+        })
         this._fileMap.set(id, fileTestItem)
         return fileTestItem
-    }
-
-    /**
-     * Search for a suite by name
-     * @param suiteName Suite name to search for
-     * @param parent Parent test item
-     * @returns TestItem for the suite if found
-     */
-    public searchSuite(suiteName: string, parent: vscode.TestItem): vscode.TestItem | undefined {
-        const id = `${parent.id}${TEST_ID_SEPARATOR}${suiteName}`
-        const suiteItem = this._suiteMap.get(id)
-        if (suiteItem) {
-            return suiteItem
-        }
-        if (parent.parent) {
-            return this.searchSuite(suiteName, parent.parent)
-        }
-        const errorMessage = `proper test suite is not found: ${suiteName}`
-        log.debug(errorMessage)
-        return undefined
     }
 
     /**
@@ -398,8 +327,10 @@ export class TestRepository implements vscode.Disposable {
      * Dispose of resources
      */
     public dispose() {
-        this._wdioConfigTestItem.metadata.runProfiles.forEach((p)=>p.dispose())
-        this._suiteMap.clear()
+        const metadata = RepositoryManager.getMetadata(this._wdioConfigTestItem)
+        if (metadata.runProfiles) {
+            metadata.runProfiles.forEach((p) => p.dispose())
+        }
         this._fileMap.clear()
     }
 }

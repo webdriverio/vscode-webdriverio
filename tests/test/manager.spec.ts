@@ -10,7 +10,6 @@ import { EXTENSION_ID, TEST_ID_SEPARATOR } from '../../src/constants.js'
 import { RepositoryManager } from '../../src/test/manager.js'
 import { TestRepository } from '../../src/test/repository.js'
 import type { WorkspaceData } from '../../src/config/types.js'
-import type { WdioConfigTestItem, WorkspaceTestItem } from '../../src/test/types.js'
 
 const expect = chai.expect
 
@@ -107,8 +106,9 @@ describe('RepositoryManager', () => {
             expect(repositoryManager.controller.items.size).to.equal(1)
             const resistedItem = repositoryManager.controller.items.get(
                 `workspace:${vscode.Uri.file(workspacePath).fsPath}${TEST_ID_SEPARATOR}config:${vscode.Uri.file(configPath).fsPath}`
-            ) as WdioConfigTestItem
-            expect(resistedItem?.metadata.isConfigFile).to.equal(true)
+            )
+
+            expect(RepositoryManager.getMetadata(resistedItem!).isConfigFile).to.equal(true)
         })
 
         it('should register workspace test items for multiple workspaces', async () => {
@@ -137,22 +137,22 @@ describe('RepositoryManager', () => {
             expect(repositoryManager.controller.items.size).to.equal(2)
             const resistedItem1 = repositoryManager.controller.items.get(
                 `workspace:${vscode.Uri.file(workspacePath).fsPath}`
-            ) as WorkspaceTestItem
+            )
             const resistedItem2 = repositoryManager.controller.items.get(
                 `workspace:${vscode.Uri.file(anotherWorkspacePath).fsPath}`
-            ) as WorkspaceTestItem
-            expect(resistedItem1?.metadata.isWorkspace).to.equal(true)
-            expect(resistedItem2?.metadata.isWorkspace).to.equal(true)
+            )
+            expect(RepositoryManager.getMetadata(resistedItem1!).isWorkspace).to.equal(true)
+            expect(RepositoryManager.getMetadata(resistedItem2!).isWorkspace).to.equal(true)
 
-            const configItem1 = resistedItem1.children.get(
+            const configItem1 = resistedItem1!.children.get(
                 `workspace:${vscode.Uri.file(workspacePath).fsPath}${TEST_ID_SEPARATOR}config:${vscode.Uri.file(configPath).fsPath}`
-            ) as WdioConfigTestItem
-            expect(configItem1?.metadata.isConfigFile).to.equal(true)
+            )
+            expect(RepositoryManager.getMetadata(configItem1!).isConfigFile).to.equal(true)
 
-            const configItem2 = resistedItem2.children.get(
+            const configItem2 = resistedItem2!.children.get(
                 `workspace:${vscode.Uri.file(anotherWorkspacePath).fsPath}${TEST_ID_SEPARATOR}config:${vscode.Uri.file(anotherConfigPath).fsPath}`
-            ) as WdioConfigTestItem
-            expect(configItem2?.metadata.isConfigFile).to.equal(true)
+            )
+            expect(RepositoryManager.getMetadata(configItem2!).isConfigFile).to.equal(true)
         })
     })
 

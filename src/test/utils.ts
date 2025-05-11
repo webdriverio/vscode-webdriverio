@@ -5,15 +5,6 @@ import * as vscode from 'vscode'
 import { createHandler } from './runHandler.js'
 import type { RepositoryManager } from './manager.js'
 
-import type {
-    BaseTestItemMetadata,
-    SpecFileTestItem,
-    TestcaseTestItem,
-    WdioConfigTestItem,
-    WdioTestItem,
-    WorkspaceTestItem,
-} from './types.js'
-
 /**
  * Filter spec files by paths
  * @param allSpecs All spec files from configuration
@@ -37,31 +28,9 @@ export function filterSpecsByPaths(allSpecs: string[], filterPaths: string[]): s
     })
 }
 
-export const isWdioTestItem = (testItem: vscode.TestItem): testItem is WdioTestItem =>
-    'metadata' in testItem &&
-    typeof testItem.metadata !== 'undefined' &&
-    typeof (testItem.metadata as BaseTestItemMetadata).isWorkspace === 'boolean' &&
-    typeof (testItem.metadata as BaseTestItemMetadata).isConfigFile === 'boolean' &&
-    typeof (testItem.metadata as BaseTestItemMetadata).isSpecFile === 'boolean'
-
-export const isWorkspace = (testItem: vscode.TestItem): testItem is WorkspaceTestItem =>
-    isWdioTestItem(testItem) && Boolean(testItem.metadata.isWorkspace)
-
-export const isConfig = (testItem: vscode.TestItem): testItem is WdioConfigTestItem =>
-    isWdioTestItem(testItem) && Boolean(testItem.metadata.isConfigFile)
-
-export const isSpec = (testItem: vscode.TestItem): testItem is SpecFileTestItem =>
-    isWdioTestItem(testItem) && Boolean(testItem.metadata.isSpecFile)
-
-export const isTestcase = (testItem: vscode.TestItem): testItem is TestcaseTestItem =>
-    isWdioTestItem(testItem) &&
-    !testItem.metadata.isWorkspace &&
-    !testItem.metadata.isConfigFile &&
-    !testItem.metadata.isSpecFile
-
 export function createRunProfile(
     this: RepositoryManager,
-    wdioConfigFileTestItem: WdioConfigTestItem,
+    wdioConfigFileTestItem: vscode.TestItem,
     isDefaultProfile: boolean
 ) {
     const description = wdioConfigFileTestItem.description ? ` (${wdioConfigFileTestItem.description})` : ''

@@ -17,14 +17,19 @@ vi.mock('vscode', async () => {
 })
 
 // Mock dependencies
-vi.mock('../../src/test/manager.js', () => ({
-    repositoryManager: {
-        controller: {
-            createTestRun: vi.fn(),
-            items: new Map(),
+vi.mock('../../src/test/manager.js', async (importActual) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    const actual = await importActual<typeof import('../../src/test/manager.js')>()
+    return {
+        ...actual,
+        repositoryManager: {
+            controller: {
+                createTestRun: vi.fn(),
+                items: new Map(),
+            },
         },
-    },
-}))
+    }
+})
 
 vi.mock('../../src/test/reporter.js', () => ({
     TestReporter: vi.fn(() => ({
@@ -117,6 +122,7 @@ describe('Run Handler', () => {
                 isConfigFile: false,
                 isSpecFile: false,
             })
+
             mockWorkspaceTest.children.forEach = vi.fn().mockImplementation((callback) => {
                 callback(mockConfigTest)
             })
@@ -209,26 +215,14 @@ describe('Run Handler', () => {
     describe('Test execution', () => {
         it('should throw an error if workspace item is invalid', async () => {
             // Setup
-            const mockInvalidWorkspaceTest = createTestItem('invalid')
+            const mockConfigTest = createTestItem('config1')
 
             const request = {
-                include: [mockInvalidWorkspaceTest],
+                include: [mockConfigTest],
             } as unknown as vscode.TestRunRequest
 
             // Execute & Verify
-            await expect(runHandler(request, mockToken)).rejects.toThrow('Workspace TestItem is not valid.')
-        })
-
-        it('should throw an error if test item is invalid type', async () => {
-            // Setup
-            const mockSpecTest = createTestItem('spec1')
-
-            const request = {
-                include: [mockSpecTest],
-            } as unknown as vscode.TestRunRequest
-
-            // Execute & Verify
-            await expect(runHandler(request, mockToken)).rejects.toThrow('Workspace TestItem is not valid.')
+            await expect(runHandler(request, mockToken)).rejects.toThrow()
         })
 
         it('should run the test and update status based on results', async () => {
@@ -321,6 +315,7 @@ describe('Run Handler', () => {
             // Setup
             const mockParentTest = createTestItem('scenario1', {
                 type: 'scenario',
+                isTestcase: true,
                 repository: { framework: 'cucumber', worker: {} },
             })
 
@@ -328,6 +323,7 @@ describe('Run Handler', () => {
                 'step1',
                 {
                     type: 'step',
+                    isTestcase: true,
                     repository: { framework: 'cucumber', worker: {} },
                 },
                 mockParentTest
