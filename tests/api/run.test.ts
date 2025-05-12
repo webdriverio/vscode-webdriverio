@@ -3,14 +3,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { TestRunner } from '../../src/api/run.js'
 import { TEST_ID_SEPARATOR } from '../../src/constants.js'
 import { createTestItem } from '../utils.js'
-// import type * as vscode from 'vscode'
+
 import type { WdioExtensionWorkerInterface } from '../../src/api/types.js'
 import type { ResultSet } from '../../src/reporter/types.js'
 
 // Mock dependencies
-vi.mock('vscode', () => {
-    return {}
-})
+vi.mock('vscode', () => import('../__mocks__/vscode.cjs'))
 
 vi.mock('../../src/utils/logger', () => ({
     log: {

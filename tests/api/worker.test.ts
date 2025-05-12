@@ -12,7 +12,6 @@ import type * as WebSocket from 'ws'
 import type { ExtensionApi } from '../../src/api/types.js'
 
 // Mock dependencies
-vi.mock('vscode')
 vi.mock('node:child_process')
 vi.mock('node:http')
 vi.mock('ws', () => {

@@ -9,10 +9,10 @@ import type { TestRepository } from '../../src/test/repository.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => {
-    const mockModule = await import('../__mocks__/vscode.js')
+    const mockModule = await import('../__mocks__/vscode.cjs')
     return {
-        TestMessage: vi.fn(),
         ...mockModule,
+        TestMessage: vi.fn(),
     }
 })
 vi.mock('../../src/test/repository')

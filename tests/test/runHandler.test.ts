@@ -11,7 +11,9 @@ import type { ExtensionConfigManager } from '../../src/config/index.js'
 import type { RepositoryManager } from '../../src/test/index.js'
 
 vi.mock('vscode', async () => {
+    const mockVscode = await import('../__mocks__/vscode.cjs')
     return {
+        ...mockVscode,
         TestMessage: vi.fn(),
     }
 })

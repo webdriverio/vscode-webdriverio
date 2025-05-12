@@ -6,7 +6,9 @@ import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../../src/test/manager.js'
 
 vi.mock('vscode', async () => {
+    const mockVscode = await import('../__mocks__/vscode.cjs')
     return {
+        ...mockVscode,
         TestRunProfileKind: {
             Run: 1,
         },

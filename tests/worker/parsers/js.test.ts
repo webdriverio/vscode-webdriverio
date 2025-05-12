@@ -6,8 +6,6 @@ import type { TestData } from '../../../src/test/types.js'
 import type { WorkerMetaContext } from '../../../src/worker/types.js'
 
 // Mock vscode dependencies only
-vi.mock('vscode', () => import('../../__mocks__/vscode.js'))
-
 describe('Test Parser', () => {
     // Create mock WorkerMetaContext for the parseTestCases function
     const mockContext: WorkerMetaContext = {

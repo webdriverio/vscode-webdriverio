@@ -1,15 +1,15 @@
 import { normalize } from 'node:path'
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import * as vscode from 'vscode'
 
 import { ConfigFileWatcher } from '../../src/config/watcher.js'
 import { FileWatcherManager } from '../../src/utils/watcher.js'
-import type * as vscode from 'vscode'
 import type { ServerManager } from '../../src/api/index.js'
 import type { ExtensionConfigManager } from '../../src/config/index.js'
 import type { RepositoryManager } from '../../src/test/index.js'
 
-vi.mock('vscode')
+vi.mock('vscode', async () => await import('../__mocks__/vscode.cjs'))
 
 // Mock dependencies
 vi.mock('../../src/utils/logger.js', () => ({
@@ -20,13 +20,13 @@ vi.mock('../../src/utils/logger.js', () => ({
 
 // Mock functions from test/index.js
 vi.mock('../../src/test/index.js', () => {
-    const TestfileWatcher=vi.fn()
+    const TestfileWatcher = vi.fn()
     TestfileWatcher.prototype.enable = vi.fn()
     TestfileWatcher.prototype.refreshWatchers = vi.fn()
-    return ({
+    return {
         TestfileWatcher,
         convertUriToPath: vi.fn((uri) => uri.fsPath),
-    })
+    }
 })
 
 // Mock normalizePath function
@@ -58,9 +58,7 @@ describe('ConfigFileWatcher', () => {
         vi.clearAllMocks()
 
         // Create mock URI
-        mockUri = {
-            fsPath: '/path/to/wdio.conf.js',
-        } as unknown as vscode.Uri
+        mockUri = vscode.Uri.file('/path/to/wdio.conf.js')
 
         // Create mock repositories
         mockRepo1 = {
@@ -150,7 +148,7 @@ describe('ConfigFileWatcher', () => {
             const result = watcher['getFilePatterns']()
 
             // Verify
-            expect(result).toEqual([{ pattern:'**/wdio.conf.{js,ts}' }])
+            expect(result).toEqual([{ pattern: '**/wdio.conf.{js,ts}' }])
         })
 
         it('should return empty array if no patterns are defined', () => {

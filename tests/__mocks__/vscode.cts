@@ -3,4 +3,4 @@ import { vi } from 'vitest'
 
 const vscode = createVSCodeMock(vi)
 
-module.exports = { ...vscode }
+module.exports = vscode

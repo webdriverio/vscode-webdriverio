@@ -4,20 +4,11 @@ import * as vscode from 'vscode'
 import { FileWatcherManager, type WatchPattern } from '../../src/utils/watcher.js'
 
 // Mock vscode module
-vi.mock('vscode', () => {
+vi.mock('vscode', async () => {
+    const mockVscode = await import('../__mocks__/vscode.cjs')
     return {
-        workspace: {
-            createFileSystemWatcher: vi.fn(() => ({
-                onDidCreate: vi.fn(),
-                onDidChange: vi.fn(),
-                onDidDelete: vi.fn(),
-                dispose: vi.fn(),
-            })),
-        },
+        ...mockVscode,
         RelativePattern: vi.fn(),
-        Uri: {
-            file: (path: string) => ({ fsPath: path }),
-        },
     }
 })
 
@@ -36,9 +27,11 @@ class TestFileWatcherManager extends FileWatcherManager {
     public handleFileChangeCalls = 0
     public handleFileDeleteCalls = 0
     public lastHandledUri: vscode.Uri | null = null
-    public filePatterns:WatchPattern[] = [{
-        pattern: '**/*.test.ts'
-    }]
+    public filePatterns: WatchPattern[] = [
+        {
+            pattern: '**/*.test.ts',
+        },
+    ]
     constructor() {
         super()
     }
@@ -92,6 +85,14 @@ describe('FileWatcherManager', () => {
     beforeEach(() => {
         // Reset all mocks before each test
         vi.resetAllMocks()
+
+        vi.mocked(vscode.workspace.createFileSystemWatcher).mockReturnValue({
+            onDidCreate: vi.fn(),
+            onDidChange: vi.fn(),
+            onDidDelete: vi.fn(),
+            dispose: vi.fn(),
+        } as unknown as vscode.FileSystemWatcher)
+
         fileWatcherManager = new TestFileWatcherManager()
     })
 
@@ -147,7 +148,7 @@ describe('FileWatcherManager', () => {
     describe('Watcher management', () => {
         it('should create watchers for all file patterns', () => {
             const mockCreateFileSystemWatcher = vscode.workspace.createFileSystemWatcher
-            fileWatcherManager.filePatterns = [{ pattern: '**/*.test.ts' }, { pattern:'**/*.spec.ts' }]
+            fileWatcherManager.filePatterns = [{ pattern: '**/*.test.ts' }, { pattern: '**/*.spec.ts' }]
 
             fileWatcherManager.exposeCreateWatchers()
 
@@ -161,11 +162,12 @@ describe('FileWatcherManager', () => {
             fileWatcherManager.filePatterns = [
                 {
                     pattern: '**/*.test.ts',
-                    base: { fsPath:'/path/to' } as vscode.Uri,
-                }, {
-                    pattern:'**/*.spec.ts',
-                    base: { fsPath:'/path/to' } as vscode.Uri,
-                }
+                    base: { fsPath: '/path/to' } as vscode.Uri,
+                },
+                {
+                    pattern: '**/*.spec.ts',
+                    base: { fsPath: '/path/to' } as vscode.Uri,
+                },
             ]
 
             fileWatcherManager.exposeCreateWatchers()

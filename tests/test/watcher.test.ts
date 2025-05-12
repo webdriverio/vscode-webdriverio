@@ -8,13 +8,7 @@ import { FileWatcherManager } from '../../src/utils/watcher.js'
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../../src/test/manager.js'
 
-vi.mock('vscode', () => {
-    return {
-        Uri: {
-            file: vi.fn((f) => ({ fsPath: f })),
-        },
-    }
-})
+vi.mock('vscode', () => import('../__mocks__/vscode.cjs'))
 
 // Mock dependencies
 vi.mock('../../src/utils/logger.js', () => ({

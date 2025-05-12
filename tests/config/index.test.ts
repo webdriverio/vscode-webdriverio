@@ -6,19 +6,10 @@ import { ExtensionConfigManager } from '../../src/config/index.js'
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '../../src/constants.js'
 import { log } from '../../src/utils/logger.js'
 
+import type { MockWorkspace } from 'jest-mock-vscode'
+
 // Mock dependencies
-vi.mock('vscode', () => {
-    return {
-        workspace: {
-            getConfiguration: vi.fn(),
-            workspaceFolders: undefined,
-        },
-        ConfigurationChangeEvent: vi.fn(),
-        WorkspaceFolder: vi.fn(),
-        EventEmitter: vi.fn(),
-        Disposable: vi.fn(),
-    }
-})
+vi.mock('vscode', async () => import('../__mocks__/vscode.cjs'))
 vi.mock('../../src/config/find.js')
 vi.mock('../../src/config/watcher.js', () => {
     return {}
@@ -180,9 +171,6 @@ describe('ExtensionConfigManager', () => {
 
     describe('initialize', () => {
         it('should return empty array when no workspace folders', async () => {
-            // Setup
-            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [] })
-
             // Execute
             const result = await configManager.initialize()
 
@@ -194,12 +182,9 @@ describe('ExtensionConfigManager', () => {
 
         it('should initialize workspaces and find config files', async () => {
             // Setup
-            const mockWorkspaceFolder1 = { uri: { fsPath: '/workspace1' } } as vscode.WorkspaceFolder
-            const mockWorkspaceFolder2 = { uri: { fsPath: '/workspace2' } } as vscode.WorkspaceFolder
-
-            Object.defineProperty(vscode.workspace, 'workspaceFolders', {
-                value: [mockWorkspaceFolder1, mockWorkspaceFolder2],
-            })
+            const mockWorkspaceFolder1 = { uri: vscode.Uri.file('/workspace1') } as vscode.WorkspaceFolder
+            const mockWorkspaceFolder2 = { uri: vscode.Uri.file('/workspace2') } as vscode.WorkspaceFolder
+            ;(vscode.workspace as MockWorkspace).setWorkspaceFolders([mockWorkspaceFolder1, mockWorkspaceFolder2])
 
             const wdioConfigFiles1 = ['/workspace1/wdio.conf.js', '/workspace1/wdio.e2e.conf.js']
             const wdioConfigFiles2 = ['/workspace2/wdio.conf.js']
@@ -229,8 +214,9 @@ describe('ExtensionConfigManager', () => {
 
         it('should handle workspaces with no config files', async () => {
             // Setup
-            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
+            const mockWorkspaceFolder = { uri: vscode.Uri.file('/workspace') } as vscode.WorkspaceFolder
+            ;(vscode.workspace as MockWorkspace).setWorkspaceFolders([mockWorkspaceFolder])
+
             vi.mocked(findWdioConfig).mockResolvedValueOnce([])
 
             // Execute
@@ -255,8 +241,8 @@ describe('ExtensionConfigManager', () => {
 
         it('should return all config paths after initialization', async () => {
             // Setup
-            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
+            const mockWorkspaceFolder = { uri: vscode.Uri.file('/workspace') } as vscode.WorkspaceFolder
+            ;(vscode.workspace as MockWorkspace).setWorkspaceFolders([mockWorkspaceFolder])
 
             const wdioConfigFiles = ['/workspace/wdio.conf.js', '/workspace/wdio.e2e.conf.js']
             vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)
@@ -279,13 +265,6 @@ describe('ExtensionConfigManager', () => {
 
     describe('dispose', () => {
         it('should clear workspaces data', async () => {
-            // Setup
-            const mockWorkspaceFolder = { uri: { fsPath: '/workspace' } } as vscode.WorkspaceFolder
-            Object.defineProperty(vscode.workspace, 'workspaceFolders', { value: [mockWorkspaceFolder] })
-
-            const wdioConfigFiles = ['/workspace/wdio.conf.js']
-            vi.mocked(findWdioConfig).mockResolvedValueOnce(wdioConfigFiles)
-
             await configManager.initialize()
             expect(configManager.workspaces).toBeDefined()
 
