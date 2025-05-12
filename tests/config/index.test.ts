@@ -1,3 +1,5 @@
+import { normalize } from 'node:path'
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
@@ -10,17 +12,9 @@ import type { MockWorkspace } from 'jest-mock-vscode'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../__mocks__/vscode.cjs'))
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
 vi.mock('../../src/config/find.js')
-vi.mock('../../src/config/watcher.js', () => {
-    return {}
-})
-vi.mock('../../src/utils/logger.js', () => ({
-    log: {
-        debug: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-    },
-}))
+vi.mock('../../src/config/watcher.js', () => ({}))
 vi.mock('node:events', () => {
     const EventEmitter = vi.fn()
     EventEmitter.prototype.emit = vi.fn()
@@ -197,8 +191,14 @@ describe('ExtensionConfigManager', () => {
             // Verify
             expect(configManager.isMultiWorkspace).toBe(true)
             expect(findWdioConfig).toHaveBeenCalledTimes(2)
-            expect(findWdioConfig).toHaveBeenCalledWith('/workspace1', DEFAULT_CONFIG_VALUES.configFilePattern)
-            expect(findWdioConfig).toHaveBeenCalledWith('/workspace2', DEFAULT_CONFIG_VALUES.configFilePattern)
+            expect(findWdioConfig).toHaveBeenCalledWith(
+                normalize('/workspace1'),
+                DEFAULT_CONFIG_VALUES.configFilePattern
+            )
+            expect(findWdioConfig).toHaveBeenCalledWith(
+                normalize('/workspace2'),
+                DEFAULT_CONFIG_VALUES.configFilePattern
+            )
 
             expect(configManager.workspaces).toEqual([
                 {

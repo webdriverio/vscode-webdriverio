@@ -20,14 +20,7 @@ vi.mock('../../src/api/worker.js', () => {
 })
 
 // Mock the logger module
-vi.mock('../../src/utils/logger.js', () => {
-    return {
-        log: {
-            debug: vi.fn(),
-            trace: vi.fn(),
-        },
-    }
-})
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
 
 describe('ServerManager', () => {
     let serverManager: ServerManager

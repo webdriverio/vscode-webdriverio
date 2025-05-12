@@ -12,12 +12,12 @@ type Listeners = {
     stderr: (data: string) => void
 }
 
-export class TestRunner {
+export class TestRunner implements vscode.Disposable{
     private _stdout = ''
     private _stderr = ''
     private _listeners: Listeners | undefined
 
-    constructor(private _worker: WdioExtensionWorkerInterface) {}
+    constructor(protected worker: WdioExtensionWorkerInterface) {}
 
     public get stdout() {
         return this._stdout
@@ -110,10 +110,10 @@ export class TestRunner {
      */
     private async executeTest(testOptions: RunTestOptions) {
         log.trace(`REQUEST: ${JSON.stringify(testOptions, null, 2)}`)
-        await this._worker.ensureConnected()
+        await this.worker.ensureConnected()
         this.setListener()
 
-        const result = await this._worker.rpc.runTest(testOptions)
+        const result = await this.worker.rpc.runTest(testOptions)
         this.removeListener()
         const resultData = result.json
         log.trace(`RESULT: ${JSON.stringify(resultData, null, 2)}`)
@@ -132,14 +132,14 @@ export class TestRunner {
             stdout: (data: string) => this.stdoutListener(data),
             stderr: (data: string) => this.stderrListener(data),
         }
-        this._worker.on('stdout', this._listeners.stdout)
-        this._worker.on('stderr', this._listeners.stderr)
+        this.worker.on('stdout', this._listeners.stdout)
+        this.worker.on('stderr', this._listeners.stderr)
     }
 
     private removeListener() {
         if (this._listeners) {
-            this._worker.removeListener('stdout', this._listeners.stdout)
-            this._worker.removeListener('stderr', this._listeners.stderr)
+            this.worker.removeListener('stdout', this._listeners.stdout)
+            this.worker.removeListener('stderr', this._listeners.stderr)
         }
     }
 
@@ -149,5 +149,9 @@ export class TestRunner {
 
     private stderrListener(data: string) {
         this._stderr += data + '\n'
+    }
+
+    async dispose() {
+        // noting to do
     }
 }

@@ -13,8 +13,7 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebdriverIOConfig
-    // private _workspaceConfigMap = new Map<string, vscode.WorkspaceFolder>()
-    private _workspaceConfigMap2 = new WeakMap<vscode.WorkspaceFolder, Set<string>>()
+    private _workspaceConfigMap = new WeakMap<vscode.WorkspaceFolder, Set<string>>()
     private _wdioConfigPathSet = new Set<string>()
     private _workspaces: WorkspaceData[] | undefined
 
@@ -93,11 +92,11 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
                 }
                 for (const wdioConfigFile of wdioConfigFiles) {
                     // this._workspaceConfigMap.set(wdioConfigFile, workspaceFolder)
-                    const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+                    const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
                     if (workspaceInfo) {
                         workspaceInfo.add(wdioConfigFile)
                     } else {
-                        this._workspaceConfigMap2.set(workspaceFolder, new Set([wdioConfigFile]))
+                        this._workspaceConfigMap.set(workspaceFolder, new Set([wdioConfigFile]))
                     }
                     this._wdioConfigPathSet.add(wdioConfigFile)
                 }
@@ -117,7 +116,7 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
 
         const result: vscode.Uri[] = []
         for (const workspaceFolder of workspaceFolders) {
-            const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+            const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.has(normalizedConfigPath)) {
                 log.debug(`detected workspace "${workspaceFolder.uri.fsPath}"`)
                 result.push(workspaceFolder.uri)
@@ -126,7 +125,7 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
         return result
     }
 
-    private getWorkspaces() {
+    public getWorkspaces() {
         const workspaceFolders = vscode.workspace.workspaceFolders
         if (!workspaceFolders || workspaceFolders.length === 0) {
             log.debug('No workspace is detected.')
@@ -140,7 +139,7 @@ export class ExtensionConfigManager extends EventEmitter implements vscode.Dispo
         const result: vscode.Uri[] = []
         const workspaceFolders = this.getWorkspaces()
         for (const workspaceFolder of workspaceFolders) {
-            const workspaceInfo = this._workspaceConfigMap2.get(workspaceFolder)
+            const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.delete(normalizedConfigPath)) {
                 log.debug(`Remove the config file "${normalizedConfigPath}" from "${workspaceFolder.uri.fsPath}"`)
                 result.push(workspaceFolder.uri)

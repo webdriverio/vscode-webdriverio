@@ -19,6 +19,8 @@ vi.mock('vscode', async () => {
 })
 
 // Mock dependencies
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
+
 vi.mock('../../src/test/manager.js', async (importActual) => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-imports
     const actual = await importActual<typeof import('../../src/test/manager.js')>()
@@ -54,7 +56,9 @@ vi.mock('../../src/api/index.js', () => {
     const TestRunner = vi.fn()
     TestRunner.prototype.run = vi.fn()
     TestRunner.prototype.stdout = null
-    return { TestRunner }
+    TestRunner.prototype.dispose = vi.fn()
+    const DebugRunner=vi.fn()
+    return { TestRunner, DebugRunner }
 })
 
 vi.mock('../../src/config/index.js', () => ({
@@ -62,12 +66,6 @@ vi.mock('../../src/config/index.js', () => ({
         globalConfig: {
             showOutput: false,
         },
-    },
-}))
-
-vi.mock('../../src/utils/logger.js', () => ({
-    log: {
-        debug: vi.fn(),
     },
 }))
 

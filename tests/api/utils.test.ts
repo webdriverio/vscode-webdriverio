@@ -6,15 +6,7 @@ import { log } from '../../src/utils/logger.js'
 
 vi.mock('vscode', () => import('../__mocks__/vscode.cjs'))
 
-vi.mock('../../src/utils/logger.js', () => ({
-    log: {
-        trace: vi.fn(),
-        debug: vi.fn(),
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-    },
-}))
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
 
 describe('loggingFn', () => {
     it('should call the appropriate log method based on log level', async () => {

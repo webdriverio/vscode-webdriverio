@@ -29,7 +29,8 @@ You can read the official guides about how to run the tests in the VSCode Docume
 The toolbar at the top provides various commands to manage test execution:
 
 - **Refresh Tests**: To reload your test suite, reflecting any new changes.
-- **Run All Tests**: To start testing all cases that are currently visible.
+- **Run Tests**: To start testing all cases that are currently visible.
+- **Debug Tests**: To begin a debugging session for the tests.
 - **Show Output**: To display detailed logs from test executions.
 - **Miscellaneous Settings**: To customize the Testing view, such as sorting and grouping tests.
 
@@ -52,6 +53,7 @@ You can do the following actions:
 - **Run a Single Test:** Click the test icon next to a test case to run that specific test.
 - **More Options:** Right-click the test icon to open a context menu with additional options:
     - `Run Test`: Execute the selected test case.
+    - `Debug Test`: Execute the selected test case with a debugging session.
     - `Reveal in Test Explorer`: Locate and highlight the test in the centralized Testing view.
 
 ## 　Extension Settings

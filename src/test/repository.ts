@@ -315,7 +315,7 @@ export class TestRepository implements vscode.Disposable {
         for (const [key, value] of this._fileMap.entries()) {
             // The path of the Spec file is the third one, as it is the next level after Workspace,WdioConfig.
             const candidatePath = key.split(TEST_ID_SEPARATOR)[2]
-            if (typeof key === 'string' && normalizedSpecFilePath === candidatePath) {
+            if (normalizedSpecFilePath === candidatePath) {
                 return value
             }
         }

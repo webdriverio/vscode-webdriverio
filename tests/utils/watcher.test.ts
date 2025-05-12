@@ -13,13 +13,7 @@ vi.mock('vscode', async () => {
 })
 
 // Mock logger module
-vi.mock('../../src/utils/logger.js', () => {
-    return {
-        log: {
-            debug: vi.fn(),
-        },
-    }
-})
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
 
 // Create a concrete implementation of FileWatcherManager for testing
 class TestFileWatcherManager extends FileWatcherManager {

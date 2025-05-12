@@ -41,12 +41,27 @@ export function createRunProfile(
             createHandler(this.configManager, this),
             isDefaultProfile
         ),
-        //TODO: support debug
-        // this.controller.createRunProfile(
-        //     `${path.basename(wdioConfigFileTestItem.uri!.fsPath)}${description}`,
-        //     vscode.TestRunProfileKind.Debug,
-        //     createHandler(this.configManager, this),
-        //     isDefaultProfile
-        // ),
+        this.controller.createRunProfile(
+            `${path.basename(wdioConfigFileTestItem.uri!.fsPath)}${description}`,
+            vscode.TestRunProfileKind.Debug,
+            createHandler(this.configManager, this, true),
+            isDefaultProfile
+        ),
     ]
+}
+
+export function getRootTestItem(testItem:vscode.TestItem) {
+    let _testItem = testItem.parent
+    if (typeof _testItem === 'undefined') {
+        return testItem
+    }
+
+    while (typeof _testItem !== 'undefined') {
+        if (typeof _testItem.parent !== 'undefined') {
+            _testItem = _testItem.parent
+        } else {
+            break
+        }
+    }
+    return _testItem
 }

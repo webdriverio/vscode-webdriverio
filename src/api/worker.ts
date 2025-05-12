@@ -17,19 +17,19 @@ import type { ExtensionApi, WdioExtensionWorkerInterface, WorkerApi } from './ty
 const WORKER_PATH = resolve(__dirname, 'worker/index.cjs')
 export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWorkerInterface {
     public cid: string
+    protected cwd: string
+    protected disposables: vscode.Disposable[] = []
     private _workerProcess: ChildProcess | null = null
     private _workerRpc: WorkerApi | null = null
     private _workerPort: number | null = null
     private _workerConnected = false
-    private _disposables: vscode.Disposable[] = []
     private _server: Server | null = null
     private _wss: WebSocketServer | null = null
-    private _cwd: string
 
     constructor(cid: string = '#0', cwd: string) {
         super()
         this.cid = cid
-        this._cwd = cwd
+        this.cwd = cwd
 
         const psListener = () => {
             if (this._workerProcess && !this._workerProcess.killed) {
@@ -43,11 +43,25 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
         }
         process.on('exit', psListener)
 
-        this._disposables.push({
+        this.disposables.push({
             dispose: () => {
                 process.removeListener('exit', psListener)
             },
         })
+    }
+
+    protected async getServer() {
+        // Find available port for WebSocket communication
+        // Store server instances for proper cleanup
+        this._workerPort = await getPort()
+        this._server = createHttpServer().listen(this._workerPort)
+        this._server.unref()
+        this._wss = createWss(this._server)
+
+        log.debug(`Starting WebdriverIO worker ${this.cid} on port ${this._workerPort}`)
+        log.debug(`Worker path: ${WORKER_PATH}`)
+        log.debug(`Worker cwd: ${ this.cwd}`)
+        return `ws://localhost:${this._workerPort}`
     }
 
     /**
@@ -61,15 +75,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
         try {
             // Find available port for WebSocket communication
             // Store server instances for proper cleanup
-            this._workerPort = await getPort()
-            this._server = createHttpServer().listen(this._workerPort)
-            this._server.unref()
-            this._wss = createWss(this._server)
-
-            log.debug(`Starting WebdriverIO worker on port ${this._workerPort}`)
-            log.debug(`Worker path: ${WORKER_PATH}`)
-
-            const wsUrl = `ws://localhost:${this._workerPort}`
+            const wsUrl = await this.getServer()
 
             const env = {
                 ...process.env,
@@ -81,7 +87,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
 
             // Start worker process
             this._workerProcess = spawn('node', [WORKER_PATH], {
-                cwd: this._cwd,
+                cwd: this.cwd,
                 env,
                 stdio: 'pipe',
             })
@@ -161,7 +167,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                     }
                 })
 
-                this._disposables.push({
+                this.disposables.push({
                     dispose: () => {
                         ws.close()
                     },
@@ -224,10 +230,10 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
         this._workerConnected = false
 
         // Dispose all resources
-        for (const disposable of this._disposables) {
+        for (const disposable of this.disposables) {
             disposable.dispose()
         }
-        this._disposables = []
+        this.disposables = []
 
         if (this._wss) {
             this._wss.close((err) => {
@@ -246,7 +252,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             })
             this._server = null
         }
-        log.debug('Worker manager stopped completely')
+        log.debug('Extension worker stopped completely')
     }
 
     /**
@@ -297,7 +303,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             }
         }, 60000) // Check every minute
 
-        this._disposables.push({
+        this.disposables.push({
             dispose: () => clearInterval(interval),
         })
     }

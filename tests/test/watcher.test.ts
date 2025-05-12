@@ -11,11 +11,7 @@ import type { RepositoryManager } from '../../src/test/manager.js'
 vi.mock('vscode', () => import('../__mocks__/vscode.cjs'))
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
-    log: {
-        debug: vi.fn(),
-    },
-}))
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
 
 // Mock FileWatcherManager parent class
 vi.mock('../../src/utils/watcher.js', () => {

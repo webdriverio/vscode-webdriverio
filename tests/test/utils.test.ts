@@ -118,4 +118,34 @@ describe('Test Utils', () => {
             )
         })
     })
+
+    describe('getRootTestItem', ()=>{
+        const rootTestItem = {
+            id:'root',
+            parent:undefined
+        } as unknown as vscode.TestItem
+        const l1TestItem ={
+            id:'l1',
+            parent: rootTestItem
+        } as unknown as vscode.TestItem
+        const l2TestItem ={
+            id:'l2',
+            parent: l1TestItem
+        } as unknown as vscode.TestItem
+
+        it('should return root TestItem when input the ground child item', ()=>{
+            const result = utils.getRootTestItem(l2TestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+
+        it('should return root TestItem when input the child item2', ()=>{
+            const result = utils.getRootTestItem(l1TestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+
+        it('should return root TestItem when input the root item itself', ()=>{
+            const result = utils.getRootTestItem(rootTestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+    })
 })

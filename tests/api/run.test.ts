@@ -19,6 +19,9 @@ vi.mock('../../src/utils/logger', () => ({
         error: vi.fn(),
     },
 }))
+vi.mock('../../src/api/debug.js', () => ({
+
+}))
 
 describe('TestRunner', () => {
     let testRunner: TestRunner

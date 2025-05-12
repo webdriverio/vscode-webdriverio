@@ -1,8 +1,11 @@
+import { dirname } from 'node:path'
+
 import * as vscode from 'vscode'
 
 import { RepositoryManager } from './manager.js'
 import { TestReporter } from './reporter.js'
-import { TestRunner } from '../api/index.js'
+import { getRootTestItem } from './utils.js'
+import { DebugRunner, TestRunner } from '../api/index.js'
 import { log } from '../utils/logger.js'
 
 import type { ExtensionConfigManager } from '../config/index.js'
@@ -23,7 +26,11 @@ class TestQueue {
     }
 }
 
-export function createHandler(configManager: ExtensionConfigManager, repositoryManager: RepositoryManager) {
+export function createHandler(
+    configManager: ExtensionConfigManager,
+    repositoryManager: RepositoryManager,
+    isDebug = false
+) {
     return async function runHandler(request: vscode.TestRunRequest, token: vscode.CancellationToken): Promise<void> {
         const run = repositoryManager.controller.createTestRun(request)
 
@@ -68,8 +75,16 @@ export function createHandler(configManager: ExtensionConfigManager, repositoryM
             markTestsAsRunning(run, testData.testItem)
 
             try {
-                const runner = new TestRunner(testData.repository.worker)
+                const runner = !isDebug
+                    ? new TestRunner(testData.repository.worker)
+                    : new DebugRunner(
+                        getWorkspaceFolder(configManager, testData.testItem),
+                        token,
+                        dirname(testData.repository.wdioConfigPath)
+                    )
                 const result = await runner.run(testData.testItem)
+
+                await runner.dispose()
 
                 if (result.detail && result.detail.length > 0) {
                     // Update test status based on actual test results
@@ -110,4 +125,12 @@ function conversionCucumberStep(testItem: vscode.TestItem) {
         return { testItem: testItem.parent, metadata, repository }
     }
     return { testItem, metadata, repository }
+}
+
+function getWorkspaceFolder(configManager: ExtensionConfigManager, testItem: vscode.TestItem) {
+    if (!configManager.isMultiWorkspace) {
+        return vscode.workspace.getWorkspaceFolder(configManager.getWorkspaces()[0].uri)
+    }
+    const metadata = RepositoryManager.getMetadata(getRootTestItem(testItem))
+    return vscode.workspace.getWorkspaceFolder(metadata.uri)
 }

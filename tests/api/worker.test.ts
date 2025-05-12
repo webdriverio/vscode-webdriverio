@@ -100,7 +100,7 @@ describe('WdioExtensionWorker', () => {
     })
 
     afterEach(() => {
-        for (const disposable of (worker as any)._disposables) {
+        for (const disposable of (worker as any).disposables) {
             disposable.dispose()
         }
         vi.clearAllMocks()
@@ -444,8 +444,8 @@ describe('WdioExtensionWorker', () => {
             // Call the method
             ;(worker as any).startHealthCheck()
 
-            // Check if an interval was created (by checking _disposables)
-            expect((worker as any)._disposables.length).toBeGreaterThanOrEqual(1)
+            // Check if an interval was created (by checking disposables)
+            expect((worker as any).disposables.length).toBeGreaterThanOrEqual(1)
 
             // Fast forward time to trigger interval
             vi.advanceTimersByTime(60000)

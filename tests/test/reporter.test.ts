@@ -15,13 +15,8 @@ vi.mock('vscode', async () => {
         TestMessage: vi.fn(),
     }
 })
-vi.mock('../../src/test/repository')
-vi.mock('../../src/utils/logger', () => ({
-    log: {
-        debug: vi.fn(),
-        error: vi.fn(),
-    },
-}))
+vi.mock('../../src/utils/logger.js', () => import('../__mocks__/logger.js'))
+vi.mock('../../src/test/repository', ()=>({}))
 
 describe('TestReporter', () => {
     let mockRegistry: TestRepository

@@ -124,6 +124,7 @@ export interface WdioExtensionWorkerInterface extends EventEmitter {
     cid: string
     rpc: WorkerApi
     start(): Promise<void>
+    waitForStart(): Promise<void>
     stop(): Promise<void>
     isConnected(): boolean
     ensureConnected(): Promise<void>
