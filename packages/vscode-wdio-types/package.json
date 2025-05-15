@@ -1,0 +1,57 @@
+{
+    "name": "@vscode-wdio/types",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./api": {
+            "importSource": "./src/api.ts",
+            "types": "./dist/api.d.ts",
+            "import": "./dist/api.js"
+        },
+        "./config": {
+            "importSource": "./src/config.ts",
+            "types": "./dist/config.d.ts",
+            "import": "./dist/config.js"
+        },
+        "./reporter": {
+            "importSource": "./src/reporter.ts",
+            "types": "./dist/reporter.d.ts",
+            "import": "./dist/reporter.js"
+        },
+        "./test": {
+            "importSource": "./src/test.ts",
+            "types": "./dist/test.d.ts",
+            "import": "./dist/test.js"
+        },
+        "./utils": {
+            "importSource": "./src/utils.ts",
+            "types": "./dist/utils.d.ts",
+            "import": "./dist/utils.js"
+        },
+        "./worker": {
+            "importSource": "./src/worker.ts",
+            "types": "./dist/worker.d.ts",
+            "import": "./dist/worker.js"
+        }
+    },
+    "scripts": {
+        "build-production": "npm run clean-build",
+        "build": "tsc -p .",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
+        "clean-build": "npm run clean && npm run build",
+        "clean": "shx rm -rf out dist coverage",
+        "watch": "tsc -p . --watch"
+    },
+    "devDependencies": {
+        "@vscode-wdio/constants": "workspace:*",
+        "@wdio/types": "^9.13.0"
+    },
+    "dependencies": {
+        "@types/ws": "^8.18.1"
+    }
+}

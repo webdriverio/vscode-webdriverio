@@ -7,7 +7,15 @@ export default wdioEslint.config([
         /**
          * Eslint ignore patterns for the whole project
          */
-        ignores: ['.vscode-test', 'dist', 'out', 'node_modules', 'coverage', '**/*.d.ts'],
+        ignores: [
+            '**/.vscode-test',
+            '**/.wdio-vscode-service',
+            '**/dist',
+            '**/out',
+            '**/node_modules',
+            '**/coverage',
+            '**/*.d.ts',
+        ],
     },
     {
         files: ['**/*.ts'],
@@ -35,6 +43,14 @@ export default wdioEslint.config([
                     sortTypesGroup: true,
                     'newlines-between': 'always',
                     'newlines-between-types': 'ignore',
+                    pathGroups: [
+                        {
+                            pattern: '@wdio-vscode/**',
+                            group: 'sibling',
+                            position: 'before',
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ['builtin', 'type'],
                 },
             ],
         },
@@ -49,7 +65,7 @@ export default wdioEslint.config([
         /**
          * Eslint configuration for the vitest test files
          */
-        files: ['tests/**/*.test.ts'],
+        files: ['packages/**/tests/**/*.test.ts'],
         plugins: {
             vitest,
         },

@@ -25,6 +25,13 @@ jobs:
               with:
                   node-version: ${{ matrix.node-version }}
 
+            - name: ⬇️ Download Build Archive
+              uses: ./.github/workflows/actions/download-archive
+              with:
+                  name: vscode-webdriverio
+                  path: .
+                  filename: vscode-webdriverio-build.zip
+
             - name: 🧪 Run the unit test
               run: pnpm run test:unit
               shell: bash

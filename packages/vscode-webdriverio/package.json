@@ -1,0 +1,73 @@
+{
+    "name": "vscode-webdriverio",
+    "displayName": "WebdriverIO",
+    "description": "WebdriverIO for the vscode",
+    "version": "0.0.1",
+    "type": "module",
+    "author": "WebdriverIO Team",
+    "packageManager": "pnpm@10.8.0",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/webdriverio/vscode-webdriverio.git"
+    },
+    "bugs": {
+        "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
+    },
+    "keywords": [
+        "WebdriverIO",
+        "test",
+        "typescript",
+        "javascript"
+    ],
+    "categories": [
+        "Testing"
+    ],
+    "engines": {
+        "vscode": "^1.98.0"
+    },
+    "main": "./dist/extension.cjs",
+    "exports": {
+        ".": {
+            "requireSource": "./src/extension.ts",
+            "require": "./dist/extension.cjs"
+        },
+        "./worker": {
+            "requireSource": "./src/worker.ts",
+            "require": "./dist/worker.cjs"
+        },
+        "./reporter": {
+            "requireSource": "./src/reporter.ts",
+            "require": "./dist/reporter.cjs"
+        }
+    },
+    "scripts": {
+        "build-production": "pnpm run clean-build",
+        "build": "npm-run-all -p build:*",
+        "build:tsc": "pnpm run typecheck",
+        "build:esbuild": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
+        "package": "npm-run-all -p package:*",
+        "package:typecheck": "pnpm run typecheck",
+        "package:build": "pnpm run build:esbuild --production",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
+        "clean-build": "pnpm run clean && npm run build",
+        "clean": "shx rm -rf out dist coverage",
+        "test": "vitest run .",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
+    },
+    "devDependencies": {
+        "@vscode-wdio/types": "workspace:*"
+    },
+    "dependencies": {
+        "@vscode-wdio/api": "workspace:*",
+        "@vscode-wdio/config": "workspace:*",
+        "@vscode-wdio/constants": "workspace:*",
+        "@vscode-wdio/logger": "workspace:*",
+        "@vscode-wdio/reporter": "workspace:*",
+        "@vscode-wdio/test": "workspace:*",
+        "@vscode-wdio/utils": "workspace:*",
+        "@vscode-wdio/worker": "workspace:*"
+    }
+}

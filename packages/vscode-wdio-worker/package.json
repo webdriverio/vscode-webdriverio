@@ -1,0 +1,36 @@
+{
+    "name": "@vscode-wdio/worker",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build-production": "npm run clean-build",
+        "build": "tsc -p .",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
+        "clean-build": "npm run clean && npm run build",
+        "clean": "shx rm -rf out dist coverage",
+        "test": "vitest run .",
+        "watch": "tsc -p . --watch"
+    },
+    "dependencies": {
+        "@babel/parser": "^7.27.0",
+        "@babel/types": "^7.27.0",
+        "@cucumber/gherkin": "^32.1.0",
+        "@cucumber/messages": "^27.2.0",
+        "@vscode-wdio/constants": "workspace:*",
+        "@vscode-wdio/utils": "workspace:*",
+        "birpc": "^2.3.0",
+        "recast": "^0.23.11",
+        "ws": "^8.18.1"
+    },
+    "devDependencies": {
+        "@types/ws": "^8.18.1",
+        "@vscode-wdio/types": "workspace:*",
+        "@wdio/cli": "^9.12.4"
+    }
+}

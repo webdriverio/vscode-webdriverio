@@ -1,6 +1,4 @@
 import { vi } from 'vitest'
-
-import { RepositoryManager } from '../src/test/manager.js'
 import type * as vscode from 'vscode'
 
 export function createTestItem(id: string, metadata?: any, parent: vscode.TestItem | null = null) {
@@ -20,9 +18,7 @@ export function createTestItem(id: string, metadata?: any, parent: vscode.TestIt
         id,
         label: id,
         uri: { fsPath: '/path/to/test.js' } as vscode.Uri,
-        children: {
-            forEach: vi.fn(),
-        } as unknown as vscode.TestItemCollection,
+        children: new MockTestItemCollection(),
         canResolveChildren: false,
         busy: false,
         parent,
@@ -32,6 +28,43 @@ export function createTestItem(id: string, metadata?: any, parent: vscode.TestIt
         },
     } as unknown as vscode.TestItem
 
-    RepositoryManager.setMetadata(testItem, _metadata)
-    return testItem
+    return { testItem, metadata: _metadata }
 }
+
+export class MockTestItemCollection implements vscode.TestItemCollection {
+    private map = new Map<string, vscode.TestItem>()
+    get size() {
+        return this.map.size
+    }
+    replace(items: readonly vscode.TestItem[]): void {
+        this.map.clear()
+        for (const item of items) {
+            this.map.set(item.id, item)
+        }
+    }
+    forEach(callback: (item: vscode.TestItem, collection: vscode.TestItemCollection) => unknown, _thisArg?: any): void {
+        this.map.forEach((item) => callback(item, this))
+    }
+    add(item: vscode.TestItem): void {
+        this.map.set(item.id, item)
+    }
+    delete(itemId: string): void {
+        this.map.delete(itemId)
+    }
+    get(itemId: string): vscode.TestItem | undefined {
+        return this.map.get(itemId)
+    }
+    [Symbol.iterator](): Iterator<[id: string, testItem: vscode.TestItem], any, any> {
+        return this.map[Symbol.iterator]()
+    }
+}
+
+export const mockCreateTestItem = vi.fn((id: string, label: string, uri: vscode.Uri) => {
+    return {
+        id,
+        label,
+        uri,
+        sortText: undefined,
+        children: new MockTestItemCollection(),
+    }
+})

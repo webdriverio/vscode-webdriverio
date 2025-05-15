@@ -6,3 +6,4 @@ node_modules
 *.vsix
 coverage
 e2e/logs
+**/.turbo

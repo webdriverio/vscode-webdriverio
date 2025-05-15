@@ -35,4 +35,4 @@ jobs:
               with:
                   name: vscode-webdriverio
                   output: vscode-webdriverio-build.zip
-                  paths: dist
+                  paths: packages/*/dist

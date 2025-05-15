@@ -1,0 +1,12 @@
+{
+    "name": "@vscode-wdio/compiler",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "tsx ./src/index.ts"
+    },
+    "dependencies": {
+        "esbuild": "^0.25.0",
+        "type-fest": "^4.24.0"
+    }
+}

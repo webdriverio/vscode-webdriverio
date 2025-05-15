@@ -24,12 +24,16 @@ How to develop and build this extension:
 - Run the unit test via:
 
     ```bash
+    # run the complete unit test suite
     $ pnpm test:unit
+
+    # run test for a specific sub project (e.g. vscode-webdriverio)
+    $ npx vitest ./packages/vscode-webdriverio/tests
     ```
 
-    We are using 2 testing tools `vitest` and `vscode-test-cli`. Please see the [README.md](./tests/README.md) of the unit test.
-
 - And run the extension via press F5
+  The build process with the watch option will be start as background process.
+  After that the changeset will be applied soon.
 
 - Get the coverage report via:
 
@@ -37,7 +41,6 @@ How to develop and build this extension:
     $ pnpm coverage
     ```
 
-    and see the following files.
+# Package structure
 
-    - `coverage/merge/coverage-merge.json` (JSON format)
-    - `coverage/report/index.html` (HTML format)
+![Package structure](./assets/build.png 'Package structure')

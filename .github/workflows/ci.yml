@@ -23,4 +23,5 @@ jobs:
 
     unit:
         name: Unit
+        needs: [build]
         uses: ./.github/workflows/ci-unit.yml

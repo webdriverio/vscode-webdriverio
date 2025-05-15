@@ -5,7 +5,7 @@
     "tasks": [
         {
             "label": "watch",
-            "dependsOn": ["npm: watch:tsc", "npm: watch:esbuild"],
+            "dependsOn": ["npm: watch:esbuild"],
             "presentation": {
                 "reveal": "never"
             },
@@ -18,7 +18,7 @@
             "type": "npm",
             "script": "watch:esbuild",
             "group": "build",
-            "problemMatcher": "$esbuild-watch",
+            "problemMatcher": ["$esbuild-watch", "$tsc"],
             "isBackground": true,
             "label": "npm: watch:esbuild",
             "presentation": {
