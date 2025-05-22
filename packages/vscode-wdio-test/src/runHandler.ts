@@ -80,6 +80,7 @@ export function createHandler(
                 const runner = !isDebug
                     ? new TestRunner(testData.repository.worker)
                     : new DebugRunner(
+                        configManager,
                         getWorkspaceFolder.call(repositoryManager, configManager, testData.testItem),
                         token,
                         dirname(testData.repository.wdioConfigPath)

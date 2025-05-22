@@ -1,8 +1,12 @@
+import * as fs from 'node:fs/promises'
+
 import { LOG_LEVEL, TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
+import which from 'which'
 import { WebSocketServer } from 'ws'
 
 import type { Server } from 'node:http'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
 import type { TestItemMetadataWithRepository } from '@vscode-wdio/types/test'
 import type { NumericLogLevel } from '@vscode-wdio/types/utils'
 import type * as vscode from 'vscode'
@@ -89,4 +93,34 @@ export function getCucumberSpec(testItem: vscode.TestItem, metadata: TestItemMet
         }
     }
     return baseSpec
+}
+
+export async function resolveNodePath(configManager: ExtensionConfigManagerInterface) {
+    log.debug('Resolving the Node executable path')
+    const configuredPath = configManager.globalConfig.nodeExecutable
+    if (configuredPath && (await checkExistence(configuredPath))) {
+        log.debug(`Resolved executable path: ${configuredPath}`)
+        return configuredPath
+    }
+
+    const foundPath = await which('node', { nothrow: true })
+    if (foundPath && (await checkExistence(foundPath))) {
+        log.debug(`Resolved executable path: ${foundPath}`)
+        return foundPath
+    }
+    const msg = `Unable to find 'node' executable.\nMake sure to have Node.js installed and available in your PATH.\nCurrent PATH: '${process.env.PATH}'.`
+    log.error(msg)
+    throw new Error(msg)
+}
+
+async function checkExistence(targetPath: string) {
+    log.debug(`Access check: ${targetPath}`)
+    try {
+        await fs.access(targetPath, fs.constants.X_OK)
+        return true
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        log.debug(`Access check was failed: ${msg}`)
+        return false
+    }
 }

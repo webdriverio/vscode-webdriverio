@@ -27,7 +27,7 @@ class WdioExtension implements vscode.Disposable {
     constructor(
         private controller = vscode.tests.createTestController(EXTENSION_ID, 'WebdriverIO'),
         private configManager = new ExtensionConfigManager(),
-        private serverManager = new ServerManager()
+        private serverManager = new ServerManager(configManager)
     ) {}
 
     async activate() {
@@ -37,11 +37,7 @@ class WdioExtension implements vscode.Disposable {
         const configPaths = this.configManager.getWdioConfigPaths()
 
         // Start worker process asynchronously
-        const starting = this.serverManager.start(configPaths).catch(async (error) => {
-            const errorMessage = `Failed to start worker process: ${error instanceof Error ? error.message : String(error)}`
-            log.error(errorMessage)
-            vscode.window.showErrorMessage('Failed to start WebdriverIO worker process')
-        })
+        const starting = this.serverManager.start(configPaths)
 
         // Create Manages and watchers
         const repositoryManager = new RepositoryManager(this.controller, this.configManager, this.serverManager)
@@ -66,7 +62,13 @@ class WdioExtension implements vscode.Disposable {
 
         // Initialize
         try {
-            await starting
+            try {
+                await starting
+            } catch (error) {
+                const errorMessage = `Failed to start WebdriverIO worker process: ${error instanceof Error ? error.message : String(error)}`
+                log.error(errorMessage)
+                vscode.window.showErrorMessage(errorMessage)
+            }
             await repositoryManager.initialize()
             return Promise.all(
                 repositoryManager.repos.map(async (repo) => {

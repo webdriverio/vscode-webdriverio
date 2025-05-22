@@ -12,7 +12,12 @@ export function createRpcClient(cid: string, url: string) {
     let rpc: ExtensionApi | null = null
     let isConnected = false
 
-    const handlerContext = { shutdownRequested: false, ws: new WebSocket(url), pendingCalls: [] as Array<() => void> }
+    const handlerContext = {
+        shutdownRequested: false,
+        ws: new WebSocket(url),
+        pendingCalls: [] as Array<() => void>,
+        cwd: process.cwd(),
+    }
 
     function callServerMethod<T>(method: (rpc: ExtensionApi) => Promise<T>): Promise<T> {
         return new Promise<T>((resolve, reject) => {

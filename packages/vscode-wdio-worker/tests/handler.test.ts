@@ -32,6 +32,7 @@ vi.mock('../src/cli.js', () => {
 describe('handler', () => {
     // Mock context
     const mockContext: WorkerMetaContext = {
+        cwd: '/path/to/work',
         log: {
             info: vi.fn(),
             debug: vi.fn(),
@@ -183,6 +184,7 @@ describe('handler', () => {
     describe('loadWdioConfig', () => {
         // Create a mock context
         const mockContext: WorkerMetaContext = {
+            cwd: '/path/to/work',
             log: {
                 debug: vi.fn(),
                 info: vi.fn(),

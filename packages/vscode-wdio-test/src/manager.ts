@@ -30,6 +30,7 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: vscode.TestItem[] = []
     private _wdioConfigTestItems: vscode.TestItem[] = []
+    private _isInitialized = false
     private isCreatedDefaultProfile = false
 
     constructor(
@@ -46,6 +47,27 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
             log.info('Refreshing WebdriverIO tests...')
             await this.refreshTests()
         }
+        configManager.on('update:configFilePattern', async () => {
+            if (!this._isInitialized) {
+                return
+            }
+            this.controller.items.replace([this._loadingTestItem])
+            await this.dispose()
+            configManager.dispose()
+            await configManager
+                .initialize()
+                .then(async () => await this.initialize())
+                .then(
+                    async () =>
+                        await Promise.all(
+                            this.repos.map(async (repo) => {
+                                return await repo.discoverAllTests()
+                            })
+                        )
+                )
+                .then(() => this.registerToTestController())
+                .then(() => this.serverManager.reorganize(configManager.getWdioConfigPaths()))
+        })
     }
 
     public get repos() {
@@ -76,6 +98,7 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
                 return workspaceTestItem
             })
         )
+        this._isInitialized = true
         log.debug('Finish initialize the RepositoryManager')
     }
 
@@ -199,6 +222,9 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
             },
             async () => {
                 try {
+                    if (!this._isInitialized) {
+                        await this.initialize()
+                    }
                     for (const repo of this._repos) {
                         // Clear existing tests
                         repo.clearTests()
@@ -216,7 +242,12 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
         )
     }
 
-    public dispose() {
+    public async dispose() {
+        await Promise.all(
+            Array.from(this._repos).map(async (repo) => {
+                await repo.dispose()
+            })
+        )
         this._repos.clear()
         this._workspaceTestItems = []
         this._wdioConfigTestItems = []

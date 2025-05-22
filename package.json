@@ -52,6 +52,10 @@
         "configuration": {
             "title": "WebdriverIO",
             "properties": {
+                "webdriverio.nodeExecutable": {
+                    "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
+                    "type": "string"
+                },
                 "webdriverio.configFilePattern": {
                     "type": "array",
                     "items": {

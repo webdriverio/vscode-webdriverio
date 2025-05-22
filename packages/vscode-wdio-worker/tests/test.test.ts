@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { getLauncherInstance } from '../src/cli.js'
+import { createTempConfigFile, isWindows } from '../src/config.js'
 import { runTest } from '../src/test.js'
 import type { Dirent } from 'node:fs'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
@@ -20,6 +21,12 @@ vi.mock('../src/cli.js', () => {
     )
     return { getLauncherInstance }
 })
+vi.mock('../src/config.js', () => {
+    return {
+        createTempConfigFile: vi.fn(async (config) => config),
+        isWindows: vi.fn(() => false),
+    }
+})
 
 describe('runTest', () => {
     const mockLog = {
@@ -33,8 +40,9 @@ describe('runTest', () => {
         log: mockLog,
     } as unknown as WorkerMetaContext
 
+    const mockConfigFile = '/path/to/wdio.conf.js'
     const mockOptions = {
-        configPath: '/path/to/wdio.conf.js',
+        configPath: mockConfigFile,
         specs: ['test.spec.js'],
         grep: 'test pattern',
     }
@@ -92,6 +100,37 @@ describe('runTest', () => {
 
         // Verify cleanup happened
         expect(fs.rm).toHaveBeenCalledWith(mockResultDir, { recursive: true, force: true })
+    })
+
+    it('should run tests successfully and return results on the windows', async () => {
+        vi.mocked(isWindows).mockReturnValue(true)
+        vi.mocked(createTempConfigFile).mockResolvedValue('/path/to/customized/wdio.conf.ts')
+        // Act
+        const result = await runTest.call(mockContext, mockOptions)
+
+        // Assert
+        expect(result.success).toBe(true)
+        expect(result.json).toHaveLength(1)
+        expect(result.json[0]).toEqual({ some: 'test result' })
+
+        // Verify logger was called with expected messages
+        expect(mockLog.info).toHaveBeenCalledWith('Launching WebdriverIO...')
+        expect(mockLog.info).toHaveBeenCalledWith('Tests completed with exit code: 0')
+
+        // Verify temporary directories were created
+        expect(fs.mkdir).toHaveBeenCalledWith(join(mockTmpDir, 'vscode-webdriverio'), { recursive: true })
+        expect(fs.mkdtemp).toHaveBeenCalledWith(join(mockTmpDir, 'vscode-webdriverio', 'result-'))
+
+        // Verify createTempConfigFile were called
+        expect(createTempConfigFile).toHaveBeenCalledWith(mockConfigFile, mockResultDir)
+
+        // Verify result files were read
+        expect(fs.readdir).toHaveBeenCalledWith(mockResultDir)
+        expect(fs.readFile).toHaveBeenCalledWith(join(mockResultDir, mockResultFile))
+
+        // Verify cleanup happened
+        expect(fs.rm).toHaveBeenCalledWith(mockResultDir, { recursive: true, force: true })
+        expect(fs.rm).toHaveBeenCalledWith(mockOptions.configPath, { recursive: true, force: true })
     })
 
     it('should handle tests with no specs provided', async () => {

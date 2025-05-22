@@ -73,7 +73,7 @@ export abstract class FileWatcherManager implements vscode.Disposable {
         // Split pattern by comma and create watchers for each
 
         for (const p of patterns) {
-            log.debug(`Creating file watchers for patterns: ${p.pattern}`)
+            log.debug(`Creating file watchers for patterns: ${p.pattern}${p.base ? ` base: ${p.base}` : ''}`)
             const watcher = p.base
                 ? vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(p.base, p.pattern))
                 : vscode.workspace.createFileSystemWatcher(p.pattern)

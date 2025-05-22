@@ -77,7 +77,7 @@ describe('RepositoryManager', () => {
         ]
 
         // Setup ServerManager mock
-        serverManager = new ServerManager()
+        serverManager = new ServerManager(configManager)
         vi.spyOn(serverManager, 'getConnection').mockResolvedValue({} as unknown as WdioExtensionWorkerInterface)
 
         // Stub configManager

@@ -7,6 +7,8 @@ import { DebugRunner, DebugSessionTerminatedError, WdioExtensionDebugWorker } fr
 import * as runModule from '../src/run.js'
 import * as workerModule from '../src/worker.js'
 
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+
 // Mock VSCode
 vi.mock('vscode', async () => {
     const mockModule = await import('../../../tests/__mocks__/vscode.cjs')
@@ -23,6 +25,8 @@ vi.mock('vscode', async () => {
 
 // Mock logger
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
+
+const mockConfigManager = {} as unknown as ExtensionConfigManagerInterface
 
 describe('DebugRunner', () => {
     let workspaceFolder: vscode.WorkspaceFolder
@@ -73,7 +77,7 @@ describe('DebugRunner', () => {
         })
 
         // Create debug runner instance
-        debugRunner = new DebugRunner(workspaceFolder, mockToken, '/path/to/worker/cwd', mockWorker)
+        debugRunner = new DebugRunner(mockConfigManager, workspaceFolder, mockToken, '/path/to/worker/cwd', mockWorker)
     })
 
     afterEach(() => {
@@ -215,7 +219,13 @@ describe('WdioExtensionDebugWorker', () => {
         vi.spyOn(workerModule.WdioExtensionWorker.prototype, 'stop').mockResolvedValue(undefined)
 
         // Create worker instance
-        debugWorker = new WdioExtensionDebugWorker('#DEBUGGER1', '/path/to', workspaceFolder, mockToken)
+        debugWorker = new WdioExtensionDebugWorker(
+            mockConfigManager,
+            '#DEBUGGER1',
+            '/path/to',
+            workspaceFolder,
+            mockToken
+        )
 
         // Mock getServer method
         vi.spyOn(debugWorker as any, 'getServer').mockResolvedValue('ws://localhost:1234')

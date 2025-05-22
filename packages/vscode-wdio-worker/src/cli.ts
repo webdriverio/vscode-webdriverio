@@ -16,7 +16,7 @@ class Launcher {
         const cjsWdioCliModule = require.resolve('@wdio/cli', {
             paths: [process.cwd()],
         })
-        const esmWdioCliModule = cjsWdioCliModule.replace(/\.cjs$/, '.js')
+        const esmWdioCliModule = pathToFileURL(cjsWdioCliModule.replace(/\.cjs$/, '.js')).href
         this.#esmLauncher = import(esmWdioCliModule).then(
             ({ Launcher }) => new Launcher(configFilePath, args, isWatchMode)
         )
@@ -48,10 +48,11 @@ async function ensureRegisteredTsx(configFilePath: string) {
         const tsxPath = require.resolve('tsx', {
             paths: [process.cwd()],
         })
+        const tsxUrl = pathToFileURL(tsxPath).href
         /**
          * add tsx to process NODE_OPTIONS so it will be passed along the worker process
          */
-        if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes(tsxPath)) {
+        if (!process.env.NODE_OPTIONS || !process.env.NODE_OPTIONS.includes(tsxUrl)) {
             /**
              * The `--import` flag is only available in Node 20.6.0 / 18.19.0 and later.
              * This switching can be removed once the minimum supported version of Node exceeds 20.6.0 / 18.19.0
@@ -63,9 +64,9 @@ async function ensureRegisteredTsx(configFilePath: string) {
                 (nodeVersion('major') === 18 && nodeVersion('minor') >= 19)
                     ? '--import'
                     : '--loader'
-            process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} ${moduleLoaderFlag} ${tsxPath}`
+            process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS || ''} ${moduleLoaderFlag} ${tsxUrl}`
         }
-        await import(tsxPath)
+        await import(tsxUrl)
 
         isTsxRegistered = true
     }

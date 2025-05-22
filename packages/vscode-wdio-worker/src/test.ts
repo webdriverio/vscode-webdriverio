@@ -1,8 +1,9 @@
 import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
-import { join, resolve } from 'node:path'
+import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 import { getLauncherInstance } from './cli.js'
+import { createTempConfigFile, isWindows } from './config.js'
 import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/api'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
 import type { LoggerInterface } from '@vscode-wdio/types/utils'
@@ -12,6 +13,8 @@ import type { RunCommandArguments } from '@wdio/cli'
 const VSCODE_REPORTER_PATH = resolve(__dirname, 'reporter.cjs')
 
 export async function runTest(this: WorkerMetaContext, options: RunTestOptions): Promise<TestResultData> {
+    const outputDir = await getOutputDir.call(this)
+    let configFile: string | undefined = undefined
     try {
         // Prepare launcher options
         const wdioArgs: RunCommandArguments = {
@@ -29,11 +32,25 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             wdioArgs.jasmineOpts = { grep: options.grep }
         }
 
-        const outputDir = await getOutputDir.call(this)
+        // ensure log directory exists if needed
+        if (process.env.WDIO_LOG_PATH) {
+            const logPath = dirname(process.env.WDIO_LOG_PATH)
+            const logDir = isAbsolute(logPath) ? logPath : join(this.cwd, logPath)
+            this.log.debug(`Create the log directory: ${logDir}`)
+            await fs.mkdir(logDir, { recursive: true })
+        }
+
+        if (isWindows()) {
+            configFile = await createTempConfigFile(options.configPath, outputDir.json!)
+            options.configPath = configFile
+            wdioArgs.configPath = configFile
+        }
 
         // The `stdout` must be true because the name of the logger is
         // the name of the file and the initialization of Write Stream will fail.
-        wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: outputDir.json }]]
+        if (!isWindows()) {
+            wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: outputDir.json }]]
+        }
 
         this.log.info('Launching WebdriverIO...')
         this.log.trace(`Configuration: ${JSON.stringify(wdioArgs, null, 2)}`)
@@ -65,12 +82,19 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             captureStderr(message)
         }
 
-        // Run tests and get return code
-        const exitCode = await launcher.run()
-
-        // Restore console functions
-        console.log = originalConsoleLog
-        console.error = originalConsoleError
+        let exitCode: number | undefined
+        try {
+            // Run tests and get return code
+            exitCode = await launcher.run()
+        } catch (error) {
+            originalConsoleLog(outputText)
+            originalConsoleError(stderrText)
+            throw error
+        } finally {
+            // Restore console functions
+            console.log = originalConsoleLog
+            console.error = originalConsoleError
+        }
 
         this.log.info(`Tests completed with exit code: ${exitCode}`)
 
@@ -90,6 +114,20 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             stdout: `Error launching WebdriverIO: ${errorMessage}${stack ? '\n' + stack : ''}`,
             error: errorMessage,
             json: [],
+        }
+    } finally {
+        if (outputDir.json) {
+            await removeResultDir(this.log, outputDir.json)
+        }
+        if (isWindows() && configFile) {
+            try {
+                this.log.debug(`Remove temp config file...: ${configFile}`)
+                await fs.rm(configFile, { recursive: true, force: true })
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error)
+                this.log.debug(`Failed to remove temp config file: ${errorMessage}`)
+                // pass
+            }
         }
     }
 }
@@ -123,8 +161,6 @@ async function extractResultJson(log: LoggerInterface, outputDir: string | undef
                     data.push(JSON.parse((await fs.readFile(join(outputDir, fileName))).toString()))
                 })
             )
-
-            await removeResultDir(log, outputDir)
 
             return data as ResultSet[]
         } catch (error) {

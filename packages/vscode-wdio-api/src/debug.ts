@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 
 import { TestRunner } from './run.js'
 import { WdioExtensionWorker } from './worker.js'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
 import type { TestItemMetadata } from '@vscode-wdio/types/test'
 
 let debuggerId = 0
@@ -22,11 +23,15 @@ export class DebugRunner extends TestRunner {
     private _runController: AbortController | null = null
 
     constructor(
+        configManager: ExtensionConfigManagerInterface,
         workspaceFolder: vscode.WorkspaceFolder | undefined,
         token: vscode.CancellationToken,
         workerCwd: string,
-        worker = new WdioExtensionDebugWorker(`#DEBUGGER${debuggerId++}`, workerCwd, workspaceFolder, token)
+        _worker?: WdioExtensionDebugWorker
     ) {
+        const worker = _worker
+            ? _worker
+            : new WdioExtensionDebugWorker(configManager, `#DEBUGGER${debuggerId++}`, workerCwd, workspaceFolder, token)
         super(worker)
 
         worker.setDebugTerminationCallback(() => {
@@ -75,12 +80,13 @@ export class WdioExtensionDebugWorker extends WdioExtensionWorker {
     private _debugTerminationCallback: (() => void) | null = null
 
     constructor(
+        configManager: ExtensionConfigManagerInterface,
         cid: string = '#0',
         cwd: string,
         private _workspaceFolder: vscode.WorkspaceFolder | undefined,
         private _token: vscode.CancellationToken
     ) {
-        super(cid, cwd)
+        super(configManager, cid, cwd)
     }
 
     /**

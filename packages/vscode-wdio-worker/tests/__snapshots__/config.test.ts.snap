@@ -1,0 +1,116 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`config.ts > createTempConfigFile > should add reporter to a CJS config file if not present 1`] = `
+"
+                import VscodeJsonReporter from "file:///path/to/reporter.cjs";
+                const { config } = require('@wdio/cli')
+
+                exports.config = {
+                    runner: 'local',
+                    specs: ['./test/specs/**/*.js'],
+
+                    capabilities: [{
+                        browserName: 'chrome'
+                    }],
+
+                    logLevel: 'info',
+                    services: ['chromedriver'],
+
+                    reporters: [[VscodeJsonReporter.default || VscodeJsonReporter, {
+                        stdout: true,
+                        outputDir: "/output/dir"
+                    }]]
+                }
+            "
+`;
+
+exports[`config.ts > createTempConfigFile > should add reporter to a config using module.exports 1`] = `
+"
+        import VscodeJsonReporter from "file:///path/to/reporter.cjs";
+        const path = require('path')
+
+        module.exports = {
+          runner: 'local',
+          specs: ['./test/specs/**/*.js'],
+
+          capabilities: [{
+            browserName: 'chrome'
+          }],
+
+          logLevel: 'info',
+
+          reporters: [[VscodeJsonReporter.default || VscodeJsonReporter, {
+            stdout: true,
+            outputDir: "/output/dir"
+          }]]
+        }
+      "
+`;
+
+exports[`config.ts > createTempConfigFile > should add reporter to an ESM config file if not present 1`] = `
+"
+        import VscodeJsonReporter from "file:///path/to/reporter.cjs";
+        import { defineConfig } from '@wdio/cli'
+
+        export const config = defineConfig({
+          runner: 'local',
+          specs: ['./test/specs/**/*.ts'],
+
+          capabilities: [{
+            browserName: 'chrome'
+          }],
+
+          logLevel: 'info',
+          services: ['chromedriver'],
+
+          reporters: [[VscodeJsonReporter.default || VscodeJsonReporter, {
+            stdout: true,
+            outputDir: "/output/dir"
+          }]]
+        })
+      "
+`;
+
+exports[`config.ts > createTempConfigFile > should add reporter to an ESM config with existing reporters 1`] = `
+"
+        import VscodeJsonReporter from "file:///path/to/reporter.cjs";
+        import { defineConfig } from '@wdio/cli'
+
+        export const config = defineConfig({
+          runner: 'local',
+          specs: ['./test/specs/**/*.ts'],
+          reporters: [
+            'spec',
+            ['allure', { outputDir: 'allure-results' }],
+            [VscodeJsonReporter.default || VscodeJsonReporter, {
+              stdout: true,
+              outputDir: "/output/dir"
+            }]
+          ],
+          capabilities: [{
+            browserName: 'chrome'
+          }],
+        })
+      "
+`;
+
+exports[`config.ts > createTempConfigFile > should not add duplicate reporter import if already present in ESM 1`] = `
+"
+        import { defineConfig } from '@wdio/cli'
+        import VscodeJsonReporter from "file:///path/to/reporter.cjs"
+
+        export const config = defineConfig({
+          runner: 'local',
+          specs: ['./test/specs/**/*.ts'],
+
+          capabilities: [{
+            browserName: 'chrome'
+          }],
+
+          reporters: [[VscodeJsonReporter.default || VscodeJsonReporter, {
+            stdout: true,
+            outputDir: "/output/dir"
+          }]]
+        })
+      "
+`;

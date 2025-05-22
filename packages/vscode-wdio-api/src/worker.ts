@@ -8,14 +8,16 @@ import { log } from '@vscode-wdio/logger'
 import { createBirpc } from 'birpc'
 import getPort from 'get-port'
 
-import { createWss, loggingFn } from './utils.js'
+import { createWss, loggingFn, resolveNodePath } from './utils.js'
 
 import type { ExtensionApi, WdioExtensionWorkerInterface, WorkerApi } from '@vscode-wdio/types/api'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
 import type * as vscode from 'vscode'
 import type { WebSocketServer } from 'ws'
 
 const WORKER_PATH = resolve(__dirname, 'worker.cjs')
 export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWorkerInterface {
+    protected configManager: ExtensionConfigManagerInterface
     public cid: string
     protected cwd: string
     protected disposables: vscode.Disposable[] = []
@@ -26,10 +28,11 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
     private _server: Server | null = null
     private _wss: WebSocketServer | null = null
 
-    constructor(cid: string = '#0', cwd: string) {
+    constructor(configManager: ExtensionConfigManagerInterface, cid: string = '#0', cwd: string) {
         super()
         this.cid = cid
         this.cwd = cwd
+        this.configManager = configManager
 
         const psListener = () => {
             if (this._workerProcess && !this._workerProcess.killed) {
@@ -73,6 +76,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             return
         }
         try {
+            const nodeExecutable = await resolveNodePath(this.configManager)
             // Find available port for WebSocket communication
             // Store server instances for proper cleanup
             const wsUrl = await this.getServer()
@@ -86,7 +90,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
             }
 
             // Start worker process
-            this._workerProcess = spawn('node', [WORKER_PATH], {
+            this._workerProcess = spawn(nodeExecutable, [WORKER_PATH], {
                 cwd: this.cwd,
                 env,
                 stdio: 'pipe',

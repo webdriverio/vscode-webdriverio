@@ -28,6 +28,7 @@ export class ExtensionConfigManager extends EventEmitter implements ExtensionCon
         const configFilePattern = config.get<string[]>('configFilePattern')
 
         this._globalConfig = {
+            nodeExecutable: config.get<string | undefined>('nodeExecutable', DEFAULT_CONFIG_VALUES.nodeExecutable),
             configFilePattern:
                 configFilePattern && configFilePattern.length > 0
                     ? configFilePattern
@@ -95,7 +96,6 @@ export class ExtensionConfigManager extends EventEmitter implements ExtensionCon
                     }
                 }
                 for (const wdioConfigFile of wdioConfigFiles) {
-                    // this._workspaceConfigMap.set(wdioConfigFile, workspaceFolder)
                     const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
                     if (workspaceInfo) {
                         workspaceInfo.add(wdioConfigFile)

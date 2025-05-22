@@ -64,6 +64,7 @@ For example:
 
 This extension contributes the following settings:
 
+- `webdriverio.nodeExecutable`: The path to the Node.js executable. If not assigned, WebdriverIO try to resolve the node path from environment valuables of `PATH`.
 - `webdriverio.configFilePattern`: Glob pattern for WebdriverIO configuration file
 - `webdriverio.logLevel`: Set the logLevel
 - `webdriverio.showOutput`: Show WebdriverIO output in the test result when set `true` this option

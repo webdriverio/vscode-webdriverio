@@ -1,6 +1,7 @@
 import type { LOG_LEVEL } from '@vscode-wdio/constants'
 
 export interface WebdriverIOConfig {
+    nodeExecutable: string | undefined
     configFilePattern: string[]
     showOutput: boolean
     logLevel: string

@@ -30,6 +30,7 @@ export type StepType = 'Given' | 'When' | 'Then' | 'And' | 'But' | '*'
 export type { SourceRange, TestData }
 
 export interface WorkerMetaContext {
+    cwd: string
     log: LoggerInterface
     ws: WebSocket
     shutdownRequested: boolean

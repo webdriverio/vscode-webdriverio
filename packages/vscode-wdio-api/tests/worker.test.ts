@@ -9,6 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createWss } from '../src/utils.js'
 import { WdioExtensionWorker } from '../src/worker.js'
 import type { ExtensionApi } from '@vscode-wdio/types/api'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
 import type * as WebSocket from 'ws'
 
 // Mock dependencies
@@ -30,6 +31,7 @@ vi.mock('../src/utils.js', () => {
     return {
         loggingFn: vi.fn(),
         createWss: vi.fn(),
+        resolveNodePath: vi.fn(async () => '/path/to/node'),
     }
 })
 
@@ -88,7 +90,7 @@ describe('WdioExtensionWorker', () => {
         vi.mocked(createBirpc).mockReturnValue(mockBirpc)
 
         // Create worker instance
-        worker = new WdioExtensionWorker('#1', '/test/path')
+        worker = new WdioExtensionWorker({} as unknown as ExtensionConfigManagerInterface, '#1', '/test/path')
     })
 
     afterEach(() => {
@@ -115,7 +117,7 @@ describe('WdioExtensionWorker', () => {
 
             // Check if worker process is spawned with correct arguments
             expect(childProcess.spawn).toHaveBeenCalledWith(
-                'node',
+                '/path/to/node',
                 expect.any(Array),
                 expect.objectContaining({
                     cwd: '/test/path',

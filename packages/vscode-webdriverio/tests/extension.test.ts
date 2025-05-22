@@ -112,8 +112,10 @@ describe('extension', () => {
             await activate(fakeContext)
 
             // Assert
-            expect(log.error).toHaveBeenCalledWith(`Failed to start worker process: ${errorMessage}`)
-            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Failed to start WebdriverIO worker process')
+            expect(log.error).toHaveBeenCalledWith(`Failed to start WebdriverIO worker process: ${errorMessage}`)
+            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
+                `Failed to start WebdriverIO worker process: ${errorMessage}`
+            )
         })
 
         it('should continue activation even when serverManager.start rejects', async () => {

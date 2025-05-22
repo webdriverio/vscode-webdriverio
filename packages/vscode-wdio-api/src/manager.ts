@@ -1,9 +1,11 @@
 import { dirname, normalize } from 'node:path'
 
 import { log } from '@vscode-wdio/logger'
+import * as vscode from 'vscode'
 
 import { WdioExtensionWorker } from './worker.js'
 import type { ServerManagerInterface, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
 
 export class ServerManager implements ServerManagerInterface {
     private _serverPool = new Map<string, WdioExtensionWorkerInterface>()
@@ -12,6 +14,28 @@ export class ServerManager implements ServerManagerInterface {
     // Semaphore to track the overall operation (for complete sequential execution)
     private _operationLock = false
     private _operationQueue: (() => Promise<void>)[] = []
+
+    constructor(private readonly configManager: ExtensionConfigManagerInterface) {
+        configManager.on('update:nodeExecutable', async (nodeExecutable: string) => {
+            log.debug(`Restart worker using webdriverio.nodeExecutable: ${nodeExecutable}`)
+            const cwds = Array.from(this._serverPool.keys())
+            await Promise.all(
+                cwds.map(async (cwd) => {
+                    const worker = this._serverPool.get(cwd)
+                    if (worker) {
+                        await this.stopWorker(cwd, worker)
+                    }
+                })
+            )
+            try {
+                await this.start(this.configManager.getWdioConfigPaths())
+            } catch (error) {
+                const errorMessage = `Failed to restart WebdriverIO worker process: ${error instanceof Error ? error.message : String(error)}`
+                log.error(errorMessage)
+                vscode.window.showErrorMessage(errorMessage)
+            }
+        })
+    }
 
     /**
      * Start worker process directory by directory which is located the wdio config file.
@@ -28,7 +52,7 @@ export class ServerManager implements ServerManagerInterface {
             })
 
             const workerCwds = Array.from(duplicatedWorkerCwds)
-            const ids = Array.from({ length: workerCwds.length }, (_, i) => i)
+            const ids = Array.from({ length: workerCwds.length }, (_, i) => this.latestId + i)
             this.latestId = ids[ids.length - 1]
 
             await Promise.all(
@@ -146,35 +170,35 @@ export class ServerManager implements ServerManagerInterface {
         }
     }
 
-    private async startWorker(id: number, configPaths: string): Promise<WdioExtensionWorkerInterface> {
+    private async startWorker(id: number, workerCwd: string): Promise<WdioExtensionWorkerInterface> {
         // Return existing server if already created
-        const existingServer = this._serverPool.get(configPaths)
+        const existingServer = this._serverPool.get(workerCwd)
         if (existingServer) {
             return existingServer
         }
 
         // Return pending operation if one is in progress
-        const pendingOperation = this._pendingOperations.get(`start:${configPaths}`)
+        const pendingOperation = this._pendingOperations.get(`start:${workerCwd}`)
         if (pendingOperation) {
             return pendingOperation as Promise<WdioExtensionWorkerInterface>
         }
 
         // Start a new process and track it
-        const serverPromise = this.createWorker(id, configPaths)
-        this._pendingOperations.set(`start:${configPaths}`, serverPromise)
+        const serverPromise = this.createWorker(id, workerCwd)
+        this._pendingOperations.set(`start:${workerCwd}`, serverPromise)
 
         try {
             const server = await serverPromise
             return server
         } finally {
             // Remove from pending list when completed
-            this._pendingOperations.delete(`start:${configPaths}`)
+            this._pendingOperations.delete(`start:${workerCwd}`)
         }
     }
 
     private async createWorker(id: number, configPaths: string): Promise<WdioExtensionWorker> {
         const strId = `#${String(id)}`
-        const server = new WdioExtensionWorker(strId, configPaths)
+        const server = new WdioExtensionWorker(this.configManager, strId, configPaths)
         await server.start()
         await server.waitForStart()
         log.debug(`[server manager] server was registered: ${configPaths}`)

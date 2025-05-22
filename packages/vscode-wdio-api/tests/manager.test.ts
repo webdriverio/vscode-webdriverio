@@ -4,10 +4,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import { ServerManager } from '../src/manager.js'
 import { WdioExtensionWorker } from '../src/worker.js'
+import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+
+vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))
 
 // Mock the worker.js module
 vi.mock('../src/worker.js', () => {
-    const WdioExtensionWorker = vi.fn(function (cid, configPath) {
+    const WdioExtensionWorker = vi.fn(function (_configManager, cid, configPath) {
         // @ts-ignore
         this.cid = cid
         // @ts-ignore
@@ -22,13 +25,26 @@ vi.mock('../src/worker.js', () => {
 // Mock the logger module
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
 
+vi.mock('../src/utils.js', async (importActual) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    const actual = await importActual<typeof import('../src/utils.js')>()
+    return {
+        ...actual,
+        resolveNodePath: vi.fn(),
+    }
+})
+
+const mockConfigManager = {
+    on: vi.fn(),
+} as unknown as ExtensionConfigManagerInterface
+
 describe('ServerManager', () => {
     let serverManager: ServerManager
 
     // Create a fresh instance of ServerManager before each test
     beforeEach(() => {
         vi.resetAllMocks()
-        serverManager = new ServerManager()
+        serverManager = new ServerManager(mockConfigManager)
     })
 
     afterEach(() => {
@@ -45,8 +61,8 @@ describe('ServerManager', () => {
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(2)
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#0', normalize('/path/to'))
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#1', normalize('/another/path'))
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#0', normalize('/path/to'))
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#1', normalize('/another/path'))
 
             // Check that start was called on each worker
             expect(vi.mocked(WdioExtensionWorker).mock.instances.length).toBe(2)
@@ -90,7 +106,7 @@ describe('ServerManager', () => {
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(1)
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#1', wdioDirName)
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#1', wdioDirName)
             expect(result).toBeDefined()
             expect(result.cid).toBe('#1')
         })
@@ -104,8 +120,8 @@ describe('ServerManager', () => {
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(2)
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#1', '/path/to')
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#2', '/another/path')
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#1', '/path/to')
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#2', '/another/path')
         })
     })
 
@@ -149,7 +165,7 @@ describe('ServerManager', () => {
 
             // Should create one new worker
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(1)
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#2', normalize('/new/path'))
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#2', normalize('/new/path'))
         })
     })
 
@@ -235,7 +251,7 @@ describe('ServerManager', () => {
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(1)
-            expect(WdioExtensionWorker).toHaveBeenCalledWith('#42', configPath)
+            expect(WdioExtensionWorker).toHaveBeenCalledWith(mockConfigManager, '#42', configPath)
             expect(result).toBeDefined()
             expect(result.start).toHaveBeenCalledTimes(1)
             expect(result.waitForStart).toHaveBeenCalledTimes(1)
@@ -256,7 +272,7 @@ describe('ServerManager', () => {
                 createWorkerCalls++
                 // Mock delay to ensure operations overlap
                 await new Promise((resolve) => setTimeout(resolve, 50))
-                return new WdioExtensionWorker(`#${id}`, path)
+                return new WdioExtensionWorker(mockConfigManager, `#${id}`, path)
             }) as any)
 
             // Execute two concurrent calls with same path
