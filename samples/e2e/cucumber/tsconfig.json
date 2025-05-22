@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": ".",
+        "lib": ["es2022", "dom"],
+        "types": ["node", "@wdio/globals/types", "@wdio/cucumber-framework"]
+    },
+    "include": ["wdio.conf.ts", "step-definitions.ts"]
+}

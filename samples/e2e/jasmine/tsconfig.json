@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": ".",
+        "lib": ["es2022", "dom"],
+        "types": ["node", "jasmine", "@wdio/globals/types", "@wdio/jasmine-framework"]
+    },
+    "include": ["tests", "wdio.conf.ts"]
+}

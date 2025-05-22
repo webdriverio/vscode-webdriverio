@@ -43,18 +43,16 @@
     },
     "scripts": {
         "build-production": "pnpm run clean-build",
-        "build": "npm-run-all -p build:*",
-        "build:tsc": "pnpm run typecheck",
-        "build:esbuild": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
+        "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
         "package": "npm-run-all -p package:*",
         "package:typecheck": "pnpm run typecheck",
-        "package:build": "pnpm run build:esbuild --production",
+        "package:build": "pnpm run build --production",
         "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean-build": "pnpm run clean && npm run build",
+        "clean-build": "pnpm run clean && pnpm run build",
         "clean": "shx rm -rf out dist coverage",
         "test": "vitest run .",
         "watch": "npm-run-all -p watch:*",
-        "watch:esbuild": "node esbuild.js --watch",
+        "watch:esbuild": "pnpm run build --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
     },
     "devDependencies": {

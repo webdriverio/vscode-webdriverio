@@ -38,7 +38,7 @@ if (!fss.existsSync(pkgPath)) {
     throw new Error(`The package.json is not found: ${pkgPath}`)
 }
 
-const pkg = (await import(url.pathToFileURL(pkgPath).href, { assert: { type: 'json' } })).default
+const pkg = (await import(url.pathToFileURL(pkgPath).href, { with: { type: 'json' } })).default
 
 const absWorkingDir = path.dirname(pkgPath)
 
