@@ -5,16 +5,17 @@
             "dependsOn": ["^build"],
             "outputs": ["dist"]
         },
+        "build:production": {
+            "dependsOn": ["^build:production"],
+            "outputs": ["dist"],
+            "cache": false
+        },
         "typecheck": {
             "dependsOn": ["^build", "^typecheck"],
             "cache": false
         },
-        "dev": {
-            "persistent": true,
-            "cache": false
-        },
         "vscode-webdriverio#package": {
-            "dependsOn": ["^build", "^typecheck"]
+            "dependsOn": ["build:production"]
         }
     }
 }

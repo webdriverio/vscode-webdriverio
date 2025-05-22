@@ -5,8 +5,46 @@
     "version": "0.0.1",
     "type": "module",
     "author": "WebdriverIO Team",
-    "packageManager": "pnpm@10.8.0",
     "license": "MIT",
+    "main": "./dist/extension.cjs",
+    "exports": {
+        ".": {
+            "requireSource": "./src/extension.ts",
+            "require": "./dist/extension.cjs"
+        },
+        "./worker": {
+            "requireSource": "./src/worker.ts",
+            "require": "./dist/worker.cjs"
+        },
+        "./reporter": {
+            "requireSource": "./src/reporter.ts",
+            "require": "./dist/reporter.cjs"
+        }
+    },
+    "scripts": {
+        "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
+        "build:production": "pnpm clean && pnpm typecheck && pnpm run build --production",
+        "package": "run-s package:*",
+        "package:pre": "pnpm --filter @vscode-wdio/pre-package run copy",
+        "package:pack": "vsce package",
+        "typecheck": "tsc --noEmit --project tsconfig.json",
+        "clean": "shx rm -rf out dist coverage"
+    },
+    "devDependencies": {
+        "@vscode-wdio/api": "workspace:*",
+        "@vscode-wdio/config": "workspace:*",
+        "@vscode-wdio/constants": "workspace:*",
+        "@vscode-wdio/logger": "workspace:*",
+        "@vscode-wdio/reporter": "workspace:*",
+        "@vscode-wdio/test": "workspace:*",
+        "@vscode-wdio/types": "workspace:*",
+        "@vscode-wdio/utils": "workspace:*",
+        "@vscode-wdio/worker": "workspace:*",
+        "@vscode/vsce": "^3.4.2"
+    },
+    "dependencies": {},
+    "homepage": "https://webdriver.io",
+    "icon": "assets/icon.png",
     "repository": {
         "type": "git",
         "url": "https://github.com/webdriverio/vscode-webdriverio.git"
@@ -26,46 +64,49 @@
     "engines": {
         "vscode": "^1.98.0"
     },
-    "main": "./dist/extension.cjs",
-    "exports": {
-        ".": {
-            "requireSource": "./src/extension.ts",
-            "require": "./dist/extension.cjs"
-        },
-        "./worker": {
-            "requireSource": "./src/worker.ts",
-            "require": "./dist/worker.cjs"
-        },
-        "./reporter": {
-            "requireSource": "./src/reporter.ts",
-            "require": "./dist/reporter.cjs"
+    "activationEvents": [
+        "onLanguage:javascript",
+        "onLanguage:typescript",
+        "workspaceContains:**/wdio.conf.js",
+        "workspaceContains:**/wdio.conf.ts"
+    ],
+    "contributes": {
+        "configuration": {
+            "title": "WebdriverIO",
+            "properties": {
+                "webdriverio.nodeExecutable": {
+                    "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
+                    "type": "string"
+                },
+                "webdriverio.configFilePattern": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "**/wdio.conf.{ts,js}"
+                    ],
+                    "description": "Glob pattern for WebdriverIO configuration file"
+                },
+                "webdriverio.logLevel": {
+                    "type": "string",
+                    "enum": [
+                        "trace",
+                        "debug",
+                        "info",
+                        "warn",
+                        "error",
+                        "silent"
+                    ],
+                    "default": "info",
+                    "description": "Set the logLevel"
+                },
+                "webdriverio.showOutput": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show WebdriverIO output in the test result"
+                }
+            }
         }
-    },
-    "scripts": {
-        "build-production": "pnpm run clean-build",
-        "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
-        "package": "npm-run-all -p package:*",
-        "package:typecheck": "pnpm run typecheck",
-        "package:build": "pnpm run build --production",
-        "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean-build": "pnpm run clean && pnpm run build",
-        "clean": "shx rm -rf out dist coverage",
-        "test": "vitest run .",
-        "watch": "npm-run-all -p watch:*",
-        "watch:esbuild": "pnpm run build --watch",
-        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
-    },
-    "devDependencies": {
-        "@vscode-wdio/types": "workspace:*"
-    },
-    "dependencies": {
-        "@vscode-wdio/api": "workspace:*",
-        "@vscode-wdio/config": "workspace:*",
-        "@vscode-wdio/constants": "workspace:*",
-        "@vscode-wdio/logger": "workspace:*",
-        "@vscode-wdio/reporter": "workspace:*",
-        "@vscode-wdio/test": "workspace:*",
-        "@vscode-wdio/utils": "workspace:*",
-        "@vscode-wdio/worker": "workspace:*"
     }
 }

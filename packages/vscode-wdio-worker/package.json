@@ -9,13 +9,10 @@
         }
     },
     "scripts": {
-        "build-production": "npm run clean-build",
         "build": "tsc -p .",
+        "build:production": "pnpm clean && pnpm run build",
         "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean-build": "npm run clean && npm run build",
-        "clean": "shx rm -rf out dist coverage",
-        "test": "vitest run .",
-        "watch": "tsc -p . --watch"
+        "clean": "shx rm -rf out dist coverage"
     },
     "dependencies": {
         "@babel/parser": "^7.27.0",

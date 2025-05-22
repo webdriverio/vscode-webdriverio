@@ -1,3 +1,4 @@
+.turbo/**
 .vscode/**
 .vscode-test/**
 out/**

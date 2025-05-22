@@ -10,11 +10,9 @@
         }
     },
     "scripts": {
-        "build-production": "npm run clean-build",
         "build": "tsc -p .",
+        "build:production": "pnpm clean && pnpm run build",
         "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean-build": "npm run clean && npm run build",
-        "clean": "shx rm -rf out dist coverage",
-        "watch": "tsc -p . --watch"
+        "clean": "shx rm -rf out dist coverage"
     }
 }

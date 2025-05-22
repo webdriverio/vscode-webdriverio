@@ -5,8 +5,6 @@ import { log } from '@vscode-wdio/logger'
 import { RepositoryManager, TestfileWatcher } from '@vscode-wdio/test'
 import * as vscode from 'vscode'
 
-import { configureTests } from './commands/configureTests.js'
-
 let extension: WdioExtension | null = null
 export async function activate(context: vscode.ExtensionContext) {
     extension = new WdioExtension()
@@ -50,7 +48,6 @@ class WdioExtension implements vscode.Disposable {
         )
 
         this._disposables = [
-            vscode.commands.registerCommand('webdriverio.configureTests', configureTests),
             vscode.workspace.onDidChangeConfiguration((event) => this.configManager.listener(event)),
             testfileWatcher,
             configFileWatcher,
@@ -85,8 +82,9 @@ class WdioExtension implements vscode.Disposable {
         }
     }
 
-    async dispose() {
-        await Promise.all(this._disposables.map(async (d) => await d.dispose()))
-        this._disposables = []
+    dispose() {
+        Promise.all(this._disposables.map(async (d) => await d.dispose())).then(()=>{
+            this._disposables = []
+        })
     }
 }

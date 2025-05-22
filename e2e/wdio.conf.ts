@@ -15,12 +15,12 @@ export const config: WebdriverIO.Config = {
             browserVersion: 'stable', // also possible: "insiders" or a specific version e.g. "1.80.0"
             'wdio:vscodeOptions': {
                 // points to directory where extension package.json is located
-                extensionPath: path.resolve('..'),
+                extensionPath: path.resolve('../packages/vscode-webdriverio'),
                 // optional VS Code settings
                 userSettings: {
                     'webdriverio.logLevel': 'trace',
                 },
-                workspacePath: path.resolve(path.join('..', 'samples', 'e2e', target)),
+                workspacePath: path.resolve(`../samples/e2e/${target}`),
             },
             'wdio:enforceWebDriverClassic': true,
         },

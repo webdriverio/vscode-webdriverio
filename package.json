@@ -4,95 +4,17 @@
     "description": "WebdriverIO for the vscode",
     "version": "0.0.1",
     "type": "module",
+    "private": true,
     "author": "WebdriverIO Team",
     "packageManager": "pnpm@10.8.0",
     "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/webdriverio/vscode-webdriverio.git"
-    },
-    "bugs": {
-        "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
-    },
-    "keywords": [
-        "WebdriverIO",
-        "test",
-        "typescript",
-        "javascript"
-    ],
-    "categories": [
-        "Testing"
-    ],
-    "engines": {
-        "vscode": "^1.98.0"
-    },
-    "activationEvents": [
-        "onLanguage:javascript",
-        "onLanguage:typescript",
-        "workspaceContains:**/wdio.conf.js",
-        "workspaceContains:**/wdio.conf.ts"
-    ],
     "main": "./packages/vscode-webdriverio/dist/extension.cjs",
-    "contributes": {
-        "commands": [
-            {
-                "command": "webdriverio.configureTests",
-                "title": "WebdriverIO: Configure Tests"
-            }
-        ],
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "webdriverio-explorer",
-                    "title": "WebdriverIO Explorer",
-                    "icon": "media/icon.svg"
-                }
-            ]
-        },
-        "configuration": {
-            "title": "WebdriverIO",
-            "properties": {
-                "webdriverio.nodeExecutable": {
-                    "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
-                    "type": "string"
-                },
-                "webdriverio.configFilePattern": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "default": [
-                        "**/wdio.conf.{ts,js}"
-                    ],
-                    "description": "Glob pattern for WebdriverIO configuration file"
-                },
-                "webdriverio.logLevel": {
-                    "type": "string",
-                    "enum": [
-                        "trace",
-                        "debug",
-                        "info",
-                        "warn",
-                        "error",
-                        "silent"
-                    ],
-                    "default": "info",
-                    "description": "Set the logLevel"
-                },
-                "webdriverio.showOutput": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show WebdriverIO output in the test result"
-                }
-            }
-        }
-    },
     "scripts": {
         "vscode:prepublish": "pnpm run package",
         "compile": "turbo run typecheck build --filter=./packages/*",
         "build": "turbo run build --filter=./packages/*",
         "typecheck": "turbo run typecheck --filter=./packages/*",
-        "watch": "npm-run-all -p watch:*",
+        "watch": "run-p watch:*",
         "watch:build": "turbo watch build --filter=./packages/*",
         "watch:typecheck": "turbo watch typecheck --filter=./packages/*",
         "watch:test": "vitest",
@@ -101,10 +23,13 @@
         "format:fix": "prettier --write .",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
-        "test:e2e": "pnpm --filter @vscode-wdio/e2e run test:e2e",
+        "test": "run-s test:*",
         "test:unit": "vitest --run",
+        "test:e2e": "pnpm --filter @vscode-wdio/e2e run test:e2e",
         "coverage": "vitest --run --coverage",
-        "graph": "pnpm run build --graph assets/build.png"
+        "graph": "pnpm run build --graph assets/build.png",
+        "postinstall": "run-s postinstall:*",
+        "postinstall:husky": "husky"
     },
     "devDependencies": {
         "@types/node": "20.x",

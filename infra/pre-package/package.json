@@ -1,0 +1,9 @@
+{
+    "name": "@vscode-wdio/pre-package",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "copy": "tsx ./src/copy.ts"
+    },
+    "dependencies": {}
+}

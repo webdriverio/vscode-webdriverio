@@ -8,3 +8,6 @@ coverage
 e2e/logs
 samples/**/logs
 **/.turbo
+packages/vscode-webdriverio/README.md
+packages/vscode-webdriverio/CHANGELOG.md
+packages/vscode-webdriverio/LICENSE
