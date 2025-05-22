@@ -1,4 +1,4 @@
-name: Unit tests
+name: E2E tests
 
 on:
     workflow_call:
@@ -10,7 +10,7 @@ env:
 
 jobs:
     unit:
-        name: Unit Tests (${{ matrix.os }}.${{ matrix.node-version }})
+        name: E2E Tests (${{ matrix.os }}.${{ matrix.node-version }})
         strategy:
             fail-fast: false
             matrix:
@@ -35,8 +35,8 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
-            - name: 🧪 Run the unit test
-              run: pnpm run test:unit
+            - name: 🧪 Run the e2e test
+              run: pnpm run test:e2e
               shell: bash
 
             - name: 🐛 Debug Build

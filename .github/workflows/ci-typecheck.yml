@@ -1,4 +1,4 @@
-name: Unit tests
+name: Typecheck
 
 on:
     workflow_call:
@@ -9,13 +9,13 @@ env:
     TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-    unit:
-        name: Unit Tests (${{ matrix.os }}.${{ matrix.node-version }})
+    typecheck:
+        name: Typecheck
         strategy:
             fail-fast: false
             matrix:
                 node-version: ['20']
-                os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+                os: ['ubuntu-latest']
         runs-on: ${{ matrix.os }}
         steps:
             - name: 👷 Checkout
@@ -35,12 +35,6 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
-            - name: 🧪 Run the unit test
-              run: pnpm run test:unit
+            - name: 🏛️ Run the typecheck
+              run: pnpm run typecheck --only
               shell: bash
-
-            - name: 🐛 Debug Build
-              uses: stateful/vscode-server-action@v1.1.0
-              if: failure()
-              with:
-                  timeout: '180000'

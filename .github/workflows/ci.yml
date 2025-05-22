@@ -9,6 +9,10 @@ on:
             - v[0-9]+.[0-9]+.[0-9]+*
     pull_request:
 
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 jobs:
     build:
         name: Build
@@ -21,7 +25,17 @@ jobs:
         needs: [build]
         uses: ./.github/workflows/ci-lint.yml
 
+    typecheck:
+        name: Typecheck
+        needs: [build]
+        uses: ./.github/workflows/ci-typecheck.yml
+
     unit:
         name: Unit
         needs: [build]
         uses: ./.github/workflows/ci-unit.yml
+
+    e2e:
+        name: E2E
+        needs: [build]
+        uses: ./.github/workflows/ci-e2e.yml
