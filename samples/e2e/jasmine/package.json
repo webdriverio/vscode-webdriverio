@@ -10,7 +10,7 @@
     },
     "devDependencies": {
         "@types/jasmine": "^5.1.7",
-        "@types/node": "^22.14.1",
+        "@types/node": "^20.17.50",
         "@wdio/cli": "^9.12.6",
         "@wdio/globals": "^9.12.6",
         "@wdio/jasmine-framework": "^9.12.6",

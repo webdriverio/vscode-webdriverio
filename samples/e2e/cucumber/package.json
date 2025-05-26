@@ -10,7 +10,7 @@
     },
     "devDependencies": {
         "@cucumber/cucumber": "^11.3.0",
-        "@types/node": "^22.14.1",
+        "@types/node": "^20.17.50",
         "@wdio/cli": "^9.12.6",
         "@wdio/cucumber-framework": "^9.12.6",
         "@wdio/globals": "^9.12.6",
