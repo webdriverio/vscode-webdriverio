@@ -8,6 +8,7 @@ on: pull_request_target
 
 # Dependabot PRs' tokens have read permissions by default and thus we must enable write permissions.
 permissions:
+  checks: read
   contents: write
   pull-requests: write
 
