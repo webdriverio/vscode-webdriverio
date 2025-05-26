@@ -1,0 +1,18 @@
+{
+    "name": "@vscode-wdio/release",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "copy": "tsx ./src/copy.ts",
+        "push": "tsx ./src/push.ts",
+        "update-version": "tsx ./src/updatePrereleaseVersion.ts",
+        "release-note": "tsx ./src/createRelease.ts",
+        "changelog": "tsx ./src/changelog.ts"
+    },
+    "devDependencies": {
+        "@actions/core": "^1.11.1",
+        "@octokit/rest": "^22.0.0",
+        "dotenv": "^16.5.0",
+        "lerna-changelog": "^2.2.0"
+    }
+}

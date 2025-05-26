@@ -24,9 +24,13 @@
     "scripts": {
         "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
         "build:production": "pnpm clean && pnpm typecheck && pnpm run build --production",
-        "package": "run-s package:*",
-        "package:pre": "pnpm --filter @vscode-wdio/pre-package run copy",
-        "package:pack": "vsce package",
+        "prepackage": "run-s prepackage:*",
+        "prepackage:copy": "pnpm --filter @vscode-wdio/release run copy",
+        "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
+        "package": "vsce package",
+        "publish": "vsce publish",
+        "package:next": "pnpm run package --pre-release",
+        "publish:next": "vsce publish --pre-release",
         "typecheck": "tsc --noEmit --project tsconfig.json",
         "clean": "shx rm -rf out dist coverage"
     },
@@ -43,6 +47,7 @@
         "@vscode/vsce": "^3.4.2"
     },
     "dependencies": {},
+    "publisher": "WebdriverIO",
     "homepage": "https://webdriver.io",
     "icon": "assets/icon.png",
     "repository": {

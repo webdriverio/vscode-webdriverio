@@ -1,9 +1,13 @@
-# Change Log
+# Changelog
 
-All notable changes to the "wdio-vscode" extension will be documented in this file.
+> **Tags:**
+>
+> - :boom: [Breaking Change]
+> - :eyeglasses: [Spec Compliancy]
+> - :rocket: [New Feature]
+> - :bug: [Bug Fix]
+> - :memo: [Documentation]
+> - :house: [Internal]
+> - :nail_care: [Polish]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+---

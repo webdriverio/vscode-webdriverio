@@ -1,6 +1,7 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "tasks": {
+        "clean": {},
         "build": {
             "dependsOn": ["^build"],
             "outputs": ["dist"]
@@ -15,7 +16,20 @@
             "cache": false
         },
         "vscode-webdriverio#package": {
-            "dependsOn": ["build:production"]
+            "dependsOn": ["build:production"],
+            "env": ["VSCE_PAT"]
+        },
+        "vscode-webdriverio#publish": {
+            "dependsOn": ["package"],
+            "env": ["VSCE_PAT"]
+        },
+        "vscode-webdriverio#package:next": {
+            "dependsOn": ["build:production"],
+            "env": ["VSCE_PAT", "VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER"]
+        },
+        "vscode-webdriverio#publish:next": {
+            "dependsOn": ["package:next"],
+            "env": ["VSCE_PAT"]
         }
     }
 }

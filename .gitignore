@@ -4,6 +4,8 @@ node_modules
 .vscode-test
 .wdio-vscode-service
 *.vsix
+.changelog
+.env
 coverage
 e2e/logs
 samples/**/logs
