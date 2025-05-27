@@ -1,7 +1,7 @@
 <h1 align="center">WebdriverIO extension for Visual Studio Code.</h1>
 
 <p align="center">
-  <a title="WebdriverIO extension for Visual Studio Code" href="https://github.com/webdriverio/vscode-webdriverio"><img src="./assets/vscode-webdriverio.png" alt="WebdriverIO extension for Visual Studio Code" width="50%" /></a>
+  <a title="WebdriverIO extension for Visual Studio Code" href="https://github.com/webdriverio/vscode-webdriverio"><img src="./assets/vscode-webdriverio.png" alt="WebdriverIO extension for Visual Studio Code" width="80%" /></a>
 </p>
 
 ## Features
