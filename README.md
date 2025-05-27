@@ -56,7 +56,7 @@ You can do the following actions:
     - `Debug Test`: Execute the selected test case with a debugging session.
     - `Reveal in Test Explorer`: Locate and highlight the test in the centralized Testing view.
 
-## 　Extension Settings
+## Extension Settings
 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
@@ -68,3 +68,7 @@ This extension contributes the following settings:
 - `webdriverio.configFilePattern`: Glob pattern for WebdriverIO configuration file
 - `webdriverio.logLevel`: Set the logLevel
 - `webdriverio.showOutput`: Show WebdriverIO output in the test result when set `true` this option
+
+## Remarks
+
+This extension is **pre-release status**. So, the interface (e.g. configuration parameters) is subject to change.
