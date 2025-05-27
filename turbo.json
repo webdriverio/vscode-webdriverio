@@ -17,19 +17,19 @@
         },
         "vscode-webdriverio#package": {
             "dependsOn": ["build:production"],
-            "env": ["VSCE_PAT"]
+            "env": ["GITHUB_ACTIONS", "GITHUB_AUTH", "VSCE_PAT"]
         },
         "vscode-webdriverio#publish": {
             "dependsOn": ["package"],
-            "env": ["VSCE_PAT"]
+            "env": ["GITHUB_ACTIONS", "GITHUB_AUTH", "VSCE_PAT"]
         },
         "vscode-webdriverio#package:next": {
             "dependsOn": ["build:production"],
-            "env": ["VSCE_PAT", "VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER"]
+            "env": ["GITHUB_ACTIONS", "GITHUB_AUTH", "VSCE_PAT", "VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER"]
         },
         "vscode-webdriverio#publish:next": {
             "dependsOn": ["package:next"],
-            "env": ["VSCE_PAT"]
+            "env": ["GITHUB_ACTIONS", "GITHUB_AUTH", "VSCE_PAT"]
         }
     }
 }

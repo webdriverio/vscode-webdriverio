@@ -68,7 +68,6 @@ jobs:
               run: |
                   pnpm run publish:next
               env:
-                  NODE_ENV: production
                   GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
                   VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.version }}
@@ -78,7 +77,6 @@ jobs:
               run: |
                   pnpm run publish
               env:
-                  NODE_ENV: production
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
                   GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
 
