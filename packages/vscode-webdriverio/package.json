@@ -29,8 +29,9 @@
         "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
         "package": "vsce package",
         "publish": "vsce publish",
+        "postpublish": "pnpm --filter @vscode-wdio/release run push",
         "package:next": "pnpm run package --pre-release",
-        "publish:next": "vsce publish --pre-release",
+        "publish:next": "pnpm run publish --pre-release",
         "typecheck": "tsc --noEmit --project tsconfig.json",
         "clean": "shx rm -rf out dist coverage"
     },

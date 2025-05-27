@@ -31,7 +31,6 @@
         "coverage": "vitest --run --coverage",
         "graph": "pnpm run build --graph assets/build.png",
         "version": "pnpm --filter @vscode-wdio/release run changelog && git add CHANGELOG.md",
-        "postversion": "pnpm --filter @vscode-wdio/release run push",
         "postinstall": "run-s postinstall:*",
         "postinstall:husky": "husky"
     },
@@ -63,9 +62,11 @@
     },
     "pnpm": {
         "onlyBuiltDependencies": [
+            "@vscode/vsce-sign",
             "edgedriver",
             "esbuild",
             "geckodriver",
+            "keytar",
             "nx",
             "unrs-resolver"
         ]

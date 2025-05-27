@@ -76,7 +76,7 @@ jobs:
             - name: 🚀 Build and publish
               if: ${{  github.event.inputs.publishMarketplace == 'yes' && !startsWith(github.event.inputs.releaseType, 'pre') }}
               run: |
-                  pnpm run publish:next
+                  pnpm run publish
               env:
                   NODE_ENV: production
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
