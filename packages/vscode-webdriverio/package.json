@@ -72,8 +72,8 @@
     "activationEvents": [
         "onLanguage:javascript",
         "onLanguage:typescript",
-        "workspaceContains:**/wdio.conf.js",
-        "workspaceContains:**/wdio.conf.ts"
+        "workspaceContains:**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}",
+        "workspaceContains:**/node_modules/.bin/wdio"
     ],
     "contributes": {
         "configuration": {
