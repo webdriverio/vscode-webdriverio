@@ -14,6 +14,8 @@
         "test:e2e:mocha": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=mocha xvfb-maybe pnpm run wdio",
         "test:e2e:jasmine": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=jasmine xvfb-maybe pnpm run wdio",
         "test:e2e:cucumber": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=cucumber xvfb-maybe pnpm run wdio",
+        "test:smoke": "run-s test:smoke:*",
+        "test:smoke:update-config": "wdio run ./wdioSmoke.conf.ts",
         "wdio": "wdio run ./wdio.conf.ts"
     },
     "devDependencies": {
