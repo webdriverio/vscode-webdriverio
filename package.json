@@ -31,6 +31,7 @@
         "coverage": "vitest --run --coverage",
         "graph": "pnpm run build --graph assets/build.png",
         "version": "pnpm --filter @vscode-wdio/release run changelog && git add CHANGELOG.md",
+        "postversion": "git show",
         "postinstall": "run-s postinstall:*",
         "postinstall:husky": "husky"
     },

@@ -13,7 +13,8 @@ export const createPreReleaseVer = (version: string) => {
     if (!patchNumber) {
         throw new Error('VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER is not set. Please check the environment variables.')
     }
-    const newVersion = version.split('.').slice(0, 2)
-    newVersion.push(patchNumber)
+    const [major, minor, patch] = version.split('.')
+    const newVersion = [major, minor]
+    newVersion.push(`${patch.split('-')[0]}${patchNumber}`.slice(0, 9))
     return `${newVersion.join('.')}`
 }

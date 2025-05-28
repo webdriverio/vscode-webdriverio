@@ -1,5 +1,7 @@
 name: Manual Publish
 
+run-name: Manual Publish${{ github.event.inputs.dryRun == 'yes' && ' (DRY RUN)' || '' }}
+
 on:
     workflow_dispatch:
         inputs:
@@ -12,14 +14,23 @@ on:
                     - patch
                     - minor
                     - major
-                    - premajor
-                    - preminor
                     - prepatch
+                    - preminor
+                    - premajor
+                    - prerelease
             publishMarketplace:
                 description: 'Publish on Visual Studio Marketplace?'
                 required: true
                 type: choice
                 default: 'yes'
+                options:
+                    - 'yes'
+                    - 'no'
+            dryRun:
+                description: 'Dry run? If yes, this workflow will NOT push to remote and NOT publish the extension.'
+                required: true
+                type: choice
+                default: 'no'
                 options:
                     - 'yes'
                     - 'no'
@@ -59,7 +70,6 @@ jobs:
               run: |
                   pnpm lerna version ${{github.event.inputs.releaseType}} --no-push --exact --preid next --yes -m "chore(release): %s"
               env:
-                  NODE_ENV: production
                   GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
                   VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.version }}
 
@@ -68,8 +78,9 @@ jobs:
               run: |
                   pnpm run publish:next
               env:
-                  GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
+                  GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+                  VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
                   VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.version }}
 
             - name: 🚀 Build and publish
@@ -79,10 +90,12 @@ jobs:
               env:
                   VSCE_PAT: ${{ secrets.VSCE_PAT }}
                   GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+                  VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
 
             - name: 📝 Create the Github Release
               run: |
                   pnpm --filter @vscode-wdio/release run release-note
               env:
                   GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+                  VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
                   VSCODE_WDIO_RELEASE_NOTE: ${{ steps.bump.outputs.changelog }}
