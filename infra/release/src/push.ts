@@ -8,12 +8,12 @@ import shell from 'shelljs'
 
 import pkg from '../../../lerna.json' with { type: 'json' }
 
-const isGithubActions = Boolean(process.env.GITHUB_ACTIONS)
-
-console.log('\nPushing release tag...')
-if (!isGithubActions) {
-    console.log('\nSkip pushing because this is not running on the Github Actions.')
+if (process.env.VSCODE_WDIO_DRY_RUN === 'yes') {
+    console.log('dryRun is `yes`. Skip the push.')
     process.exit(0)
 }
+
+console.log('Pushing the commit and tag.')
 shell.exec('git push origin --no-verify')
 shell.exec(`git push origin refs/tags/v${pkg.version} -f --no-verify`)
+console.log('Successfully pushed.')
