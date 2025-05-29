@@ -12,7 +12,6 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update (improvements to the project's docs)
-- [ ] Specification changes (updates to WebDriver command specifications)
 - [ ] Internal updates (everything related to internal scripts, governance documentation and CI files)
 
 ## Checklist
