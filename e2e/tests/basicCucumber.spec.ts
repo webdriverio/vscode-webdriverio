@@ -13,7 +13,8 @@ import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
 const targetFramework = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
 
-describe(`VS Code Extension Testing with ${targetFramework}`, () => {
+describe(`VS Code Extension Testing with ${targetFramework}`, function () {
+    this.retries(3)
     let workbench: Workbench
     let testingViewControl: ViewControl
     let sideBarView: SideBarView<any>

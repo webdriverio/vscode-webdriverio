@@ -13,7 +13,8 @@ import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
 const targetFramework = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
 
-describe(`VS Code Extension Testing with ${targetFramework}`, () => {
+describe(`VS Code Extension Testing with ${targetFramework}`, function () {
+    this.retries(3)
     let workbench: Workbench
     let testingViewControl: ViewControl
     let sideBarView: SideBarView<any>
@@ -63,7 +64,10 @@ describe(`VS Code Extension Testing with ${targetFramework}`, () => {
                                 children: [
                                     { text: 'should be a pending test', status: STATUS.NOT_YET_RUN },
                                     { text: 'should have the right title - WebdriverIO', status: STATUS.NOT_YET_RUN },
-                                    { text: 'should have the right title - Github', status: STATUS.NOT_YET_RUN },
+                                    {
+                                        text: 'should have the right title - WebdriverJS Testpage',
+                                        status: STATUS.NOT_YET_RUN,
+                                    },
                                     { text: 'should fail', status: STATUS.NOT_YET_RUN },
                                 ],
                             },

@@ -430,6 +430,36 @@ importers:
         specifier: ^11.1.0
         version: 11.5.0
 
+  samples/smoke/update-config:
+    devDependencies:
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: ^20.17.50
+        version: 20.17.50
+      '@wdio/cli':
+        specifier: ^9.12.6
+        version: 9.14.0
+      '@wdio/globals':
+        specifier: ^9.12.6
+        version: 9.14.0(@wdio/logger@9.4.4)
+      '@wdio/local-runner':
+        specifier: ^9.12.6
+        version: 9.14.0
+      '@wdio/mocha-framework':
+        specifier: ^9.12.6
+        version: 9.14.0
+      '@wdio/spec-reporter':
+        specifier: ^9.12.6
+        version: 9.14.0
+      '@wdio/types':
+        specifier: ^9.12.6
+        version: 9.14.0
+      mocha:
+        specifier: ^11.1.0
+        version: 11.5.0
+
 packages:
 
   '@actions/core@1.11.1':
@@ -11190,7 +11220,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.15.21
+      '@types/node': 20.17.50
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -11877,7 +11907,7 @@ snapshots:
       array-differ: 3.0.0
       array-union: 2.1.0
       arrify: 2.0.1
-      minimatch: 3.0.5
+      minimatch: 3.1.2
 
   mute-stream@0.0.8: {}
 

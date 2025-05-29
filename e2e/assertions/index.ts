@@ -3,7 +3,7 @@ import type { TreeItem } from 'wdio-vscode-service'
 import type { STATUS } from '../helpers.js'
 
 export interface ExpectedTreeItem {
-    label: string
+    text: string
     status: StatusStrings
     children?: ExpectedTreeItem[]
 }
@@ -37,12 +37,15 @@ async function expectTreeToMatchStructure(
             const rootLabel = await item.getLabel()
 
             const expectItem = expectedTree[Number(index)]
-            const labelRegex = new RegExp(expectItem.label)
+            if (typeof expectItem.text === 'undefined' || typeof expectItem.status === 'undefined') {
+                throw new MismatchTreeStructureError(() => `The expected values are not set (${index} : ${level})`)
+            }
+            const labelRegex = new RegExp(expectItem.text)
             if (!labelRegex.test(rootLabel)) {
                 throw new MismatchTreeStructureError(
                     () =>
                         `Mismatch the label of items at (${index} : ${level})` +
-                        `  Expected: ${this.utils.printExpected(expectItem.label)}` +
+                        `  Expected: ${this.utils.printExpected(expectItem.text)}` +
                         `  Received: ${this.utils.printReceived(rootLabel)}`
                 )
             }

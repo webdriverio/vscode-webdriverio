@@ -23,7 +23,9 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
 
         // Add specs if provided
         if (options.specs && options.specs.length > 0) {
-            wdioArgs.spec = options.specs
+            wdioArgs.spec = isWindows()
+                ? options.specs.map((spec) => spec.replace(/^([a-z]):/, (_match, p1) => `${p1.toUpperCase()}:`))
+                : options.specs
         }
 
         // Add grep pattern if provided
