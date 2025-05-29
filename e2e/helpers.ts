@@ -42,10 +42,10 @@ export async function waitForResolved(browser: WebdriverIO.Browser, item: TreeIt
 }
 
 export async function clickTreeItemButton(browser: WebdriverIO.Browser, target: TreeItem, buttonLabel: string) {
-    let btn: ViewItemAction
+    let btn: ViewItemAction | undefined
     await browser.waitUntil(
         async () => {
-            const btn = await target.getActionButton(buttonLabel)
+            btn = await target.getActionButton(buttonLabel)
             if (btn && (await (btn.elem as WebdriverIO.Element).isClickable())) {
                 return true
             }
