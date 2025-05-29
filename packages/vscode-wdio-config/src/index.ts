@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events'
 
 import { DEFAULT_CONFIG_VALUES, EXTENSION_ID } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
-import { normalizePath } from '@vscode-wdio/utils'
+import { convertUriToPath, normalizePath } from '@vscode-wdio/utils'
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from './find.js'
@@ -86,7 +86,7 @@ export class ExtensionConfigManager extends EventEmitter implements ExtensionCon
         this._workspaces = await Promise.all(
             workspaceFolders.map(async (workspaceFolder) => {
                 const wdioConfigFiles = await findWdioConfig(
-                    workspaceFolder.uri.fsPath,
+                    convertUriToPath(workspaceFolder.uri),
                     this._globalConfig.configFilePattern
                 )
                 if (!wdioConfigFiles) {
