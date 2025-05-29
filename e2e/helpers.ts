@@ -1,6 +1,6 @@
 import { DefaultTreeSection } from 'wdio-vscode-service'
 import type { StatusStrings } from 'assertions/index.ts'
-import type { TreeItem, Workbench, ViewControl, ViewContent } from 'wdio-vscode-service'
+import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction } from 'wdio-vscode-service'
 
 export const STATUS = {
     NOT_YET_RUN: 'Not yet run',
@@ -39,6 +39,24 @@ export async function waitForResolved(browser: WebdriverIO.Browser, item: TreeIt
             timeoutMsg: 'Resolving tests ware not finished',
         }
     )
+}
+
+export async function clickTreeItemButton(browser: WebdriverIO.Browser, target: TreeItem, buttonLabel: string) {
+    let btn: ViewItemAction
+    await browser.waitUntil(
+        async () => {
+            const btn = await target.getActionButton(buttonLabel)
+            if (btn && (await (btn.elem as WebdriverIO.Element).isClickable())) {
+                return true
+            }
+            return false
+        },
+        {
+            timeoutMsg: 'The button is not clickable.',
+        }
+    )
+
+    await (btn!.elem as WebdriverIO.Element).click()
 }
 
 export async function waitForTestStatus(browser: WebdriverIO.Browser, item: TreeItem, status: StatusStrings) {
