@@ -39,6 +39,16 @@ const createInitial = (version: string) => {
 `
 }
 
+const createChangelog = (version: string, changelog: string) => {
+    if (changelog) {
+        return changelog
+    }
+    return `## v${version} (${getCurrentDate()})
+
+No updates!
+`
+}
+
 console.log('Start generating changelog...')
 const result = shell.exec('pnpm exec lerna-changelog --next-version-from-metadata', { silent: true })
 
@@ -59,7 +69,7 @@ const BANNER = `
 ###                 ###
 #######################`
 
-const orgNewChangelog = isNoGitTags ? createInitial(pkg.version) : result.stdout
+const orgNewChangelog = isNoGitTags ? createInitial(pkg.version) : createChangelog(pkg.version, result.stdout.trim())
 
 const isPreRelease = Boolean(process.env.VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER || '')
 
