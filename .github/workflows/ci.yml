@@ -39,3 +39,8 @@ jobs:
         name: E2E
         needs: [build]
         uses: ./.github/workflows/ci-e2e.yml
+
+    smoke:
+        name: Smoke
+        needs: [build]
+        uses: ./.github/workflows/ci-smoke.yml
