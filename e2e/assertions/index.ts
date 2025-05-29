@@ -37,6 +37,9 @@ async function expectTreeToMatchStructure(
             const rootLabel = await item.getLabel()
 
             const expectItem = expectedTree[Number(index)]
+            if (typeof expectItem.text === 'undefined' || typeof expectItem.status === 'undefined') {
+                throw new MismatchTreeStructureError(() => `The expected values are not set (${index} : ${level})`)
+            }
             const labelRegex = new RegExp(expectItem.text)
             if (!labelRegex.test(rootLabel)) {
                 throw new MismatchTreeStructureError(
