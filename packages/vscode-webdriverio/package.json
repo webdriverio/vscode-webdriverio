@@ -67,7 +67,7 @@
         "Testing"
     ],
     "engines": {
-        "vscode": "^1.98.0"
+        "vscode": "^1.96.0"
     },
     "activationEvents": [
         "onLanguage:javascript",

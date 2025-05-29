@@ -1,6 +1,16 @@
 import * as path from 'node:path'
 
+import { minVersion } from 'semver'
+
+import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
+
 const target = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
+
+const minimumVersion = minVersion(pkg.engines.vscode )?.version || 'stable'
+
+const version = process.env.VSCODE_WDIO_E2E_COMPATIBILITY_MODE === 'yes'
+    ? minimumVersion
+    :'stable'
 
 const specs = target === 'cucumber' ? ['./tests/basicCucumber.spec.ts'] : ['./tests/basic.spec.ts']
 
@@ -12,7 +22,7 @@ export const config: WebdriverIO.Config = {
     capabilities: [
         {
             browserName: 'vscode',
-            browserVersion: 'stable', // also possible: "insiders" or a specific version e.g. "1.80.0"
+            browserVersion: version,
             'wdio:vscodeOptions': {
                 // points to directory where extension package.json is located
                 extensionPath: path.resolve('../packages/vscode-webdriverio'),

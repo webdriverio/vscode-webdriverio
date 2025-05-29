@@ -83,6 +83,9 @@ importers:
 
   e2e:
     devDependencies:
+      '@types/semver':
+        specifier: ^7.7.0
+        version: 7.7.0
       '@wdio/cli':
         specifier: ^9.13.0
         version: 9.14.0
@@ -104,6 +107,9 @@ importers:
       expect:
         specifier: ^29.7.0
         version: 29.7.0
+      semver:
+        specifier: ^7.7.2
+        version: 7.7.2
       wdio-vscode-service:
         specifier: ^6.1.3
         version: 6.1.3(webdriverio@9.14.0)
@@ -1582,6 +1588,9 @@ packages:
 
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
+
+  '@types/semver@7.7.0':
+    resolution: {integrity: sha512-k107IF4+Xr7UHjwDc7Cfd6PRQfbdkiRabXGRjo07b4WyPahFBZCZ1sE+BNxYIJPPg73UkfOsVOLwqVc/6ETrIA==}
 
   '@types/shelljs@0.8.16':
     resolution: {integrity: sha512-40SUXiH0tZfAg/oKkkGF1kdHPAmE4slv2xAmbfa8VtE6ztHYwdpW2phlzHTVdJh5JOGqA3Cx1Hzp7kxFalKHYA==}
@@ -8172,6 +8181,8 @@ snapshots:
 
   '@types/sarif@2.1.7': {}
 
+  '@types/semver@7.7.0': {}
+
   '@types/shelljs@0.8.16':
     dependencies:
       '@types/glob': 7.2.0
@@ -8583,7 +8594,7 @@ snapshots:
       parse-semver: 1.1.1
       read: 1.0.7
       secretlint: 9.3.2
-      semver: 7.7.1
+      semver: 7.7.2
       tmp: 0.2.3
       typed-rest-client: 1.8.11
       url-join: 4.0.1
@@ -11411,7 +11422,7 @@ snapshots:
       read-cmd-shim: 4.0.0
       resolve-from: 5.0.0
       rimraf: 4.4.1
-      semver: 7.7.1
+      semver: 7.7.2
       set-blocking: 2.0.0
       signal-exit: 3.0.7
       slash: 3.0.0

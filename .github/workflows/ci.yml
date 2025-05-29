@@ -40,7 +40,14 @@ jobs:
         needs: [build]
         uses: ./.github/workflows/ci-e2e.yml
 
+    compatibility:
+        name: Compatibility
+        needs: [build]
+        uses: ./.github/workflows/ci-e2e.yml
+        with:
+            compatibility-mode: 'yes'
+
     smoke:
         name: Smoke
-        needs: [build]
+        needs: [build, e2e]
         uses: ./.github/workflows/ci-smoke.yml
