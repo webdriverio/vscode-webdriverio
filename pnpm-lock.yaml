@@ -430,7 +430,7 @@ importers:
         specifier: ^11.1.0
         version: 11.5.0
 
-  samples/smoke/mocha:
+  samples/smoke/update-config:
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10
