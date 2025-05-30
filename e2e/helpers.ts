@@ -56,6 +56,7 @@ export async function clickTreeItemButton(browser: WebdriverIO.Browser, target: 
         }
     )
 
+    btn = await target.getActionButton(buttonLabel)
     await (btn!.elem as WebdriverIO.Element).click()
 }
 
