@@ -82,17 +82,8 @@ export async function clearAllTestResults(browser: WebdriverIO.Browser, workbenc
     try {
         await bottomBarPanel.toggle(true)
         const tabContainer = await bottomBarPanel.tabContainer$
-        let tab!: WebdriverIO.Element
+        const tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
 
-        await browser.waitUntil(
-            async () => {
-                tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
-                return (await tab.isExisting()) && (await tab.isClickable())
-            },
-            {
-                timeoutMsg: `Failed to wait clickable for tab: ${tabTitle}`,
-            }
-        )
         if (await tab.isExisting()) {
             await tab.click()
             await browser.waitUntil(
@@ -109,8 +100,7 @@ export async function clearAllTestResults(browser: WebdriverIO.Browser, workbenc
                 .$(`.//a[@aria-label='${actionTitle}']`)
                 .click()
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
-        // pass
+        console.log(_error)
     }
 }
