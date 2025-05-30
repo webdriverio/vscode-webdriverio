@@ -75,16 +75,36 @@ export async function waitForTestStatus(browser: WebdriverIO.Browser, item: Tree
     )
 }
 
-export async function clearAllTestResults(workbench: Workbench) {
+export async function clearAllTestResults(browser: WebdriverIO.Browser, workbench: Workbench) {
     const bottomBarPanel = workbench.getBottomBar()
     const tabTitle = 'Test Results'
     const actionTitle = 'Clear All Results'
     try {
         await bottomBarPanel.toggle(true)
         const tabContainer = await bottomBarPanel.tabContainer$
-        const tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
+        let tab!: WebdriverIO.Element
+
+        await browser.waitUntil(
+            async () => {
+                tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
+                return (await tab.isExisting()) && (await tab.isClickable())
+            },
+            {
+                timeoutMsg: `Failed to wait clickable for tab: ${tabTitle}`,
+            }
+        )
         if (await tab.isExisting()) {
             await tab.click()
+            await browser.waitUntil(
+                async () => {
+                    return await ((await bottomBarPanel.actions$) as WebdriverIO.Element)
+                        .$(`.//a[@aria-label='${actionTitle}']`)
+                        .isClickable()
+                },
+                {
+                    timeoutMsg: `Failed to wait clickable for button: ${actionTitle}`,
+                }
+            )
             await ((await bottomBarPanel.actions$) as WebdriverIO.Element)
                 .$(`.//a[@aria-label='${actionTitle}']`)
                 .click()
