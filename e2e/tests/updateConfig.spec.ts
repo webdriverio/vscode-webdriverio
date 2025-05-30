@@ -43,7 +43,7 @@ describe('VS Code Extension Testing (Update config)', function () {
     })
 
     afterEach(async () => {
-        await clearAllTestResults(workbench)
+        await clearAllTestResults(browser, workbench)
     })
     this.afterAll(() => {
         shell.exec(`git checkout ${beforeConfig}`)
