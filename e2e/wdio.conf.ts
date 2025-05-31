@@ -1,6 +1,20 @@
 import * as path from 'node:path'
+import * as url from 'node:url'
 
+import { minVersion } from 'semver'
+
+import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const target = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
+
+const minimumVersion = minVersion(pkg.engines.vscode)?.version || 'stable'
+
+const isCompatibilityMode = process.env.VSCODE_WDIO_E2E_COMPATIBILITY_MODE === 'yes'
+const version = isCompatibilityMode ? minimumVersion : 'stable'
+
+const outputDir = path.join(__dirname, 'logs', [isCompatibilityMode ? 'compatibility' : 'e2e', target].join('-'))
+process.env.VSCODE_WDIO_TRACE_LOG_PATH = outputDir
 
 const specs = target === 'cucumber' ? ['./tests/basicCucumber.spec.ts'] : ['./tests/basic.spec.ts']
 
@@ -12,7 +26,7 @@ export const config: WebdriverIO.Config = {
     capabilities: [
         {
             browserName: 'vscode',
-            browserVersion: 'stable', // also possible: "insiders" or a specific version e.g. "1.80.0"
+            browserVersion: version,
             'wdio:vscodeOptions': {
                 // points to directory where extension package.json is located
                 extensionPath: path.resolve('../packages/vscode-webdriverio'),
@@ -27,7 +41,7 @@ export const config: WebdriverIO.Config = {
     ],
 
     logLevel: 'debug',
-    outputDir: 'logs',
+    outputDir,
     bail: 0,
     waitforTimeout: 120000,
     connectionRetryTimeout: 120000,

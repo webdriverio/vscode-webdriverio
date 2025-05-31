@@ -3,6 +3,7 @@ import { browser, expect } from '@wdio/globals'
 import {
     STATUS,
     clearAllTestResults,
+    clickTreeItemButton,
     getTestingSection,
     openTestingView,
     waitForResolved,
@@ -135,8 +136,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForResolved(browser, items[0])
 
-        const actionRunTest = await items[0].getActionButton('Run Test')
-        await (actionRunTest!.elem as WebdriverIO.Element).click()
+        await clickTreeItemButton(browser, items[0], 'Run Test')
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
@@ -233,8 +233,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
             .then((items) => items[0].getChildren())
             .then((items) => items[1])
 
-        const actionRunTest = await target.getActionButton('Run Test')
-        await (actionRunTest!.elem as WebdriverIO.Element).click()
+        await clickTreeItemButton(browser, target, 'Run Test')
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 

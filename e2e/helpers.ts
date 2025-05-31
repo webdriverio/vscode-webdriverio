@@ -1,6 +1,6 @@
 import { DefaultTreeSection } from 'wdio-vscode-service'
 import type { StatusStrings } from 'assertions/index.ts'
-import type { TreeItem, Workbench, ViewControl, ViewContent } from 'wdio-vscode-service'
+import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction } from 'wdio-vscode-service'
 
 export const STATUS = {
     NOT_YET_RUN: 'Not yet run',
@@ -41,6 +41,25 @@ export async function waitForResolved(browser: WebdriverIO.Browser, item: TreeIt
     )
 }
 
+export async function clickTreeItemButton(browser: WebdriverIO.Browser, target: TreeItem, buttonLabel: string) {
+    let btn: ViewItemAction | undefined
+    await browser.waitUntil(
+        async () => {
+            btn = await target.getActionButton(buttonLabel)
+            if (btn && (await (btn.elem as WebdriverIO.Element).isClickable())) {
+                return true
+            }
+            return false
+        },
+        {
+            timeoutMsg: 'The button is not clickable.',
+        }
+    )
+
+    btn = await target.getActionButton(buttonLabel)
+    await (btn!.elem as WebdriverIO.Element).click()
+}
+
 export async function waitForTestStatus(browser: WebdriverIO.Browser, item: TreeItem, status: StatusStrings) {
     await browser.waitUntil(
         async () => {
@@ -57,21 +76,30 @@ export async function waitForTestStatus(browser: WebdriverIO.Browser, item: Tree
 }
 
 export async function clearAllTestResults(workbench: Workbench) {
+    const notifications = await workbench.getNotifications()
+    await Promise.all(
+        notifications.map(async (notification) => {
+            return await notification.dismiss()
+        })
+    )
     const bottomBarPanel = workbench.getBottomBar()
     const tabTitle = 'Test Results'
-    const actionTitle = 'Clear All Results'
     try {
-        await bottomBarPanel.toggle(true)
         const tabContainer = await bottomBarPanel.tabContainer$
         const tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
+
         if (await tab.isExisting()) {
             await tab.click()
-            await ((await bottomBarPanel.actions$) as WebdriverIO.Element)
-                .$(`.//a[@aria-label='${actionTitle}']`)
+            await bottomBarPanel.elem
+                .$(
+                    (bottomBarPanel.locatorMap.BottomBarViews.actionsContainer as Function)(
+                        'Test Results actions'
+                    ) as string
+                )
+                .$(bottomBarPanel.locatorMap.BottomBarViews.clearText as string)
                 .click()
         }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_error) {
-        // pass
+        console.log(_error)
     }
 }

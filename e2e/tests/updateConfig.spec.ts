@@ -8,6 +8,7 @@ import shell from 'shelljs'
 import {
     STATUS,
     clearAllTestResults,
+    clickTreeItemButton,
     getTestingSection,
     openTestingView,
     waitForResolved,
@@ -123,8 +124,7 @@ describe('VS Code Extension Testing (Update config)', function () {
 
         await waitForResolved(browser, items[0])
 
-        const actionRunTest = await items[0].getActionButton('Run Test')
-        await (actionRunTest!.elem as WebdriverIO.Element).click()
+        await clickTreeItemButton(browser, items[0], 'Run Test')
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 

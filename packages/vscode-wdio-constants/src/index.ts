@@ -3,7 +3,7 @@ export const EXTENSION_ID = 'webdriverio'
 
 export const DEFAULT_CONFIG_VALUES = {
     nodeExecutable: undefined,
-    configFilePattern: ['**/wdio.conf.{ts,js}'],
+    configFilePattern: ['**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}'],
     showOutput: true,
     logLevel: 'info',
 } as const

@@ -4,6 +4,11 @@ on:
     workflow_call:
         # Make this a reusable workflow, no value needed
         # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+        inputs:
+            compatibility-mode:
+                description: 'If “yes”, run test for compatibility with vscode'
+                default: 'no'
+                type: string
 
 env:
     TURBO_TELEMETRY_DISABLED: 1
@@ -36,8 +41,18 @@ jobs:
                   filename: vscode-webdriverio-build.zip
 
             - name: 🧪 Run the e2e test
+              env:
+                  VSCODE_WDIO_E2E_COMPATIBILITY_MODE: ${{ inputs.compatibility-mode }}
               run: pnpm run test:e2e
               shell: bash
+
+            - name: 📦 Upload Test Logs on Failure
+              uses: ./.github/workflows/actions/upload-archive
+              if: failure()
+              with:
+                  name: ${{ inputs.compatibility-mode == 'yes' && 'compatibility' || 'e2e' }}-logs-${{ matrix.os }}
+                  output: ${{ inputs.compatibility-mode == 'yes' && 'compatibility' || 'e2e' }}-logs-${{ matrix.os }}.zip
+                  paths: e2e/logs
 
             - name: 🐛 Debug Build
               uses: stateful/vscode-server-action@v1.1.0
