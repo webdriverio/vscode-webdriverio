@@ -75,29 +75,22 @@ export async function waitForTestStatus(browser: WebdriverIO.Browser, item: Tree
     )
 }
 
-export async function clearAllTestResults(browser: WebdriverIO.Browser, workbench: Workbench) {
+export async function clearAllTestResults(_browser: WebdriverIO.Browser, workbench: Workbench) {
     const bottomBarPanel = workbench.getBottomBar()
     const tabTitle = 'Test Results'
-    const actionTitle = 'Clear All Results'
     try {
-        await bottomBarPanel.toggle(true)
         const tabContainer = await bottomBarPanel.tabContainer$
         const tab = (await tabContainer.$(`.//a[starts-with(@aria-label, '${tabTitle}')]`)) as WebdriverIO.Element
 
         if (await tab.isExisting()) {
             await tab.click()
-            await browser.waitUntil(
-                async () => {
-                    return await ((await bottomBarPanel.actions$) as WebdriverIO.Element)
-                        .$(`.//a[@aria-label='${actionTitle}']`)
-                        .isClickable()
-                },
-                {
-                    timeoutMsg: `Failed to wait clickable for button: ${actionTitle}`,
-                }
-            )
-            await ((await bottomBarPanel.actions$) as WebdriverIO.Element)
-                .$(`.//a[@aria-label='${actionTitle}']`)
+            await bottomBarPanel.elem
+                .$(
+                    (bottomBarPanel.locatorMap.BottomBarViews.actionsContainer as Function)(
+                        'Test Results actions'
+                    ) as string
+                )
+                .$(bottomBarPanel.locatorMap.BottomBarViews.clearText as string)
                 .click()
         }
     } catch (_error) {
