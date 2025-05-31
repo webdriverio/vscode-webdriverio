@@ -75,7 +75,7 @@ export async function waitForTestStatus(browser: WebdriverIO.Browser, item: Tree
     )
 }
 
-export async function clearAllTestResults(_browser: WebdriverIO.Browser, workbench: Workbench) {
+export async function clearAllTestResults(workbench: Workbench) {
     const notifications = await workbench.getNotifications()
     await Promise.all(
         notifications.map(async (notification) => {

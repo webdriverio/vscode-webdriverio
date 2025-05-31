@@ -36,7 +36,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     })
 
     afterEach(async () => {
-        await clearAllTestResults(browser, workbench)
+        await clearAllTestResults(workbench)
     })
 
     it('should be displayed the testing screen at the sideBar', async () => {
