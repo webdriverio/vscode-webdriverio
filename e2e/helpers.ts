@@ -76,6 +76,12 @@ export async function waitForTestStatus(browser: WebdriverIO.Browser, item: Tree
 }
 
 export async function clearAllTestResults(_browser: WebdriverIO.Browser, workbench: Workbench) {
+    const notifications = await workbench.getNotifications()
+    await Promise.all(
+        notifications.map(async (notification) => {
+            return await notification.dismiss()
+        })
+    )
     const bottomBarPanel = workbench.getBottomBar()
     const tabTitle = 'Test Results'
     try {
