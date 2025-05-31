@@ -79,45 +79,6 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         ])
     })
 
-    it('should run at top Level', async () => {
-        const testingSection = await getTestingSection(sideBarView.getContent())
-        const items = await testingSection.getVisibleItems()
-
-        await waitForResolved(browser, items[0])
-
-        await clickTreeItemButton(browser, items[0], 'Run Test')
-
-        await waitForTestStatus(browser, items[0], STATUS.FAILED)
-
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.FAILED,
-                children: [
-                    {
-                        text: `${targetFramework}.spec.ts`,
-                        status: STATUS.FAILED,
-                        children: [
-                            {
-                                text: 'Website Tests',
-                                status: STATUS.FAILED,
-                                children: [
-                                    { text: 'should be a pending test', status: STATUS.SKIPPED },
-                                    { text: 'should have the right title - WebdriverIO', status: STATUS.PASSED },
-                                    {
-                                        text: 'should have the right title - WebdriverJS Testpage',
-                                        status: STATUS.PASSED,
-                                    },
-                                    { text: 'should fail', status: STATUS.FAILED },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
-    })
-
     it('should run at not top Level', async () => {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
@@ -154,6 +115,45 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
                                         status: STATUS.NOT_YET_RUN,
                                     },
                                     { text: 'should fail', status: STATUS.NOT_YET_RUN },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ])
+    })
+
+    it('should run at top Level', async () => {
+        const testingSection = await getTestingSection(sideBarView.getContent())
+        const items = await testingSection.getVisibleItems()
+
+        await waitForResolved(browser, items[0])
+
+        await clickTreeItemButton(browser, items[0], 'Run Test')
+
+        await waitForTestStatus(browser, items[0], STATUS.FAILED)
+
+        await expect(items).toMatchTreeStructure([
+            {
+                text: 'wdio.conf.ts',
+                status: STATUS.FAILED,
+                children: [
+                    {
+                        text: `${targetFramework}.spec.ts`,
+                        status: STATUS.FAILED,
+                        children: [
+                            {
+                                text: 'Website Tests',
+                                status: STATUS.FAILED,
+                                children: [
+                                    { text: 'should be a pending test', status: STATUS.SKIPPED },
+                                    { text: 'should have the right title - WebdriverIO', status: STATUS.PASSED },
+                                    {
+                                        text: 'should have the right title - WebdriverJS Testpage',
+                                        status: STATUS.PASSED,
+                                    },
+                                    { text: 'should fail', status: STATUS.FAILED },
                                 ],
                             },
                         ],
