@@ -46,6 +46,14 @@ jobs:
               run: pnpm run test:e2e
               shell: bash
 
+            - name: 📦 Upload Test Logs on Failure
+              uses: ./.github/workflows/actions/upload-archive
+              if: failure()
+              with:
+                  name: ${{ inputs.compatibility-mode == 'yes' && 'compatibility' || 'e2e' }}-logs-${{ matrix.os }}
+                  output: ${{ inputs.compatibility-mode == 'yes' && 'compatibility' || 'e2e' }}-logs-${{ matrix.os }}.zip
+                  paths: e2e/logs
+
             - name: 🐛 Debug Build
               uses: stateful/vscode-server-action@v1.1.0
               if: failure()
