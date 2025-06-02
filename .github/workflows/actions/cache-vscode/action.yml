@@ -12,6 +12,7 @@ runs:
           shell: bash
 
         - name: 🗃️ Use cached vscode
+          if: ${{ steps.generate-key.outputs.vscode-cache-key != '' }}
           uses: actions/cache@v4
           with:
               path: ${{ inputs.path }}
