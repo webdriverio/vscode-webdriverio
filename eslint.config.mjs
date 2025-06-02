@@ -1,6 +1,7 @@
 import vitest from '@vitest/eslint-plugin'
 import wdioEslint from '@wdio/eslint'
 import * as pluginImportX from 'eslint-plugin-import-x'
+import mochaPlugin from 'eslint-plugin-mocha'
 
 export default wdioEslint.config([
     {
@@ -75,5 +76,12 @@ export default wdioEslint.config([
             'vitest/padding-around-describe-blocks': 'error',
             'vitest/padding-around-test-blocks': 'error',
         },
+    },
+    {
+        /**
+         * Eslint configuration for the mocha test files
+         */
+        files: ['e2e/**/*.spec.ts'],
+        ...mochaPlugin.configs.recommended,
     },
 ])

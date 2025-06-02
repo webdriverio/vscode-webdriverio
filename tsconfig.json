@@ -1,5 +1,5 @@
 {
     "extends": "./tsconfig.base.json",
 
-    "exclude": ["e2e"]
+    "exclude": ["e2e", "samples"]
 }

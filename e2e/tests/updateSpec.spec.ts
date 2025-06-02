@@ -19,8 +19,12 @@ import type { SideBarView, Workbench } from 'wdio-vscode-service'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..', '..')
 const workspacePath = path.resolve(rootDir, 'samples/smoke/update-config/')
-const beforeConfig = path.resolve(workspacePath, 'wdio.conf.ts')
-const afterConfig = path.resolve(workspacePath, 'wdio.conf.ts.template')
+
+const testsPath = path.join(workspacePath, 'tests')
+const spec = {
+    before: path.resolve(testsPath, 'before.spec.ts'),
+    after: path.resolve(testsPath, 'after.test.ts.template'),
+}
 
 describe('VS Code Extension Testing (Update config)', function () {
     let workbench: Workbench
@@ -46,10 +50,10 @@ describe('VS Code Extension Testing (Update config)', function () {
     })
 
     after(function () {
-        shell.exec(`git checkout ${beforeConfig}`)
+        shell.exec(`git checkout ${spec.before}`)
     })
 
-    it('should be resolved the defined tests after configuration changed', async function () {
+    it('should be resolved the defined tests after spec file is changed', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -76,7 +80,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
 
         // Emulate the changing configuration
-        shell.cp('-f', afterConfig, beforeConfig)
+        shell.cp('-f', spec.after, spec.before)
         await new Promise((resolve) => setTimeout(resolve, 3000))
         await browser.waitUntil(
             async () => {
@@ -89,7 +93,7 @@ describe('VS Code Extension Testing (Update config)', function () {
                 if (!target) {
                     return false
                 }
-                const regex = new RegExp('after.test.ts')
+                const regex = new RegExp('before.spec.ts')
                 return regex.test(await target.getLabel())
             },
             {
@@ -103,13 +107,13 @@ describe('VS Code Extension Testing (Update config)', function () {
                 status: STATUS.NOT_YET_RUN,
                 children: [
                     {
-                        text: 'after.test.ts',
+                        text: 'before.spec.ts',
                         status: STATUS.NOT_YET_RUN,
                         children: [
                             {
-                                text: 'After Tests',
+                                text: 'Updated Tests',
                                 status: STATUS.NOT_YET_RUN,
-                                children: [{ text: 'TEST AFTER 1', status: STATUS.NOT_YET_RUN }],
+                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.NOT_YET_RUN }],
                             },
                         ],
                     },
@@ -118,7 +122,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
     })
 
-    it('should run tests successfully after changing the configuration', async function () {
+    it('should run tests successfully after changing the spec file', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -134,13 +138,13 @@ describe('VS Code Extension Testing (Update config)', function () {
                 status: STATUS.PASSED,
                 children: [
                     {
-                        text: 'after.test.ts',
+                        text: 'before.spec.ts',
                         status: STATUS.PASSED,
                         children: [
                             {
-                                text: 'After Tests',
+                                text: 'Updated Tests',
                                 status: STATUS.PASSED,
-                                children: [{ text: 'TEST AFTER 1', status: STATUS.PASSED }],
+                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.PASSED }],
                             },
                         ],
                     },

@@ -22,7 +22,7 @@ if (!newChangelog) {
 
 const repo = process.env.GITHUB_REPOSITORY || ''
 const [owner, repoName] = repo.split('/')
-if (owner !=='webdriverio' || repoName !== 'vscode-webdriverio'){
+if (owner !== 'webdriverio' || repoName !== 'vscode-webdriverio') {
     console.error(`This repository is not correct repository. (Current: ${repo})`)
     process.exit(1)
 }

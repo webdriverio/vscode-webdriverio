@@ -20,7 +20,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     let testingViewControl: ViewControl
     let sideBarView: SideBarView<any>
 
-    beforeEach(async () => {
+    beforeEach(async function () {
         workbench = await browser.getWorkbench()
         testingViewControl = await openTestingView(workbench)
         sideBarView = workbench.getSideBar()
@@ -35,16 +35,16 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         await browser.waitUntil(async () => (await testingSection.getVisibleItems()).length === 1)
     })
 
-    afterEach(async () => {
+    afterEach(async function () {
         await clearAllTestResults(workbench)
     })
 
-    it('should be displayed the testing screen at the sideBar', async () => {
+    it('should be displayed the testing screen at the sideBar', async function () {
         expect(await testingViewControl.getTitle()).toBe('Testing')
         expect(await sideBarView.getTitlePart().getTitle()).toBe('TESTING')
     })
 
-    it('should resolve defined tests correctly', async () => {
+    it('should resolve defined tests correctly', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -130,7 +130,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         ])
     })
 
-    it('should run at top Level', async () => {
+    it('should run at top Level', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -220,7 +220,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         ])
     })
 
-    it('should run Scenario level even if select step level test', async () => {
+    it('should run Scenario level even if select step level test', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
