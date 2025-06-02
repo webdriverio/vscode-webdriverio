@@ -35,8 +35,7 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
-            - name: 🗃️ Restore cached vscode
-              id: cache-vscode-restore
+            - name: 🗃️ Use cached vscode
               uses: actions/cache@v4
               with:
                   path: e2e/.wdio-vscode-service
