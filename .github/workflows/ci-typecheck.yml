@@ -1,40 +1,40 @@
 name: Typecheck
 
 on:
-    workflow_call:
-        # Make this a reusable workflow, no value needed
-        # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+  workflow_call:
+    # Make this a reusable workflow, no value needed
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 
 env:
-    TURBO_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-    typecheck:
-        name: Typecheck
-        strategy:
-            fail-fast: false
-            matrix:
-                node-version: ['20']
-                os: ['ubuntu-latest']
-        runs-on: ${{ matrix.os }}
-        steps:
-            - name: 👷 Checkout
-              uses: actions/checkout@v4
-              with:
-                  ssh-key: ${{ secrets.DEPLOY_KEY }}
+  typecheck:
+    name: Typecheck
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20']
+        os: ['ubuntu-latest']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 👷 Checkout
+        uses: actions/checkout@v4.2.2
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-            - name: 🛠️ Setup workspace
-              uses: ./.github/workflows/actions/setup-workspace
-              with:
-                  node-version: ${{ matrix.node-version }}
+      - name: 🛠️ Setup workspace
+        uses: ./.github/workflows/actions/setup-workspace
+        with:
+          node-version: ${{ matrix.node-version }}
 
-            - name: ⬇️ Download Build Archive
-              uses: ./.github/workflows/actions/download-archive
-              with:
-                  name: vscode-webdriverio
-                  path: .
-                  filename: vscode-webdriverio-build.zip
+      - name: ⬇️ Download Build Archive
+        uses: ./.github/workflows/actions/download-archive
+        with:
+          name: vscode-webdriverio
+          path: .
+          filename: vscode-webdriverio-build.zip
 
-            - name: 🏛️ Run the typecheck
-              run: pnpm run typecheck --only
-              shell: bash
+      - name: 🏛️ Run the typecheck
+        run: pnpm run typecheck --only
+        shell: bash

@@ -1,103 +1,103 @@
 name: Auto Label PR
 
 on:
-    pull_request:
-        types: [opened, edited, closed]
+  pull_request:
+    types: [opened, edited, closed]
 
 concurrency:
-    group: pr-labeler-${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: pr-labeler-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    auto-label:
-        runs-on: ubuntu-latest
-        if: github.event.action != 'closed' || github.event.pull_request.merged == true
-        permissions:
-            pull-requests: write
-            contents: read
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'closed' || github.event.pull_request.merged == true
+    permissions:
+      pull-requests: write
+      contents: read
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
 
-            - name: Auto Label Based on Checklist
-              uses: actions/github-script@v7
-              with:
-                  script: |
-                      const { owner, repo, number } = context.issue;
+      - name: Auto Label Based on Checklist
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
 
-                      const pr = await github.rest.pulls.get({
-                          owner,
-                          repo,
-                          pull_number: number
-                      })
+            const pr = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: number
+            })
 
-                      const prBody = pr.data.body || ''
+            const prBody = pr.data.body || ''
 
-                      const checklistToLabel = {
-                          'Polish': 'PR: Polish :nail_care:',
-                          'Bugfix':'PR: Bug Fix :bug:',
-                          'New feature': 'PR: New Feature :rocket:',
-                          'Breaking change': 'PR: Breaking Change :boom:',
-                          'Documentation update':'PR: Docs :memo:',
-                          'Internal updates': 'PR: Internal :house:',
-                      }
+            const checklistToLabel = {
+                'Polish': 'PR: Polish :nail_care:',
+                'Bugfix':'PR: Bug Fix :bug:',
+                'New feature': 'PR: New Feature :rocket:',
+                'Breaking change': 'PR: Breaking Change :boom:',
+                'Documentation update':'PR: Docs :memo:',
+                'Internal updates': 'PR: Internal :house:',
+            }
 
-                      const currentLabels = await github.rest.issues.listLabelsOnIssue({
-                          owner,
-                          repo,
-                          issue_number: number
-                      })
+            const currentLabels = await github.rest.issues.listLabelsOnIssue({
+                owner,
+                repo,
+                issue_number: number
+            })
 
-                      const currentLabelNames = currentLabels.data.map(label => label.name)
-                      console.log('Current labels:', currentLabelNames)
+            const currentLabelNames = currentLabels.data.map(label => label.name)
+            console.log('Current labels:', currentLabelNames)
 
-                      const labelsToAdd = []
-                      const labelsToRemove = []
+            const labelsToAdd = []
+            const labelsToRemove = []
 
-                      for (const [checklistKeyword, labelName] of Object.entries(checklistToLabel)) {
-                          const checkedPattern = new RegExp(`- \\[[Xx]\\]\\s+${checklistKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
-                          const uncheckedPattern = new RegExp(`- \\[\\s\\]\\s+${checklistKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+            for (const [checklistKeyword, labelName] of Object.entries(checklistToLabel)) {
+                const checkedPattern = new RegExp(`- \\[[Xx]\\]\\s+${checklistKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
+                const uncheckedPattern = new RegExp(`- \\[\\s\\]\\s+${checklistKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i')
 
-                          if (checkedPattern.test(prBody)) {
-                              if (!currentLabelNames.includes(labelName)) {
-                                  labelsToAdd.push(labelName)
-                              }
-                          } else if (uncheckedPattern.test(prBody)) {
-                              if (currentLabelNames.includes(labelName)) {
-                                  labelsToRemove.push(labelName)
-                              }
-                          }
-                      }
+                if (checkedPattern.test(prBody)) {
+                    if (!currentLabelNames.includes(labelName)) {
+                        labelsToAdd.push(labelName)
+                    }
+                } else if (uncheckedPattern.test(prBody)) {
+                    if (currentLabelNames.includes(labelName)) {
+                        labelsToRemove.push(labelName)
+                    }
+                }
+            }
 
-                      if (labelsToAdd.length > 0) {
-                          labelsToAdd.forEach((label)=>console.log('Adding label:', label))
-                          await github.rest.issues.addLabels({
-                              owner,
-                              repo,
-                              issue_number: number,
-                              labels: labelsToAdd
-                          })
-                      }
+            if (labelsToAdd.length > 0) {
+                labelsToAdd.forEach((label)=>console.log('Adding label:', label))
+                await github.rest.issues.addLabels({
+                    owner,
+                    repo,
+                    issue_number: number,
+                    labels: labelsToAdd
+                })
+            }
 
-                      for (const labelName of labelsToRemove) {
-                          console.log('Removing label:', labelName)
-                          try {
-                              await github.rest.issues.removeLabel({
-                                  owner,
-                                  repo,
-                                  issue_number: number,
-                                  name: labelName
-                              })
-                          } catch (error) {
-                              if (error.status !== 404) {
-                                  throw error
-                              }
-                          }
-                      }
+            for (const labelName of labelsToRemove) {
+                console.log('Removing label:', labelName)
+                try {
+                    await github.rest.issues.removeLabel({
+                        owner,
+                        repo,
+                        issue_number: number,
+                        name: labelName
+                    })
+                } catch (error) {
+                    if (error.status !== 404) {
+                        throw error
+                    }
+                }
+            }
 
-                      if (labelsToAdd.length > 0 || labelsToRemove.length > 0) {
-                          console.log(`Labels updated: +${labelsToAdd.length}, -${labelsToRemove.length}`)
-                      } else {
-                          console.log('No label changes needed')
-                      }
+            if (labelsToAdd.length > 0 || labelsToRemove.length > 0) {
+                console.log(`Labels updated: +${labelsToAdd.length}, -${labelsToRemove.length}`)
+            } else {
+                console.log('No label changes needed')
+            }

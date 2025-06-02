@@ -1,59 +1,59 @@
 name: Smoke tests
 
 on:
-    workflow_call:
-        # Make this a reusable workflow, no value needed
-        # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+  workflow_call:
+    # Make this a reusable workflow, no value needed
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 
 env:
-    TURBO_TELEMETRY_DISABLED: 1
+  TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-    unit:
-        name: Smoke Tests (${{ matrix.os }}.${{ matrix.node-version }})
-        strategy:
-            fail-fast: false
-            matrix:
-                node-version: ['20']
-                os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
-        runs-on: ${{ matrix.os }}
-        steps:
-            - name: 👷 Checkout
-              uses: actions/checkout@v4
-              with:
-                  ssh-key: ${{ secrets.DEPLOY_KEY }}
+  unit:
+    name: Smoke Tests (${{ matrix.os }}.${{ matrix.node-version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20']
+        os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: 👷 Checkout
+        uses: actions/checkout@v4.2.2
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
-            - name: 🛠️ Setup workspace
-              uses: ./.github/workflows/actions/setup-workspace
-              with:
-                  node-version: ${{ matrix.node-version }}
+      - name: 🛠️ Setup workspace
+        uses: ./.github/workflows/actions/setup-workspace
+        with:
+          node-version: ${{ matrix.node-version }}
 
-            - name: ⬇️ Download Build Archive
-              uses: ./.github/workflows/actions/download-archive
-              with:
-                  name: vscode-webdriverio
-                  path: .
-                  filename: vscode-webdriverio-build.zip
+      - name: ⬇️ Download Build Archive
+        uses: ./.github/workflows/actions/download-archive
+        with:
+          name: vscode-webdriverio
+          path: .
+          filename: vscode-webdriverio-build.zip
 
-            - name: 🗃️ Use cached vscode
-              uses: ./.github/workflows/actions/cache-vscode
-              with:
-                  path: e2e/.wdio-vscode-service
+      - name: 🗃️ Use cached vscode
+        uses: ./.github/workflows/actions/cache-vscode
+        with:
+          path: e2e/.wdio-vscode-service
 
-            - name: 🚂 Run the smoke test
-              run: pnpm run test:smoke
-              shell: bash
+      - name: 🚂 Run the smoke test
+        run: pnpm run test:smoke
+        shell: bash
 
-            - name: 📦 Upload Test Logs on Failure
-              uses: ./.github/workflows/actions/upload-archive
-              if: failure()
-              with:
-                  name: smoke-logs-${{ matrix.os }}
-                  output: smoke-logs-${{ matrix.os }}.zip
-                  paths: e2e/logs
+      - name: 📦 Upload Test Logs on Failure
+        uses: ./.github/workflows/actions/upload-archive
+        if: failure()
+        with:
+          name: smoke-logs-${{ matrix.os }}
+          output: smoke-logs-${{ matrix.os }}.zip
+          paths: e2e/logs
 
-            - name: 🐛 Debug Build
-              uses: stateful/vscode-server-action@v1.1.0
-              if: failure()
-              with:
-                  timeout: '180000'
+      - name: 🐛 Debug Build
+        uses: stateful/vscode-server-action@v1.1.0
+        if: failure()
+        with:
+          timeout: '180000'

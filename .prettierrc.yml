@@ -3,3 +3,7 @@ tabWidth: 4
 semi: false
 printWidth: 120
 trailingComma: es5
+overrides:
+  - files: '*.yml'
+    options:
+      tabWidth: 2
