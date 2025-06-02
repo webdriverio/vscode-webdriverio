@@ -2,10 +2,18 @@ import { LOG_LEVEL } from '@vscode-wdio/constants'
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
+import { FileLogger } from '../src/fileLogger.js'
 import { VscodeWdioLogger } from '../src/logger.js'
 
 // Mock vscode module
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
+
+vi.mock('../src/fileLogger.js', () => {
+    const FileLogger = vi.fn()
+    FileLogger.prototype.write = vi.fn().mockResolvedValue(undefined)
+    FileLogger.prototype.dispose = vi.fn().mockResolvedValue(undefined)
+    return { FileLogger }
+})
 
 describe('VscodeWdioLogger', () => {
     let mockOutputChannel: vscode.LogOutputChannel
@@ -46,6 +54,27 @@ describe('VscodeWdioLogger', () => {
 
             expect(vscode.window.createOutputChannel).toHaveBeenCalledWith('WebdriverIO')
             expect(mockOutputChannel.show).toHaveBeenCalledWith(true)
+        })
+
+        it('should initialize the FileLogger when env is set', () => {
+            const dummyPath = process.platform === 'win32' ? 'c:\\path\\to\\log' : '/path/to/log'
+            process.env.VSCODE_WDIO_TRACE_LOG_PATH = dummyPath
+            new VscodeWdioLogger()
+
+            expect(FileLogger).toHaveBeenCalledWith(dummyPath)
+            delete process.env.VSCODE_WDIO_TRACE_LOG_PATH
+        })
+
+        it('should undefined when failed to initialize the FileLogger', () => {
+            const dummyPath = process.platform === 'win32' ? 'c:\\path\\to\\log' : '/path/to/log'
+            process.env.VSCODE_WDIO_TRACE_LOG_PATH = dummyPath
+            vi.mocked(FileLogger).mockImplementation(() => {
+                throw new Error()
+            })
+            const logger = new VscodeWdioLogger()
+
+            expect((logger as any)._logFilePath).toBeUndefined()
+            delete process.env.VSCODE_WDIO_TRACE_LOG_PATH
         })
     })
 
@@ -134,13 +163,36 @@ describe('VscodeWdioLogger', () => {
         })
 
         it('should format log messages correctly', () => {
+            const dummyPath = process.platform === 'win32' ? 'c:\\path\\to\\log' : '/path/to/log'
+            process.env.VSCODE_WDIO_TRACE_LOG_PATH = dummyPath
+
             const logger = new VscodeWdioLogger()
             logger.info('test message')
 
+            const fileLogger = vi.mocked(FileLogger).mock.instances[0]
+
             // Expected format: [MM-DD HH:MM:SS+TZ] [LEVEL] message
-            expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
-                expect.stringContaining('[01-01 12:00:00+09:00] [INFO]  test message')
-            )
+            const expectedLogMessage = '[01-01 12:00:00+09:00] [INFO]  test message'
+            expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(expect.stringContaining(expectedLogMessage))
+            expect(fileLogger.write).toHaveBeenCalledWith(expect.stringContaining(expectedLogMessage))
+
+            delete process.env.VSCODE_WDIO_TRACE_LOG_PATH
+        })
+
+        it('should not write to file once error occurred', () => {
+            const dummyPath = process.platform === 'win32' ? 'c:\\path\\to\\log' : '/path/to/log'
+            process.env.VSCODE_WDIO_TRACE_LOG_PATH = dummyPath
+
+            vi.mocked(FileLogger.prototype.write).mockImplementation(() => {
+                throw new Error('DUMMY ERROR')
+            })
+            const logger = new VscodeWdioLogger()
+            logger.info('test message')
+
+            const fileLogger = vi.mocked(FileLogger).mock.instances[0]
+            expect(fileLogger.write).toHaveBeenCalledTimes(1)
+
+            delete process.env.VSCODE_WDIO_TRACE_LOG_PATH
         })
 
         it('should stringify non-string messages', () => {
@@ -274,6 +326,29 @@ describe('VscodeWdioLogger', () => {
             expect(mockOutputChannel.appendLine).toHaveBeenCalledWith(
                 expect.stringMatching(/\[01-01 12:00:00\+05:30\]/)
             )
+        })
+    })
+
+    describe('dispose', () => {
+        it('should dispose the fileLogger', () => {
+            const dummyPath = process.platform === 'win32' ? 'c:\\path\\to\\log' : '/path/to/log'
+            process.env.VSCODE_WDIO_TRACE_LOG_PATH = dummyPath
+
+            const mockWatcher = { dispose: vi.fn() }
+            vi.mocked(vscode.workspace.onDidChangeConfiguration).mockReturnValue(mockWatcher)
+
+            const logger = new VscodeWdioLogger()
+            const fileLogger = vi.mocked(FileLogger).mock.instances[0]
+
+            // Act
+            logger.dispose()
+
+            // Assertion
+            expect(fileLogger.dispose).toHaveBeenCalled()
+            expect(mockOutputChannel.dispose).toHaveBeenCalled()
+            expect(mockWatcher.dispose).toHaveBeenCalled()
+
+            delete process.env.VSCODE_WDIO_TRACE_LOG_PATH
         })
     })
 })

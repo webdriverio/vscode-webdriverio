@@ -94,6 +94,27 @@ Like in many Open Source projects we ask you to sign a **CLA** which is a Contri
 
 The WebdriverIO maintainer will review your pull request as soon as possible. They will then either approve and merge your changes, request modifications or close with an explanation.
 
+### Analyze the output of the `vscode.OutputChannel`
+
+If you would to read or save the log message of vscode.OutputChannel, you can set the directory path of the log file as environment variable `VSCODE_WDIO_TRACE_LOG_PATH`.
+Then You will then find a file called `vscode-webdriverio.log`, which contains log messages for all levels.
+
+e.g.
+
+```bash
+$ VSCODE_WDIO_TRACE_LOG_PATH=/path/to/log code .
+
+# Execute some test on the vscode with our extension.
+
+$ ls /path/to/log
+vscode-webdriverio.log
+
+$ cat /path/to/log/vscode-webdriverio.log
+[01-15 15:03:40+00:00] [INFO]  WebdriverIO Runner extension is now active
+[01-15 15:03:40+00:00] [DEBUG] Target workspace path: D:\a\vscode-webdriverio\vscode-webdriverio\samples\e2e\mocha
+[01-15 15:03:40+00:00] [DEBUG] Detecting the configuration file for WebdriverIO...: **/wdio.conf.{ts,js}
+```
+
 ### Package structure
 
 This Extension consists of several packages. Eventually, these packages will be bundled with `esbuild` and published as an Extension of VSCode.
