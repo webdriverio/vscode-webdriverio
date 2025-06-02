@@ -3,6 +3,8 @@ import * as path from 'node:path'
 
 import type * as vscode from 'vscode'
 
+const LOG_FILE_NAME = 'vscode-webdriverio.log'
+
 export class FileLogger implements vscode.Disposable {
     private _writeStream: fs.WriteStream
     private _isDisposed = false
@@ -12,8 +14,8 @@ export class FileLogger implements vscode.Disposable {
         try {
             const absLogFilePath = path.normalize(
                 path.isAbsolute(logFilePath)
-                    ? path.join(logFilePath, 'vscode-webdriverio.log')
-                    : path.join(process.cwd(), logFilePath, 'vscode-webdriverio.log')
+                    ? path.join(logFilePath, LOG_FILE_NAME)
+                    : path.join(process.cwd(), logFilePath, LOG_FILE_NAME)
             )
 
             // Ensure directory exists
