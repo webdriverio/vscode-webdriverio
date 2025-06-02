@@ -35,9 +35,22 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
+            - name: 🗃️ Use cached vscode
+              uses: ./.github/workflows/actions/cache-vscode
+              with:
+                  path: e2e/.wdio-vscode-service
+
             - name: 🚂 Run the smoke test
               run: pnpm run test:smoke
               shell: bash
+
+            - name: 📦 Upload Test Logs on Failure
+              uses: ./.github/workflows/actions/upload-archive
+              if: failure()
+              with:
+                  name: smoke-logs-${{ matrix.os }}
+                  output: smoke-logs-${{ matrix.os }}.zip
+                  paths: e2e/logs
 
             - name: 🐛 Debug Build
               uses: stateful/vscode-server-action@v1.1.0

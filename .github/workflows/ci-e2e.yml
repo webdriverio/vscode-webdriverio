@@ -12,6 +12,7 @@ on:
 
 env:
     TURBO_TELEMETRY_DISABLED: 1
+    VSCODE_WDIO_E2E_COMPATIBILITY_MODE: ${{ inputs.compatibility-mode }}
 
 jobs:
     unit:
@@ -40,9 +41,12 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
+            - name: 🗃️ Use cached vscode
+              uses: ./.github/workflows/actions/cache-vscode
+              with:
+                  path: e2e/.wdio-vscode-service
+
             - name: 🧪 Run the e2e test
-              env:
-                  VSCODE_WDIO_E2E_COMPATIBILITY_MODE: ${{ inputs.compatibility-mode }}
               run: pnpm run test:e2e
               shell: bash
 

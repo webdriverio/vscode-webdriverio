@@ -3,6 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "cache-key": "tsx ./src/cacheKey.ts",
         "copy": "tsx ./src/copy.ts",
         "push": "tsx ./src/push.ts",
         "update-version": "tsx ./src/updatePrereleaseVersion.ts",
@@ -12,7 +13,9 @@
     "devDependencies": {
         "@actions/core": "^1.11.1",
         "@octokit/rest": "^22.0.0",
+        "@types/semver": "^7.7.0",
         "dotenv": "^16.5.0",
-        "lerna-changelog": "^2.2.0"
+        "lerna-changelog": "^2.2.0",
+        "semver": "^7.7.2"
     }
 }

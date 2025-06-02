@@ -1,0 +1,19 @@
+name: 'vscode-webdriverio Cache vscode'
+description: 'cache the vscode for CI (Use after `pnpm install`)'
+inputs:
+    path:
+        description: 'location to cache'
+runs:
+    using: 'composite'
+    steps:
+        - name: 🪄 Generate cache key
+          id: generate-key
+          run: pnpm --filter @vscode-wdio/release run cache-key
+          shell: bash
+
+        - name: 🗃️ Use cached vscode
+          if: ${{ steps.generate-key.outputs.vscode-cache-key != '' }}
+          uses: actions/cache@v4
+          with:
+              path: ${{ inputs.path }}
+              key: ${{ steps.generate-key.outputs.vscode-cache-key }}
