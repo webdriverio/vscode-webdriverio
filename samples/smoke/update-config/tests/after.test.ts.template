@@ -1,0 +1,9 @@
+import { expect } from '@wdio/globals'
+
+import { add } from '../index.js'
+
+describe('Updated Tests', () => {
+    it('TEST UPDATE AFTER 1', async () => {
+        expect(add(1, 2)).toBe(3)
+    })
+})
