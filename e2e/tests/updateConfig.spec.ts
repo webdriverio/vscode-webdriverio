@@ -1,4 +1,3 @@
-// /Users/abetaiki/Documents/50_workspace/30_js/wdio-vscode/samples/smoke/mocha/wdio.conf.ts.tmplate
 import path from 'node:path'
 import url from 'node:url'
 
@@ -27,7 +26,7 @@ describe('VS Code Extension Testing (Update config)', function () {
     let workbench: Workbench
     let sideBarView: SideBarView<any>
 
-    beforeEach(async () => {
+    beforeEach(async function () {
         workbench = await browser.getWorkbench()
         await openTestingView(workbench)
         sideBarView = workbench.getSideBar()
@@ -42,14 +41,15 @@ describe('VS Code Extension Testing (Update config)', function () {
         await browser.waitUntil(async () => (await testingSection.getVisibleItems()).length === 1)
     })
 
-    afterEach(async () => {
+    afterEach(async function () {
         await clearAllTestResults(workbench)
     })
-    this.afterAll(() => {
+
+    after(function () {
         shell.exec(`git checkout ${beforeConfig}`)
     })
 
-    it('should be resolved the defined tests after configuration changed', async () => {
+    it('should be resolved the defined tests after configuration changed', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -118,7 +118,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
     })
 
-    it('should run tests successfully after changing the configuration', async () => {
+    it('should run tests successfully after changing the configuration', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 

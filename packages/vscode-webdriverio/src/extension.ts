@@ -83,7 +83,7 @@ class WdioExtension implements vscode.Disposable {
     }
 
     dispose() {
-        Promise.all(this._disposables.map(async (d) => await d.dispose())).then(()=>{
+        Promise.all(this._disposables.map(async (d) => await d.dispose())).then(() => {
             this._disposables = []
         })
     }

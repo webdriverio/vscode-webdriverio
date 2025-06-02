@@ -17,4 +17,3 @@ console.log('Pushing the commit and tag.')
 shell.exec('git push origin --no-verify')
 shell.exec(`git push origin refs/tags/v${pkg.version} -f --no-verify`)
 console.log('Successfully pushed.')
-
