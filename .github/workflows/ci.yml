@@ -1,53 +1,53 @@
 name: CI
 
 on:
-    push:
-        branches:
-            - main
-            - v[0-9]+
-        tags:
-            - v[0-9]+.[0-9]+.[0-9]+*
-    pull_request:
+  push:
+    branches:
+      - main
+      - v[0-9]+
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  pull_request:
 
 concurrency:
-    group: ci-${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-    build:
-        name: Build
-        uses: ./.github/workflows/ci-build.yml
-        with:
-            os: 'ubuntu-latest'
+  build:
+    name: Build
+    uses: ./.github/workflows/ci-build.yml
+    with:
+      os: 'ubuntu-latest'
 
-    lint:
-        name: Lint
-        needs: [build]
-        uses: ./.github/workflows/ci-lint.yml
+  lint:
+    name: Lint
+    needs: [build]
+    uses: ./.github/workflows/ci-lint.yml
 
-    typecheck:
-        name: Typecheck
-        needs: [build]
-        uses: ./.github/workflows/ci-typecheck.yml
+  typecheck:
+    name: Typecheck
+    needs: [build]
+    uses: ./.github/workflows/ci-typecheck.yml
 
-    unit:
-        name: Unit
-        needs: [build]
-        uses: ./.github/workflows/ci-unit.yml
+  unit:
+    name: Unit
+    needs: [build]
+    uses: ./.github/workflows/ci-unit.yml
 
-    e2e:
-        name: E2E
-        needs: [build]
-        uses: ./.github/workflows/ci-e2e.yml
+  e2e:
+    name: E2E
+    needs: [build]
+    uses: ./.github/workflows/ci-e2e.yml
 
-    compatibility:
-        name: Compatibility
-        needs: [build]
-        uses: ./.github/workflows/ci-e2e.yml
-        with:
-            compatibility-mode: 'yes'
+  compatibility:
+    name: Compatibility
+    needs: [build]
+    uses: ./.github/workflows/ci-e2e.yml
+    with:
+      compatibility-mode: 'yes'
 
-    smoke:
-        name: Smoke
-        needs: [build, e2e]
-        uses: ./.github/workflows/ci-smoke.yml
+  smoke:
+    name: Smoke
+    needs: [build, e2e]
+    uses: ./.github/workflows/ci-smoke.yml

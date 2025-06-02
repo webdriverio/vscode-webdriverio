@@ -21,6 +21,7 @@
         "publish": "turbo run publish --filter=vscode-webdriverio",
         "publish:next": "turbo run publish:next --filter=vscode-webdriverio",
         "clean": "turbo run clean --filter=./packages/*",
+        "style:fix": "pnpm format:fix && pnpm lint:fix",
         "format": "prettier .",
         "format:fix": "prettier --write .",
         "lint": "eslint .",
