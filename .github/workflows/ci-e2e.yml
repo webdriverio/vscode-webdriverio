@@ -41,10 +41,9 @@ jobs:
                   filename: vscode-webdriverio-build.zip
 
             - name: 🗃️ Use cached vscode
-              uses: actions/cache@v4
+              uses: ./.github/workflows/actions/cache-vscode
               with:
                   path: e2e/.wdio-vscode-service
-                  key: ${{ runner.os }}-vscode-${{ hashFiles('e2e/.wdio-vscode-service/versions.txt') }}
 
             - name: 🧪 Run the e2e test
               env:

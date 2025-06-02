@@ -137,12 +137,18 @@ importers:
       '@octokit/rest':
         specifier: ^22.0.0
         version: 22.0.0
+      '@types/semver':
+        specifier: ^7.7.0
+        version: 7.7.0
       dotenv:
         specifier: ^16.5.0
         version: 16.5.0
       lerna-changelog:
         specifier: ^2.2.0
         version: 2.2.0
+      semver:
+        specifier: ^7.7.2
+        version: 7.7.2
 
   packages/vscode-wdio-api:
     dependencies:
