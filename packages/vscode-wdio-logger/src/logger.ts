@@ -1,6 +1,7 @@
 import { EXTENSION_ID, LOG_LEVEL } from '@vscode-wdio/constants'
 import * as vscode from 'vscode'
 
+import { FileLogger } from './fileLogger.js'
 import type { LoggerInterface, WdioLogLevel } from '@vscode-wdio/types'
 
 export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
@@ -16,12 +17,22 @@ export class VscodeWdioLogger implements LoggerInterface {
     private _timezoneString: string | undefined
     private _disposables: vscode.Disposable[] = []
     private _logLevel: LOG_LEVEL
+    private _fileLogger: FileLogger | undefined
 
     constructor(
         logLevel?: WdioLogLevel,
         private _outputChannel = vscode.window.createOutputChannel('WebdriverIO')
     ) {
         this._logLevel = this.updateLogLevel(logLevel)
+
+        if (process.env.VSCODE_WDIO_TRACE_LOG_PATH) {
+            try {
+                this._fileLogger = new FileLogger(process.env.VSCODE_WDIO_TRACE_LOG_PATH)
+                this._disposables.push(this._fileLogger)
+            } catch (error) {
+                this.error(error instanceof Error ? error.message : String(error))
+            }
+        }
 
         _outputChannel.show(true)
         this._disposables.push(_outputChannel)
@@ -61,15 +72,24 @@ export class VscodeWdioLogger implements LoggerInterface {
     }
 
     private log(level: LOG_LEVEL, message: unknown): void {
-        if (level < this._logLevel) {
-            return
-        }
-
         const timestamp = `[${this.getDateTime()}]`
         const serializedMsg = typeof message !== 'string' ? JSON.stringify(message) : message
         const levelText = `[${LOG_LEVEL_NAMES[level]}] `.substring(0, 7)
         const logMessage = `${timestamp} ${levelText} ${serializedMsg}`
-        this._outputChannel.appendLine(logMessage)
+
+        if (level >= this._logLevel) {
+            this._outputChannel.appendLine(logMessage)
+        }
+
+        if (this._fileLogger) {
+            try {
+                this._fileLogger.write(logMessage)
+            } catch (error) {
+                this._fileLogger = undefined
+                console.log('====')
+                this.error(error instanceof Error ? error.message : String(error))
+            }
+        }
     }
 
     public trace(message: unknown): void {
@@ -113,5 +133,11 @@ export class VscodeWdioLogger implements LoggerInterface {
         const sign = offsetMinutes <= 0 ? '+' : '-'
 
         this._timezoneString = `${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`
+    }
+
+    dispose() {
+        for (const disposable of this._disposables) {
+            disposable.dispose()
+        }
     }
 }

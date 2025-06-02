@@ -1,4 +1,5 @@
 import type { LOG_LEVEL } from '@vscode-wdio/constants'
+import type * as vscode from 'vscode'
 
 export interface WebdriverIOConfig {
     nodeExecutable: string | undefined
@@ -9,7 +10,7 @@ export interface WebdriverIOConfig {
 
 export type WdioLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent'
 
-export interface LoggerInterface {
+export interface LoggerInterface extends vscode.Disposable {
     trace(message: unknown): void
     debug(message: unknown): void
     info(message: unknown): void
