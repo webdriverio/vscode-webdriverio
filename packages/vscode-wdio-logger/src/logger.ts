@@ -13,7 +13,7 @@ export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
     [LOG_LEVEL.SILENT]: 'SILENT ',
 } as const
 
-export class VscodeWdioLogger implements LoggerInterface {
+export class VscodeWdioLogger implements LoggerInterface, vscode.Disposable {
     private _timezoneString: string | undefined
     private _disposables: vscode.Disposable[] = []
     private _logLevel: LOG_LEVEL
