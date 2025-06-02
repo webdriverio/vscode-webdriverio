@@ -21,7 +21,7 @@ runs:
           if: ${{ runner.os == 'Windows' }}
 
         - name: ⬆️ Upload Archive
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v4.6.2
           with:
               name: ${{ inputs.name }}
               path: ${{ inputs.output }}
