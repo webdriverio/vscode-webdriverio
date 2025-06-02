@@ -40,6 +40,13 @@ jobs:
                   path: .
                   filename: vscode-webdriverio-build.zip
 
+            - name: Restore cached vscode
+              id: cache-vscode-restore
+              uses: actions/cache@v4
+              with:
+                  path: e2e/.wdio-vscode-service
+                  key: ${{ runner.os }}-vscode
+
             - name: 🧪 Run the e2e test
               env:
                   VSCODE_WDIO_E2E_COMPATIBILITY_MODE: ${{ inputs.compatibility-mode }}
