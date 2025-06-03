@@ -1,7 +1,14 @@
 /* c8 ignore start */
+export interface WebdriverIOConfig {
+    nodeExecutable: string | undefined
+    configFilePattern: string[]
+    showOutput: boolean
+    logLevel: string
+}
+
 export const EXTENSION_ID = 'webdriverio'
 
-export const DEFAULT_CONFIG_VALUES = {
+export const DEFAULT_CONFIG_VALUES: WebdriverIOConfig = {
     nodeExecutable: undefined,
     configFilePattern: ['**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}'],
     showOutput: true,
