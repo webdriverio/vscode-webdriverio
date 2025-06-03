@@ -89,7 +89,7 @@
                         "type": "string"
                     },
                     "default": [
-                        "**/wdio.conf.{ts,js}"
+                        "**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}"
                     ],
                     "description": "Glob pattern for WebdriverIO configuration file"
                 },
