@@ -57,6 +57,12 @@ export default wdioEslint.config([
         },
     },
     {
+        files: ['packages/*/src/*.ts'],
+        rules: {
+            'no-console': 'error',
+        },
+    },
+    {
         files: ['tests/**/*.spec.ts', 'tests/**/*.test.ts'],
         rules: {
             '@typescript-eslint/no-unused-expressions': 'off',
