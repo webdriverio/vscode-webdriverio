@@ -77,8 +77,9 @@ class WdioExtension implements vscode.Disposable {
                 configFileWatcher.enable()
             })
         } catch (error) {
-            console.log(error)
-            log.error(String(error))
+            const msg = `Initialization failed: ${error instanceof Error ? error.message : String(error)}`
+            vscode.window.showErrorMessage(msg)
+            log.error(msg)
         }
     }
 

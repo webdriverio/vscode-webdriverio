@@ -86,7 +86,6 @@ export class VscodeWdioLogger implements LoggerInterface, vscode.Disposable {
                 this._fileLogger.write(logMessage)
             } catch (error) {
                 this._fileLogger = undefined
-                console.log('====')
                 this.error(error instanceof Error ? error.message : String(error))
             }
         }

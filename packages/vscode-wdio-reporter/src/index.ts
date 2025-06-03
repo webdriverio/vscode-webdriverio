@@ -77,6 +77,7 @@ export default class VscodeJsonReporter extends WDIOReporter {
             fs.writeFileSync(logFile, content)
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error)
+            // eslint-disable-next-line no-console
             console.log(errorMessage)
         }
     }
