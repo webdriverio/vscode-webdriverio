@@ -2,7 +2,7 @@
     "name": "vscode-webdriverio",
     "displayName": "WebdriverIO",
     "description": "WebdriverIO for the vscode",
-    "version": "0.2.0-next.0",
+    "version": "0.2.1-next.0",
     "type": "module",
     "author": "WebdriverIO Team",
     "license": "MIT",
