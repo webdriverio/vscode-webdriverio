@@ -75,7 +75,11 @@ const isPreRelease = Boolean(process.env.VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER ||
 
 const newChangelog = !isPreRelease
     ? orgNewChangelog
-    : orgNewChangelog + `\n\n> Package as v${createPreReleaseVer(pkg.version)} `
+    : orgNewChangelog +
+      `
+#### Pre-release information
+##### Visual Studio Marketplace
+- v${createPreReleaseVer(pkg.version)}`
 
 let changelogContent = fs.readFileSync(changelogPath, 'utf8')
 changelogContent = changelogContent.replace('---', '---\n' + newChangelog)
