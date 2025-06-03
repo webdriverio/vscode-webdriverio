@@ -58,6 +58,7 @@ export default wdioEslint.config([
     },
     {
         files: ['packages/*/src/*.ts'],
+        ignores: ['packages/vscode-wdio-worker/**/*'],
         rules: {
             'no-console': 'error',
         },

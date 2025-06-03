@@ -40,7 +40,7 @@ export class WdioExtensionWorker extends EventEmitter implements WdioExtensionWo
                 try {
                     this._workerProcess.kill('SIGKILL')
                 } catch (e) {
-                    console.log(e)
+                    log.debug(e)
                 }
             }
         }
