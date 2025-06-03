@@ -8,12 +8,14 @@ import shell from 'shelljs'
 
 import pkg from '../../../lerna.json' with { type: 'json' }
 
-if (process.env.VSCODE_WDIO_DRY_RUN === 'yes') {
-    console.log('dryRun is `yes`. Skip the push.')
-    process.exit(0)
+const dryRunArgs = process.env.VSCODE_WDIO_DRY_RUN === 'yes' ? ' --dry-run' : ''
+
+function exec(command: string) {
+    console.log(`> ${command}\n`)
+    shell.exec(command)
 }
 
-console.log('Pushing the commit and tag.')
-shell.exec('git push origin --no-verify')
-shell.exec(`git push origin refs/tags/v${pkg.version} -f --no-verify`)
-console.log('Successfully pushed.')
+console.log('Pushing the commit and tag.\n')
+exec(`git push origin --no-verify${dryRunArgs}`)
+exec(`git push origin refs/tags/v${pkg.version} --no-verify${dryRunArgs}`)
+console.log('\nSuccessfully pushed.\n')
