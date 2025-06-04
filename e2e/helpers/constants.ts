@@ -1,4 +1,3 @@
-import * as cucumber from './cucumber.ts'
 import { STATUS } from './index.ts'
 
 function createExpectedNotRun(targetFramework: 'mocha' | 'jasmine') {
