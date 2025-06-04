@@ -26,6 +26,7 @@
         "build:production": "pnpm clean && pnpm typecheck && pnpm run build --production",
         "prepackage": "run-s prepackage:*",
         "prepackage:copy": "pnpm --filter @vscode-wdio/release run copy",
+        "prepackage:convert-emoji": "pnpm --filter @vscode-wdio/release run convert-emoji",
         "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
         "package": "vsce package",
         "publish": "tsx ./scripts/publish.ts",

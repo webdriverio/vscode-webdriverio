@@ -1,6 +1,8 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import url from 'node:url'
 
+import * as emoji from 'node-emoji'
 import shell from 'shelljs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
@@ -30,5 +32,20 @@ if (result.code === 0) {
             })
             .join('\n')}`
     )
+} else {
+    process.exit(result.code)
 }
-process.exit(result.code)
+
+const changelog = path.join(destDir, 'CHANGELOG.md')
+
+try {
+    console.log(`\nReplace emoji of markdown to real character: ${changelog}\n`)
+    const content = fs.readFileSync(changelog, { encoding: 'utf8' })
+    fs.writeFileSync(changelog, emoji.emojify(content), { encoding: 'utf8' })
+} catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    console.log(`Error: ${msg}\n`)
+    process.exit(1)
+}
+console.log('Completed!!\n')
+process.exit(0)
