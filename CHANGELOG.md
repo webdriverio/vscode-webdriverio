@@ -12,6 +12,23 @@
 
 ---
 
+## v0.2.2-next.0 (2025-06-04)
+
+#### :bug: Bug Fix
+
+- `vscode-wdio-api`, `vscode-wdio-test`
+    - [#50](https://github.com/webdriverio/vscode-webdriverio/pull/50) fix: fix a setting error when the test target was not a SPEC file ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
+#### Pre-release information
+
+##### Visual Studio Marketplace
+
+- v0.2.1749072678
+
 ## v0.2.1-next.0 (2025-06-03)
 
 #### :rocket: New Feature
