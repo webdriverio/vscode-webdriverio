@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "mocha"
+		},
+		{
+			"path": "jasmine"
+		},
+		{
+			"path": "cucumber"
+		}
+	],
+	"settings": {}
+}
