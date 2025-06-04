@@ -12,7 +12,7 @@ import {
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers.ts'
+} from '../helpers/index.ts'
 
 import type { SideBarView, Workbench } from 'wdio-vscode-service'
 

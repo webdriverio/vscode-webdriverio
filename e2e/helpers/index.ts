@@ -1,6 +1,6 @@
 import { DefaultTreeSection } from 'wdio-vscode-service'
 import type { StatusStrings } from 'assertions/index.ts'
-import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction } from 'wdio-vscode-service'
+import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction, ViewTitlePart } from 'wdio-vscode-service'
 
 export const STATUS = {
     NOT_YET_RUN: 'Not yet run',
@@ -56,7 +56,6 @@ export async function clickTreeItemButton(browser: WebdriverIO.Browser, target: 
         }
     )
 
-    btn = await target.getActionButton(buttonLabel)
     await (btn!.elem as WebdriverIO.Element).click()
 }
 
@@ -101,5 +100,18 @@ export async function clearAllTestResults(workbench: Workbench) {
         }
     } catch (_error) {
         console.log(_error)
+    }
+}
+
+export async function clickTitleActionButton(titlePart: ViewTitlePart, label: string) {
+    const elements = (await titlePart.elem.$$(
+        (titlePart.locatorMap.ViewSection.actionConstructor as Function)()
+    )) as WebdriverIO.Element[]
+
+    for (const element of elements) {
+        if ((await element.getAttribute('aria-label')) === label) {
+            await element.click()
+            break
+        }
     }
 }

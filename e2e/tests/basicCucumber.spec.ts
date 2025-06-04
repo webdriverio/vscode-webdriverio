@@ -1,18 +1,22 @@
 import { browser, expect } from '@wdio/globals'
 
+import { createCucumberExpected } from '../helpers/cucumber.ts'
 import {
     STATUS,
     clearAllTestResults,
+    clickTitleActionButton,
     clickTreeItemButton,
     getTestingSection,
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers.ts'
+} from '../helpers/index.ts'
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
 const targetFramework = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
+
+const expected = createCucumberExpected()
 
 describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     this.retries(3)
@@ -50,84 +54,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForResolved(browser, items[0])
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.NOT_YET_RUN,
-                children: [
-                    {
-                        text: 'my-feature.feature',
-                        status: STATUS.NOT_YET_RUN,
-                        children: [
-                            {
-                                text: 'Example feature',
-                                status: STATUS.NOT_YET_RUN,
-                                children: [
-                                    {
-                                        text: 'Get title of website',
-                                        status: STATUS.NOT_YET_RUN,
-                                        children: [
-                                            {
-                                                text: 'Given I go on the website "https://webdriver.io"',
-                                                status: STATUS.NOT_YET_RUN,
-                                            },
-                                            {
-                                                text: 'Then should the title of the page be "WebdriverIO · Next-gen browser and mobile automation test framework for Node.js | WebdriverIO"',
-                                                status: STATUS.NOT_YET_RUN,
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 1',
-                                        status: STATUS.NOT_YET_RUN,
-                                        children: [
-                                            {
-                                                text: 'Get title of website',
-                                                status: STATUS.NOT_YET_RUN,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "https://github.com/"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'Then should the title of the page be "GitHub · Build and ship software on a single, collaborative platform · GitHub"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 2',
-                                        status: STATUS.NOT_YET_RUN,
-                                        children: [
-                                            {
-                                                text: 'Data Tables',
-                                                status: STATUS.NOT_YET_RUN,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "http://todomvc.com/examples/react/dist/"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'When I add the following groceries',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'Then I should have a list of 4 items',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.notRun)
     })
 
     it('should run at top Level', async function () {
@@ -136,88 +63,11 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForResolved(browser, items[0])
 
-        await clickTreeItemButton(browser, items[0], 'Run Test')
+        await clickTitleActionButton(sideBarView.getTitlePart(), 'Run Tests')
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.PASSED,
-                children: [
-                    {
-                        text: 'my-feature.feature',
-                        status: STATUS.PASSED,
-                        children: [
-                            {
-                                text: 'Example feature',
-                                status: STATUS.PASSED,
-                                children: [
-                                    {
-                                        text: 'Get title of website',
-                                        status: STATUS.PASSED,
-                                        children: [
-                                            {
-                                                text: 'Given I go on the website "https://webdriver.io"',
-                                                status: STATUS.PASSED,
-                                            },
-                                            {
-                                                text: 'Then should the title of the page be "WebdriverIO · Next-gen browser and mobile automation test framework for Node.js | WebdriverIO"',
-                                                status: STATUS.PASSED,
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 1',
-                                        status: STATUS.PASSED,
-                                        children: [
-                                            {
-                                                text: 'Get title of website',
-                                                status: STATUS.PASSED,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "https://github.com/"',
-                                                        status: STATUS.PASSED,
-                                                    },
-                                                    {
-                                                        text: 'Then should the title of the page be "GitHub · Build and ship software on a single, collaborative platform · GitHub"',
-                                                        status: STATUS.PASSED,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 2',
-                                        status: STATUS.PASSED,
-                                        children: [
-                                            {
-                                                text: 'Data Tables',
-                                                status: STATUS.PASSED,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "http://todomvc.com/examples/react/dist/"',
-                                                        status: STATUS.PASSED,
-                                                    },
-                                                    {
-                                                        text: 'When I add the following groceries',
-                                                        status: STATUS.PASSED,
-                                                    },
-                                                    {
-                                                        text: 'Then I should have a list of 4 items',
-                                                        status: STATUS.PASSED,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.runAll)
     })
 
     it('should run Scenario level even if select step level test', async function () {
@@ -237,83 +87,6 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.PASSED,
-                children: [
-                    {
-                        text: 'my-feature.feature',
-                        status: STATUS.PASSED,
-                        children: [
-                            {
-                                text: 'Example feature',
-                                status: STATUS.PASSED,
-                                children: [
-                                    {
-                                        text: 'Get title of website',
-                                        status: STATUS.PASSED,
-                                        children: [
-                                            {
-                                                text: 'Given I go on the website "https://webdriver.io"',
-                                                status: STATUS.PASSED,
-                                            },
-                                            {
-                                                text: 'Then should the title of the page be "WebdriverIO · Next-gen browser and mobile automation test framework for Node.js | WebdriverIO"',
-                                                status: STATUS.PASSED,
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 1',
-                                        status: STATUS.NOT_YET_RUN,
-                                        children: [
-                                            {
-                                                text: 'Get title of website',
-                                                status: STATUS.NOT_YET_RUN,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "https://github.com/"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'Then should the title of the page be "GitHub · Build and ship software on a single, collaborative platform · GitHub"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        text: 'Business rule 2',
-                                        status: STATUS.NOT_YET_RUN,
-                                        children: [
-                                            {
-                                                text: 'Data Tables',
-                                                status: STATUS.NOT_YET_RUN,
-                                                children: [
-                                                    {
-                                                        text: 'Given I go on the website "http://todomvc.com/examples/react/dist/"',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'When I add the following groceries',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                    {
-                                                        text: 'Then I should have a list of 4 items',
-                                                        status: STATUS.NOT_YET_RUN,
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.runPartially)
     })
 })
