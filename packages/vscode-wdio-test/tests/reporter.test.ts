@@ -184,7 +184,7 @@ describe('TestReporter', () => {
 
             // Verify
             expect(result).toBe(true)
-            expect(log.debug).toHaveBeenCalledWith(expect.stringContaining(specPath))
+            expect(log.error).toHaveBeenCalledWith(expect.stringContaining(specPath))
         })
     })
 

@@ -315,11 +315,12 @@ export class TestRepository extends MetadataRepository implements TestRepository
      */
     public getSpecByFilePath(specPath: string) {
         const normalizedSpecFilePath = normalizePath(specPath)
-        log.trace(`searching the file :${normalizedSpecFilePath}`)
+        log.trace(`Detecting the file :${normalizedSpecFilePath}`)
         for (const [key, value] of this._fileMap.entries()) {
             // The path of the Spec file is the third one, as it is the next level after Workspace,WdioConfig.
             const candidatePath = key.split(TEST_ID_SEPARATOR)[2]
             if (normalizedSpecFilePath === normalizePath(candidatePath)) {
+                log.trace(`Detected spec file :${value}`)
                 return value
             }
         }

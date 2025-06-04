@@ -120,7 +120,7 @@ describe('TestRunner', () => {
             // Verify RPC call was made with correct options
             expect(mockRpc.runTest).toHaveBeenCalledWith({
                 configPath: '/test/path/wdio.conf.js',
-                specs: ['/path/to/test.js'],
+                specs: [],
                 grep: undefined,
                 range: undefined,
             })

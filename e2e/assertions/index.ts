@@ -1,6 +1,6 @@
 import type { MatcherContext } from 'expect'
 import type { TreeItem } from 'wdio-vscode-service'
-import type { STATUS } from '../helpers.js'
+import type { STATUS } from '../helpers/index.ts'
 
 export interface ExpectedTreeItem {
     text: string

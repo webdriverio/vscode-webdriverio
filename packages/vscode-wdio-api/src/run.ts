@@ -96,6 +96,9 @@ export class TestRunner implements vscode.Disposable {
         isCucumberFramework: boolean,
         metadata: TestItemMetadataWithRepository
     ): string[] | undefined {
+        if (metadata.isWorkspace || metadata.isConfigFile) {
+            return []
+        }
         if (isCucumberFramework) {
             return getCucumberSpec(test, metadata)
         }

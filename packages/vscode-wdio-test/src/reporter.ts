@@ -42,7 +42,7 @@ export class TestReporter {
                     const specTestItem = this._repository.getSpecByFilePath(specPath)
 
                     if (!specTestItem) {
-                        log.debug(`Spec file TestItem not found for path: ${specPath}`)
+                        log.error(`Spec file TestItem not found for path: ${specPath}`)
                         continue
                     }
 

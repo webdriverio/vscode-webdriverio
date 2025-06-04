@@ -1,18 +1,22 @@
 import { browser, expect } from '@wdio/globals'
+import { createExpected } from 'helpers/constants.ts'
 
 import {
     STATUS,
     clearAllTestResults,
+    clickTitleActionButton,
     clickTreeItemButton,
     getTestingSection,
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers.ts'
+} from '../helpers/index.ts'
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
-const targetFramework = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
+const targetFramework = (process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha') as 'mocha' | 'jasmine'
+
+const expected = createExpected(targetFramework)
 
 describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     this.retries(3)
@@ -50,33 +54,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForResolved(browser, items[0])
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.NOT_YET_RUN,
-                children: [
-                    {
-                        text: `${targetFramework}.spec.ts`,
-                        status: STATUS.NOT_YET_RUN,
-                        children: [
-                            {
-                                text: 'Website Tests',
-                                status: STATUS.NOT_YET_RUN,
-                                children: [
-                                    { text: 'should be a pending test', status: STATUS.NOT_YET_RUN },
-                                    { text: 'should have the right title - WebdriverIO', status: STATUS.NOT_YET_RUN },
-                                    {
-                                        text: 'should have the right title - WebdriverJS Testpage',
-                                        status: STATUS.NOT_YET_RUN,
-                                    },
-                                    { text: 'should fail', status: STATUS.NOT_YET_RUN },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.notRun)
     })
 
     it('should run at top Level', async function () {
@@ -85,37 +63,11 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForResolved(browser, items[0])
 
-        await clickTreeItemButton(browser, items[0], 'Run Test')
+        await clickTitleActionButton(sideBarView.getTitlePart(), 'Run Tests')
 
         await waitForTestStatus(browser, items[0], STATUS.FAILED)
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.FAILED,
-                children: [
-                    {
-                        text: `${targetFramework}.spec.ts`,
-                        status: STATUS.FAILED,
-                        children: [
-                            {
-                                text: 'Website Tests',
-                                status: STATUS.FAILED,
-                                children: [
-                                    { text: 'should be a pending test', status: STATUS.SKIPPED },
-                                    { text: 'should have the right title - WebdriverIO', status: STATUS.PASSED },
-                                    {
-                                        text: 'should have the right title - WebdriverJS Testpage',
-                                        status: STATUS.PASSED,
-                                    },
-                                    { text: 'should fail', status: STATUS.FAILED },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.runAll)
     })
 
     it('should run at not top Level', async function () {
@@ -134,32 +86,6 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
-        await expect(items).toMatchTreeStructure([
-            {
-                text: 'wdio.conf.ts',
-                status: STATUS.PASSED,
-                children: [
-                    {
-                        text: `${targetFramework}.spec.ts`,
-                        status: STATUS.PASSED,
-                        children: [
-                            {
-                                text: 'Website Tests',
-                                status: STATUS.PASSED,
-                                children: [
-                                    { text: 'should be a pending test', status: STATUS.NOT_YET_RUN },
-                                    { text: 'should have the right title - WebdriverIO', status: STATUS.PASSED },
-                                    {
-                                        text: 'should have the right title - WebdriverJS Testpage',
-                                        status: STATUS.NOT_YET_RUN,
-                                    },
-                                    { text: 'should fail', status: STATUS.NOT_YET_RUN },
-                                ],
-                            },
-                        ],
-                    },
-                ],
-            },
-        ])
+        await expect(items).toMatchTreeStructure(expected.runPartially)
     })
 })

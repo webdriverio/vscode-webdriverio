@@ -17,6 +17,6 @@ describe('Website Tests', () => {
 
     it('should fail', async () => {
         await browser.url('https://guinea-pig.webdriver.io/')
-        await expect(browser).toHaveTitle('Wrong title is set to force fail the test')
+        await expect(browser).toHaveTitle('Wrong title is set to force fail the test', { wait: 0 })
     })
 })
