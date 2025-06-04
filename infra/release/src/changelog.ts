@@ -24,7 +24,7 @@ if (!process.env.GITHUB_AUTH) {
     shell.exec('git checkout -- .')
     console.error(
         'Please export a "GITHUB_AUTH" access token to generate the changelog.\n' +
-            'See also https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTION.md#release-new-version'
+            'See also https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTING.md#release-new-version'
     )
     process.exit(1)
 }
