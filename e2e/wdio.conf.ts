@@ -5,8 +5,10 @@ import { minVersion } from 'semver'
 
 import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
 
+type TestTargets = 'workspace' | 'mocha' | 'jasmine' | 'cucumber'
+
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
-const target = process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha'
+const target = (process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha') as TestTargets
 
 const minimumVersion = minVersion(pkg.engines.vscode)?.version || 'stable'
 
@@ -16,7 +18,18 @@ const version = isCompatibilityMode ? minimumVersion : 'stable'
 const outputDir = path.join(__dirname, 'logs', [isCompatibilityMode ? 'compatibility' : 'e2e', target].join('-'))
 process.env.VSCODE_WDIO_TRACE_LOG_PATH = outputDir
 
-const specs = target === 'cucumber' ? ['./tests/basicCucumber.spec.ts'] : ['./tests/basic.spec.ts']
+function defineSpecs(target: TestTargets) {
+    switch (target) {
+        case 'cucumber':
+            return ['./tests/basicCucumber.spec.ts']
+        case 'workspace':
+            return ['./tests/basicWorkspace.spec.ts']
+        default:
+            return ['./tests/basic.spec.ts']
+    }
+}
+
+const specs = defineSpecs(target)
 
 export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
     return {
@@ -58,7 +71,9 @@ export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
     }
 }
 
+const workspace = target === 'workspace' ? '../samples/e2e/wdio.code-workspace' : `../samples/e2e/${target}`
+
 export const config: WebdriverIO.Config = {
-    ...createBaseConfig(`../samples/e2e/${target}`),
+    ...createBaseConfig(workspace),
     specs,
 }

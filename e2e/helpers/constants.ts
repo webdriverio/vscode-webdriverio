@@ -1,3 +1,4 @@
+import * as cucumber from './cucumber.ts'
 import { STATUS } from './index.ts'
 
 function createExpectedNotRun(targetFramework: 'mocha' | 'jasmine') {
@@ -88,5 +89,61 @@ export function createExpected(targetFramework: 'mocha' | 'jasmine') {
         notRun: [createExpectedNotRun(targetFramework)],
         runAll: [createExpectedRunAll(targetFramework)],
         runPartially: [createExpectedRunPartially(targetFramework)],
+    }
+}
+
+export function createWorkspaceExpected() {
+    return {
+        notRun: [
+            {
+                text: 'cucumber',
+                status: STATUS.NOT_YET_RUN,
+                children: [cucumber.createExpectedNotRun()],
+            },
+            {
+                text: 'jasmine',
+                status: STATUS.NOT_YET_RUN,
+                children: [createExpectedNotRun('jasmine')],
+            },
+            {
+                text: 'mocha',
+                status: STATUS.NOT_YET_RUN,
+                children: [createExpectedNotRun('mocha')],
+            },
+        ],
+        runAll: [
+            {
+                text: 'cucumber',
+                status: STATUS.PASSED,
+                children: [cucumber.createExpectedRunAll()],
+            },
+            {
+                text: 'jasmine',
+                status: STATUS.FAILED,
+                children: [createExpectedRunAll('jasmine')],
+            },
+            {
+                text: 'mocha',
+                status: STATUS.FAILED,
+                children: [createExpectedRunAll('mocha')],
+            },
+        ],
+        runPartially: [
+            {
+                text: 'cucumber',
+                status: STATUS.NOT_YET_RUN,
+                children: [cucumber.createExpectedNotRun()],
+            },
+            {
+                text: 'jasmine',
+                status: STATUS.PASSED,
+                children: [createExpectedRunPartially('jasmine')],
+            },
+            {
+                text: 'mocha',
+                status: STATUS.NOT_YET_RUN,
+                children: [createExpectedNotRun('mocha')],
+            },
+        ],
     }
 }
