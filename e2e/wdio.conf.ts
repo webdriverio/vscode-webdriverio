@@ -4,6 +4,7 @@ import * as url from 'node:url'
 import { minVersion } from 'semver'
 
 import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
+import type { Frameworks } from '@wdio/types'
 
 type TestTargets = 'workspace' | 'mocha' | 'jasmine' | 'cucumber'
 
@@ -30,6 +31,7 @@ function defineSpecs(target: TestTargets) {
 }
 
 const specs = defineSpecs(target)
+let screenshotCount = 0
 
 export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
     return {
@@ -67,6 +69,11 @@ export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
             ui: 'bdd',
             timeout: 6000000,
             require: ['assertions/index.ts'],
+        },
+        afterTest: async function (_test:unknown, _context:unknown, result: Frameworks.TestResult) {
+            if (!result.passed) {
+                await browser.saveScreenshot(path.join(outputDir, `screenshot-${screenshotCount++}.png`))
+            }
         },
     }
 }
