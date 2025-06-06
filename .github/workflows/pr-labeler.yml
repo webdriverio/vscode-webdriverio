@@ -11,7 +11,10 @@ concurrency:
 jobs:
   auto-label:
     runs-on: ubuntu-latest
-    if: github.event.action != 'closed' || github.event.pull_request.merged == true
+    if: |
+      (github.event.action == 'opened') ||
+      (github.event.action == 'edited' && github.event.pull_request.state == 'open') ||
+      (github.event.action == 'closed' && github.event.pull_request.merged == true)
     permissions:
       pull-requests: write
       contents: read
