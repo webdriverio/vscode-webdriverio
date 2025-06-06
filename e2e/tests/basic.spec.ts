@@ -6,6 +6,7 @@ import {
     clearAllTestResults,
     clickTitleActionButton,
     clickTreeItemButton,
+    collapseAllTests,
     getTestingSection,
     openTestingView,
     waitForResolved,
@@ -30,12 +31,8 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         sideBarView = workbench.getSideBar()
 
         const testingSection = await getTestingSection(sideBarView.getContent())
-        const items = (await testingSection.getVisibleItems()).reverse()
-        for (const item of items) {
-            if ((await item.isExpandable()) && (await item.isExpanded())) {
-                await item.collapse()
-            }
-        }
+        await collapseAllTests(testingSection)
+
         await browser.waitUntil(async () => (await testingSection.getVisibleItems()).length === 1)
     })
 

@@ -104,6 +104,9 @@ importers:
       '@wdio/spec-reporter':
         specifier: ^9.13.0
         version: 9.15.0
+      '@wdio/types':
+        specifier: ^9.15.0
+        version: 9.15.0
       chai:
         specifier: ^5.2.0
         version: 5.2.0
