@@ -1,8 +1,8 @@
 name: Auto Label PR
 
 on:
-  pull_request:
-    types: [opened, edited, closed]
+  pull_request_target:
+    types: [opened, edited, closed, reopened]
 
 concurrency:
   group: pr-labeler-${{ github.workflow }}-${{ github.ref }}
@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       (github.event.action == 'opened') ||
+      (github.event.action == 'reopened') ||
       (github.event.action == 'edited' && github.event.pull_request.state == 'open') ||
       (github.event.action == 'closed' && github.event.pull_request.merged == true)
     permissions:
@@ -20,9 +21,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4.2.2
-
       - name: Auto Label Based on Checklist
         uses: actions/github-script@v7.0.1
         with:
