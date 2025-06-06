@@ -115,3 +115,12 @@ export async function clickTitleActionButton(titlePart: ViewTitlePart, label: st
         }
     }
 }
+
+export async function collapseAllTests(testingSection: DefaultTreeSection) {
+    const items = (await testingSection.getVisibleItems()).reverse()
+    for (const item of items) {
+        if ((await item.isExpandable()) && (await item.isExpanded())) {
+            await item.collapse()
+        }
+    }
+}

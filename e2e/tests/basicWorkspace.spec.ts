@@ -4,6 +4,7 @@ import { createWorkspaceExpected } from 'helpers/constants.ts'
 import {
     STATUS,
     clearAllTestResults,
+    collapseAllTests,
     clickTitleActionButton,
     clickTreeItemButton,
     getTestingSection,
@@ -27,12 +28,7 @@ describe('VS Code Extension Testing with Workspace', function () {
         sideBarView = workbench.getSideBar()
 
         const testingSection = await getTestingSection(sideBarView.getContent())
-        const items = (await testingSection.getVisibleItems()).reverse()
-        for (const item of items) {
-            if ((await item.isExpandable()) && (await item.isExpanded())) {
-                await item.collapse()
-            }
-        }
+        await collapseAllTests(testingSection)
         await browser.waitUntil(async () => (await testingSection.getVisibleItems()).length === 3)
     })
 
@@ -51,7 +47,17 @@ describe('VS Code Extension Testing with Workspace', function () {
 
         await waitForResolved(browser, items[0])
 
-        await expect(items).toMatchTreeStructure(expected.notRun)
+        expect(items.length).toBe(expected.notRun.length)
+
+        /**
+         * Because of the small screen size of the CI environment,
+         * the tree is expanded and asserted per workspace.
+         */
+        for (let index = 0; index < expected.notRun.length; index++) {
+            await expect([items[index]]).toMatchTreeStructure([expected.notRun[index]])
+
+            await collapseAllTests(testingSection)
+        }
     })
 
     it('should run at top Level', async function () {
@@ -62,17 +68,28 @@ describe('VS Code Extension Testing with Workspace', function () {
 
         await clickTitleActionButton(sideBarView.getTitlePart(), 'Run Tests')
 
+        expect(items.length).toBe(expected.runAll.length)
+
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
         await waitForTestStatus(browser, items[1], STATUS.FAILED)
         await waitForTestStatus(browser, items[2], STATUS.FAILED)
 
-        await expect(items).toMatchTreeStructure(expected.runAll)
+        /**
+         * Because of the small screen size of the CI environment,
+         * the tree is expanded and asserted per workspace.
+         */
+        for (let index = 0; index < expected.runAll.length; index++) {
+            await expect([items[index]]).toMatchTreeStructure([expected.runAll[index]])
+
+            await collapseAllTests(testingSection)
+        }
     })
 
     it('should run at not top Level', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
+        await waitForResolved(browser, items[0])
         await waitForResolved(browser, items[0])
 
         const target = await items[1]
@@ -84,10 +101,17 @@ describe('VS Code Extension Testing with Workspace', function () {
 
         await clickTreeItemButton(browser, target, 'Run Test')
 
-        // await waitForTestStatus(browser, items[0], STATUS.NOT_YET_RUN)
+        expect(items.length).toBe(expected.runPartially.length)
         await waitForTestStatus(browser, items[1], STATUS.PASSED)
-        // await waitForTestStatus(browser, items[2], STATUS.NOT_YET_RUN)
 
-        await expect(items).toMatchTreeStructure(expected.runPartially)
+        /**
+         * Because of the small screen size of the CI environment,
+         * the tree is expanded and asserted per workspace.
+         */
+        for (let index = 0; index < expected.runPartially.length; index++) {
+            await expect([items[index]]).toMatchTreeStructure([expected.runPartially[index]])
+
+            await collapseAllTests(testingSection)
+        }
     })
 })
