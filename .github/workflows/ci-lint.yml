@@ -40,5 +40,5 @@ jobs:
         shell: bash
 
       - name: ✅ Check status
-        run: if [[ $(git status --short | wc -l) -ne 0 ]]; then STATUS=$(git status --verbose); printf "%s" "$STATUS"; git diff | cat; exit 1; fi
+        run: if [[ $(git status --short | grep -c -v vscode-webdriverio-build.zip) -ne 0 ]]; then STATUS=$(git status --verbose); printf "%s" "$STATUS"; git diff | cat; exit 1; fi
         shell: bash
