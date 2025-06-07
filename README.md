@@ -18,7 +18,7 @@
 
 ## Requirements
 
-- Visual Studio Code version >= 1.98.0
+- Visual Studio Code version >= 1.96.0
 - WebdriverIO version >= v9.0.0
 - Node.js version >= 18.0.0 (follows WebdriverIO)
 
