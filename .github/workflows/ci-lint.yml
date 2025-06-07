@@ -36,5 +36,9 @@ jobs:
           filename: vscode-webdriverio-build.zip
 
       - name: 📃 Run the lint
-        run: pnpm run lint
+        run: pnpm run style:fix
+        shell: bash
+
+      - name: ✅ Check status
+        run: if [[ $(git status --short | wc -l) -ne 0 ]]; then STATUS=$(git status --verbose); printf "%s" "$STATUS"; git diff | cat; exit 1; fi
         shell: bash
