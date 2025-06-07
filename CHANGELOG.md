@@ -12,6 +12,20 @@
 
 ---
 
+## v0.3.0 (2025-06-07)
+
+#### :memo: Documentation
+
+- [#52](https://github.com/webdriverio/vscode-webdriverio/pull/52) docs: update about pre-requests ([@mato533](https://github.com/mato533))
+
+#### :house: Internal
+
+- [#51](https://github.com/webdriverio/vscode-webdriverio/pull/51) test: add E2E for multi workspace scenario ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
 ## v0.2.2-next.0 (2025-06-04)
 
 #### :bug: Bug Fix
