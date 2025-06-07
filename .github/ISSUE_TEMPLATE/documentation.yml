@@ -12,7 +12,7 @@ body:
     id: awareness
     attributes:
       label: Pre-check
-      description: I'm aware that I can [edit the docs](https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTION.md) and submit a pull request.
+      description: I'm aware that I can [edit the docs](https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTING.md) and submit a pull request.
       options:
         - label: I know I can edit the docs but prefer to file this issue
           required: true

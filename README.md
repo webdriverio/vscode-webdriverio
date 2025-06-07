@@ -18,7 +18,7 @@
 
 ## Requirements
 
-- Visual Studio Code version >= 1.98.0
+- Visual Studio Code version >= 1.96.0
 - WebdriverIO version >= v9.0.0
 - Node.js version >= 18.0.0 (follows WebdriverIO)
 
@@ -28,6 +28,13 @@ You can manage tests both from the Testing view.
 
 The WebdriverIO uses vscode's `TestController' APIs to provide a unified testing experience.<br>
 You can read the official guides about how to run the tests in the VSCode Documentation.
+
+### First step
+
+It is necessary to install WebdriverIO to your project. (See also [project docs](https://webdriver.io))
+
+Please ensure that there is at least one configuration file of WebdriverIO that is named according to the pattern `*wdio*.conf*.{ts, js, mjs, cjs, cts, mts}`.
+This extension is enabled when a matching file exists in the workspace (workspace root folder and sub-folder are supported).
 
 ### Testing view
 
