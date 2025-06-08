@@ -1,6 +1,6 @@
 name: Manual Publish
 
-run-name: Manual Publish${{ github.event.inputs.dryRun == 'yes' && ' (DRY RUN)' || '' }}
+run-name: Manual Publish - ${{ github.event.inputs.releaseType }}${{ github.event.inputs.dryRun == 'yes' && ' (DRY RUN)' || '' }}
 
 on:
   workflow_dispatch:
@@ -35,6 +35,9 @@ on:
           - 'yes'
           - 'no'
 
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
 jobs:
   release:
     permissions:
@@ -57,13 +60,19 @@ jobs:
         id: gen-pre-release-ver
         env:
           RELEASE_TYPE: ${{ github.event.inputs.releaseType }}
-        run: |
-          if [[ "${RELEASE_TYPE}" == "pre"* ]]; then
-              VERSION="$(node .github/scripts/genPreReleaseVersion.js)"
-              echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          else
-              echo "version=" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/github-script@v7.0.1
+        with:
+          result-encoding: string
+          script: |
+            const releaseType = process.env.RELEASE_TYPE;
+            const isPreRelease =  title.startsWith('pre')
+            const version = isPreRelease ? String(Math.floor(Date.now() / 1000)) : '';
+            if (isPreRelease) {
+              core.info(`Pre-release patch version number: ${version}`)
+            } else {
+              core.info(`This is not pre-release: ${version}`)
+            }
+            return version
 
       - name: 🚧 Bump the version
         id: bump
@@ -71,7 +80,7 @@ jobs:
           pnpm lerna version ${{github.event.inputs.releaseType}} --no-push --exact --preid next --yes -m "chore(release): %s"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
-          VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.version }}
+          VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.result }}
 
       - name: 🛫 Build and publish as pre-release
         if: ${{  github.event.inputs.publishMarketplace == 'yes' && startsWith(github.event.inputs.releaseType, 'pre') }}
@@ -81,7 +90,7 @@ jobs:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
-          VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.version }}
+          VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.result }}
 
       - name: 🚀 Build and publish
         if: ${{  github.event.inputs.publishMarketplace == 'yes' && !startsWith(github.event.inputs.releaseType, 'pre') }}
@@ -96,6 +105,6 @@ jobs:
         run: |
           pnpm --filter @vscode-wdio/release run release-note
         env:
-          GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_AUTH: ${{ secrets.WDIO_BOT_GITHUB_TOKEN }}
           VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
           VSCODE_WDIO_RELEASE_NOTE: ${{ steps.bump.outputs.changelog }}
