@@ -8,6 +8,7 @@ import { normalizePath } from '@vscode-wdio/utils'
 import { convertPathToUri, convertTestData } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
+import type { SupportedFrameworks } from '@vscode-wdio/types'
 
 import type { WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
 import type { VscodeTestData, TestRepositoryInterface } from '@vscode-wdio/types/test'
@@ -20,7 +21,7 @@ import type * as vscode from 'vscode'
 export class TestRepository extends MetadataRepository implements TestRepositoryInterface {
     private _specPatterns: string[] = []
     private _fileMap = new Map<string, vscode.TestItem>()
-    private _framework: string | undefined = undefined
+    private _framework: SupportedFrameworks | undefined = undefined
 
     constructor(
         public readonly controller: vscode.TestController,
@@ -53,7 +54,7 @@ export class TestRepository extends MetadataRepository implements TestRepository
                 return
             }
 
-            this._framework = config.framework
+            this._framework = config.framework as SupportedFrameworks
             this._specPatterns = config.specPatterns
 
             // Get specs from configuration
@@ -85,7 +86,7 @@ export class TestRepository extends MetadataRepository implements TestRepository
                 return
             }
 
-            this._framework = config.framework
+            this._framework = config.framework as SupportedFrameworks
             this._specPatterns = config.specPatterns
 
             // Get specs from configuration
@@ -163,7 +164,11 @@ export class TestRepository extends MetadataRepository implements TestRepository
             this._fileMap.clear()
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
-        const testData = await this.worker.rpc.readSpecs({ specs })
+        const testData = await this.worker.rpc.readSpecs({
+            wdioConfigPath: this.wdioConfigPath,
+            framework: this.framework,
+            specs,
+        })
 
         const fileTestItems = (
             await Promise.all(

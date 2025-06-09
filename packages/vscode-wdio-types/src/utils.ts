@@ -14,3 +14,5 @@ export interface LoggerInterface {
 type ValueOf<T> = T[keyof T]
 
 export type NumericLogLevel = ValueOf<typeof LOG_LEVEL>
+
+export type SupportedFrameworks = 'cucumber' | 'mocha' | 'jasmine'

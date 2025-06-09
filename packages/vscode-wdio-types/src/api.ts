@@ -2,7 +2,7 @@ import type EventEmitter from 'node:events'
 import type * as vscode from 'vscode'
 import type { ResultSet } from './reporter.js'
 import type { TestData } from './test.js'
-import type { NumericLogLevel } from './utils.js'
+import type { NumericLogLevel, SupportedFrameworks } from './utils.js'
 
 export type WdioConfig = {
     specs: string[]
@@ -38,6 +38,8 @@ export type WorkerApi = {
 }
 
 export interface ReadSpecsOptions {
+    wdioConfigPath: string
+    framework: SupportedFrameworks
     specs: string[]
 }
 
