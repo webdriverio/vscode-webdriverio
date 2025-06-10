@@ -3,10 +3,12 @@ import path from 'node:path'
 
 import { parseCucumberFeature } from './cucumber.js'
 import { parseTestCases } from './js.js'
+import { parseWithWdio } from './parser.js'
 import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) {
+    await parseWithWdio(this, options)
     return await Promise.all(
         options.specs.map(async (spec) => {
             const normalizeSpecPath = path.normalize(spec)

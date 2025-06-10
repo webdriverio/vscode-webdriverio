@@ -305,12 +305,18 @@ importers:
       '@vscode-wdio/constants':
         specifier: workspace:*
         version: link:../vscode-wdio-constants
+      '@vscode-wdio/reporter':
+        specifier: workspace:*
+        version: link:../vscode-wdio-reporter
       '@vscode-wdio/utils':
         specifier: workspace:*
         version: link:../vscode-wdio-utils
       birpc:
         specifier: ^2.3.0
         version: 2.3.0
+      import-meta-resolve:
+        specifier: ^4.1.0
+        version: 4.1.0
       recast:
         specifier: ^0.23.11
         version: 0.23.11
@@ -326,6 +332,9 @@ importers:
         version: link:../vscode-wdio-types
       '@wdio/cli':
         specifier: ^9.12.4
+        version: 9.15.0
+      '@wdio/config':
+        specifier: ^9.15.0
         version: 9.15.0
 
   packages/vscode-webdriverio:

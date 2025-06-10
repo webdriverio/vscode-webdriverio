@@ -70,6 +70,7 @@ export interface RunTestOptions {
     grep?: string
     // Test filter range (optional)
     range?: vscode.Range
+    dryRun?: boolean
 }
 
 // Test execution result

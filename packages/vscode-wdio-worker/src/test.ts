@@ -29,10 +29,12 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
         }
 
         // Add grep pattern if provided
+        wdioArgs.mochaOpts = {}
         if (options.grep) {
-            wdioArgs.mochaOpts = { grep: options.grep }
+            wdioArgs.mochaOpts.grep = options.grep
             wdioArgs.jasmineOpts = { grep: options.grep }
         }
+        wdioArgs.mochaOpts.dryRun = options.dryRun ? true : false
 
         // ensure log directory exists if needed
         if (process.env.WDIO_LOG_PATH) {
