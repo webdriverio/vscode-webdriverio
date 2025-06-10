@@ -48,6 +48,7 @@ export interface SourceRange {
 }
 
 export type TestType =
+    | 'suite'
     | 'describe'
     | 'it'
     | 'test'
@@ -69,7 +70,7 @@ export type TestType =
 export interface TestData {
     type: TestType
     name: string
-    range: SourceRange
+    range?: SourceRange
     children: TestData[]
     // Optional fields for future extensions
     metadata?: Record<string, unknown>
@@ -77,7 +78,7 @@ export interface TestData {
 
 export type VscodeTestData = Omit<TestData, 'range' | 'children'> & {
     uri: vscode.Uri
-    range: vscode.Range
+    range?: vscode.Range
     children: VscodeTestData[]
 }
 
