@@ -30,7 +30,7 @@ on:
         description: 'Dry run? If yes, this workflow will NOT push to remote and NOT publish the extension.'
         required: true
         type: choice
-        default: 'no'
+        default: 'yes'
         options:
           - 'yes'
           - 'no'
@@ -65,7 +65,7 @@ jobs:
           result-encoding: string
           script: |
             const releaseType = process.env.RELEASE_TYPE;
-            const isPreRelease =  title.startsWith('pre')
+            const isPreRelease =  releaseType.startsWith('pre')
             const version = isPreRelease ? String(Math.floor(Date.now() / 1000)) : '';
             if (isPreRelease) {
               core.info(`Pre-release patch version number: ${version}`)
