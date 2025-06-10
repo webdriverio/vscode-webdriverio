@@ -77,7 +77,7 @@ jobs:
       - name: 🚧 Bump the version
         id: bump
         run: |
-          pnpm lerna version ${{github.event.inputs.releaseType}} --no-push --exact --preid next --yes -m "chore(release): %s"
+          pnpm lerna version ${{github.event.inputs.releaseType}} --force-publish --no-push --exact --preid next --yes -m "chore(release): %s"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.result }}
