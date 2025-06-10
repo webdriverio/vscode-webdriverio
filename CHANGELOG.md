@@ -12,6 +12,12 @@
 
 ---
 
+## v0.3.1 (2025-06-10)
+
+#### :house: Internal
+
+- [#55](https://github.com/webdriverio/vscode-webdriverio/pull/55) chore(deps-dev): dependancy updates includes Vulnerability Countermeasures ([@dependabot[bot]](https://github.com/apps/dependabot))
+
 ## v0.3.0 (2025-06-07)
 
 #### :memo: Documentation
