@@ -19,6 +19,10 @@
         "./reporter": {
             "requireSource": "./src/reporter.ts",
             "require": "./dist/reporter.cjs"
+        },
+        "./cucumber": {
+            "requireSource": "./src/cucumber.ts",
+            "require": "./dist/cucumber.cjs"
         }
     },
     "scripts": {

@@ -6,6 +6,9 @@
     "exports": {
         ".": {
             "import": "./dist/index.js"
+        },
+        "./cucumber": {
+            "import": "./dist/parsers/cucumber.js"
         }
     },
     "scripts": {
