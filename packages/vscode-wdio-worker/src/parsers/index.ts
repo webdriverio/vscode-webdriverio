@@ -7,11 +7,10 @@ import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) {
+    const testMap = options.framework !== 'cucumber' ? await parseWithWdio(this, options) : undefined
 
-    const testMap = options.framework !== 'cucumber' ? await parseWithWdio(this, options) :undefined
-
-    const getTestData =function(spec:string) {
-        const data  = testMap?.get(spec)
+    const getTestData = function (spec: string) {
+        const data = testMap?.get(spec)
         if (!data) {
             throw new Error(`TestData is not found: ${spec}`)
         }
@@ -26,7 +25,7 @@ export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) 
             try {
                 const testCases = isCucumberFeatureFile(normalizeSpecPath)
                     ? parseCucumberFeature.call(this, contents, normalizeSpecPath) // Parse Cucumber feature file
-                    : getTestData(normalizeSpecPath)
+                    : getTestData(normalizeSpecPath.replace(/^([a-z]):/, (_match, p1) => `${p1.toUpperCase()}:`))
 
                 this.log.debug(`Successfully parsed: ${normalizeSpecPath}`)
                 return {

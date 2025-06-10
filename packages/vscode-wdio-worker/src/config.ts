@@ -22,29 +22,24 @@ export async function createTempConfigFile(filename: string, outDir: string): Pr
             `${reporterIdentifierName}.default || ${reporterIdentifierName}`,
             {
                 stdout: true,
-                outputDir: outDir,
-            }
+                outputDir: outDir.replace(/\\/g, '\\\\'),
+            },
         ]
 
         const modifiedReporters = [customReporterConfig, ...existingReporters]
 
         const modifiedConfig = {
             ...config,
-            reporters: modifiedReporters
+            reporters: modifiedReporters,
         }
 
-        const configContent = await generateConfigContentWithImport(
-            modifiedConfig,
-            path.extname(filename),
-            filename
-        )
+        const configContent = await generateConfigContentWithImport(modifiedConfig, path.extname(filename), filename)
         const ext = path.extname(filename)
         const outputPath = path.join(path.dirname(filename), `wdio-vscode-${new Date().getTime()}${ext}`)
 
         await fs.writeFile(outputPath, configContent, 'utf8')
 
         return outputPath
-
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error)
         console.error('Failed to update configuration file:', msg)
@@ -57,8 +52,6 @@ async function generateConfigContentWithImport(
     fileExtension: string,
     originalConfigPath: string
 ): Promise<string> {
-    const isTypeScript = fileExtension === '.ts'
-
     let existingImports = ''
     try {
         const originalContent = await fs.readFile(originalConfigPath, 'utf8')
@@ -83,38 +76,33 @@ async function generateConfigContentWithImport(
 
     configString = configString.slice(0, -1) + `,\n  reporters: ${reportersString}\n}`
 
-    const typeImport = isTypeScript ? "import type { Options } from '@wdio/types';\n" : ''
-    const exportLine = isTypeScript ?
-        'export const config: Options.Testrunner = ' :
-        'export const config = '
+    const exportLine = 'export const config = '
 
-    return `${typeImport}${existingImports}${customImport}
+    return `${existingImports}${customImport}
 ${exportLine}${configString};
 `
 }
 
 function buildReportersString(reporters: any[]): string {
-    const reporterItems = reporters.map(reporter => {
+    const reporterItems = reporters.map((reporter) => {
         if (Array.isArray(reporter)) {
             const [reporterName, options] = reporter
 
             if (typeof reporterName === 'string' && reporterName.includes(reporterIdentifierName)) {
                 const optionsString = objectToCodeString(options, 2)
                     .split('\n')
-                    .map(line => `    ${line}`)
+                    .map((line) => `    ${line}`)
                     .join('\n')
                 return `[${reporterName}, ${optionsString}]`
             }
 
             const optionsString = objectToCodeString(options, 2)
                 .split('\n')
-                .map(line => `    ${line}`)
+                .map((line) => `    ${line}`)
                 .join('\n')
             return `['${reporterName}', ${optionsString}]`
-
         }
         return `'${reporter}'`
-
     })
 
     return `[\n    ${reporterItems.join(',\n    ')}\n  ]`
@@ -123,27 +111,40 @@ function objectToCodeString(obj: any, indent = 0): string {
     const spaces = '  '.repeat(indent)
     const nextSpaces = '  '.repeat(indent + 1)
 
-    if (obj === null) {return 'null'}
-    if (obj === undefined) {return 'undefined'}
-    if (typeof obj === 'string') {return `'${obj.replace(/'/g, "\\'")}'`}
-    if (typeof obj === 'number' || typeof obj === 'boolean') {return String(obj)}
+    if (obj === null) {
+        return 'null'
+    }
+    if (obj === undefined) {
+        return 'undefined'
+    }
+    if (typeof obj === 'string') {
+        return `'${obj.replace(/'/g, "\\'")}'`
+    }
+    if (typeof obj === 'number' || typeof obj === 'boolean') {
+        return String(obj)
+    }
     if (typeof obj === 'function') {
         return obj.toString().replace(/\n/g, `\n${nextSpaces}`)
     }
 
     if (Array.isArray(obj)) {
-        if (obj.length === 0) {return '[]'}
-        const items = obj.map(item => `${nextSpaces}${objectToCodeString(item, indent + 1)}`)
+        if (obj.length === 0) {
+            return '[]'
+        }
+        const items = obj.map((item) => `${nextSpaces}${objectToCodeString(item, indent + 1)}`)
         return `[\n${items.join(',\n')}\n${spaces}]`
     }
 
     if (typeof obj === 'object') {
         const keys = Object.keys(obj)
-        if (keys.length === 0) {return '{}'}
+        if (keys.length === 0) {
+            return '{}'
+        }
 
-        const items = keys.map(key => {
+        const items = keys.map((key) => {
+            const strKey = key.indexOf(':') > 0 ? `'${key}'` : key
             const value = objectToCodeString(obj[key], indent + 1)
-            return `${nextSpaces}${key}: ${value}`
+            return `${nextSpaces}${strKey}: ${value}`
         })
 
         return `{\n${items.join(',\n')}\n${spaces}}`
