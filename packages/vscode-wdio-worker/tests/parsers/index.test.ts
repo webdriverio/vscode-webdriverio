@@ -3,11 +3,9 @@ import * as path from 'node:path'
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// Import parse function from parsers
-
-import { parseCucumberFeature } from '../../src/parsers/cucumber.js'
 import { parse } from '../../src/parsers/index.js'
-import { parseTestCases } from '../../src/parsers/js.js'
+import { parseWithWdio } from '../../src/parsers/parser.js'
+import { getCucumberParser, type CucumberParser } from '../../src/parsers/utils.js'
 import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext, TestData, CucumberTestData } from '@vscode-wdio/types/worker'
 
@@ -18,12 +16,13 @@ vi.mock('node:fs/promises', () => ({
 }))
 
 // Mock the parsers
-vi.mock('../../src/parsers/cucumber.js', () => ({
-    parseCucumberFeature: vi.fn(),
+
+vi.mock('../../src/parsers/parser.js', () => ({
+    parseWithWdio: vi.fn(),
 }))
 
-vi.mock('../../src/parsers/js.js', () => ({
-    parseTestCases: vi.fn(),
+vi.mock('../../src/parsers/utils.js', () => ({
+    getCucumberParser: vi.fn(),
 }))
 
 // Import mocked modules
@@ -88,12 +87,15 @@ describe('Parser Index', () => {
         },
     ]
 
+    const cucumberParser: CucumberParser = vi.fn(() => cucumberMockTestData)
+
     beforeEach(() => {
         vi.resetAllMocks()
 
-        // Mock the parseTestCases and parseCucumberFeature functions
-        vi.mocked(parseTestCases).mockReturnValue(jsMockTestData)
-        vi.mocked(parseCucumberFeature).mockReturnValue(cucumberMockTestData)
+        // Mock the parseWithWdio and cucumberParser functions
+        const testMap = new Map()
+        vi.mocked(parseWithWdio).mockResolvedValue(testMap.set('/path/to/test.js', jsMockTestData))
+        vi.mocked(getCucumberParser).mockResolvedValue(cucumberParser)
     })
 
     afterEach(() => {
@@ -104,6 +106,8 @@ describe('Parser Index', () => {
         it('should parse JavaScript test files correctly', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'mocha',
+                wdioConfigPath: '/path/to/wdio.conf.js',
                 specs: ['/path/to/test.js'],
             }
 
@@ -119,8 +123,8 @@ describe('Parser Index', () => {
             expect(result[0].tests).toEqual(jsMockTestData)
 
             // Verify the correct parser was called
-            expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.js'))
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(parseWithWdio).toHaveBeenCalledWith(mockContext, options)
+            expect(cucumberParser).not.toHaveBeenCalled()
 
             // Verify logging
             expect(mockContext.log.debug).toHaveBeenCalledWith(`Parse spec file: ${path.normalize('/path/to/test.js')}`)
@@ -132,7 +136,9 @@ describe('Parser Index', () => {
         it('should parse TypeScript test files correctly', async () => {
             // Setup
             const options: ReadSpecsOptions = {
-                specs: ['/path/to/test.ts'],
+                framework: 'mocha',
+                wdioConfigPath: '/path/to/wdio.conf.js',
+                specs: ['/path/to/test.js'],
             }
 
             // Mock fs.readFile to return JS test content
@@ -143,17 +149,19 @@ describe('Parser Index', () => {
 
             // Verify
             expect(result.length).toBe(1)
-            expect(result[0].spec).toBe(path.normalize('/path/to/test.ts'))
+            expect(result[0].spec).toBe(path.normalize('/path/to/test.js'))
             expect(result[0].tests).toEqual(jsMockTestData)
 
             // Verify the correct parser was called
-            expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.ts'))
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(parseWithWdio).toHaveBeenCalledWith(mockContext, options)
+            expect(cucumberParser).not.toHaveBeenCalled()
         })
 
         it('should parse Cucumber feature files correctly', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'cucumber',
+                wdioConfigPath: '/path/to/wdio.conf.js',
                 specs: ['/path/to/test.feature'],
             }
 
@@ -169,16 +177,15 @@ describe('Parser Index', () => {
             expect(result[0].tests).toEqual(cucumberMockTestData)
 
             // Verify the correct parser was called
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
-                cucumberFeatureContent,
-                path.normalize('/path/to/test.feature')
-            )
-            expect(parseTestCases).not.toHaveBeenCalled()
+            expect(cucumberParser).toHaveBeenCalledWith(cucumberFeatureContent, path.normalize('/path/to/test.feature'))
+            expect(parseWithWdio).not.toHaveBeenCalled()
         })
 
         it('should handle uppercase feature file extensions', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'cucumber',
+                wdioConfigPath: '/path/to/wdio.conf.js',
                 specs: ['/path/to/test.FEATURE'],
             }
 
@@ -194,53 +201,15 @@ describe('Parser Index', () => {
             expect(result[0].tests).toEqual(cucumberMockTestData)
 
             // Verify the correct parser was called
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
-                cucumberFeatureContent,
-                path.normalize('/path/to/test.FEATURE')
-            )
-            expect(parseTestCases).not.toHaveBeenCalled()
-        })
-
-        it('should parse multiple spec files', async () => {
-            // Setup
-            const options: ReadSpecsOptions = {
-                specs: ['/path/to/test.js', '/path/to/test.feature'],
-            }
-
-            // Mock fs.readFile to return appropriate content based on file extension
-            vi.mocked(fs.readFile).mockImplementation((filePath) => {
-                const pathString = String(filePath)
-                if (pathString.endsWith('.feature')) {
-                    return Promise.resolve(cucumberFeatureContent)
-                }
-                return Promise.resolve(jsTestContent)
-            })
-
-            // Execute
-            const result = await parse.call(mockContext, options)
-
-            // Verify
-            expect(result.length).toBe(2)
-
-            // Check JS test results
-            expect(result[0].spec).toBe(path.normalize('/path/to/test.js'))
-            expect(result[0].tests).toEqual(jsMockTestData)
-
-            // Check Cucumber feature results
-            expect(result[1].spec).toBe(path.normalize('/path/to/test.feature'))
-            expect(result[1].tests).toEqual(cucumberMockTestData)
-
-            // Verify the correct parsers were called
-            expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.js'))
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
-                cucumberFeatureContent,
-                path.normalize('/path/to/test.feature')
-            )
+            expect(cucumberParser).toHaveBeenCalledWith(cucumberFeatureContent, path.normalize('/path/to/test.FEATURE'))
+            expect(parseWithWdio).not.toHaveBeenCalled()
         })
 
         it('should handle file reading errors', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'mocha',
+                wdioConfigPath: '/path/to/wdio.conf.js',
                 specs: ['/path/to/test.js'],
             }
 
@@ -255,6 +224,8 @@ describe('Parser Index', () => {
         it('should normalize file paths', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'mocha',
+                wdioConfigPath: 'C:\\path\\to\\wdio.conf.js',
                 specs: ['C:\\path\\to\\test.js'], // Windows style path
             }
 
@@ -268,12 +239,14 @@ describe('Parser Index', () => {
             expect(result[0].spec).toBe(path.normalize('C:\\path\\to\\test.js'))
 
             // Verify the parser was called with the normalized path
-            expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('C:\\path\\to\\test.js'))
+            expect(parseWithWdio).toHaveBeenCalledWith(mockContext, options)
         })
 
         it('should handle empty specs array', async () => {
             // Setup
             const options: ReadSpecsOptions = {
+                framework: 'mocha',
+                wdioConfigPath: '/path/to/wdio.conf.js',
                 specs: [],
             }
 
@@ -283,8 +256,8 @@ describe('Parser Index', () => {
             // Verify
             expect(result).toEqual([])
             expect(fs.readFile).not.toHaveBeenCalled()
-            expect(parseTestCases).not.toHaveBeenCalled()
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(parseWithWdio).not.toHaveBeenCalled()
+            expect(cucumberParser).not.toHaveBeenCalled()
         })
     })
 })

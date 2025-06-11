@@ -2,20 +2,22 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 
 import { parseWithWdio } from './parser.js'
+import { getCucumberParser } from './utils.js'
 import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { parseCucumberFeature } from './cucumber.js'
 
-const CUCUMBER_PARSER_PATH = path.resolve(__dirname, 'cucumber.cjs')
-
 let cucumberParser: typeof parseCucumberFeature | undefined
 
 async function parseFeatureFile(context: WorkerMetaContext, contents: string, normalizeSpecPath: string) {
-    cucumberParser = !cucumberParser ? (await import(CUCUMBER_PARSER_PATH)).parseCucumberFeature : cucumberParser
-    return (cucumberParser as typeof parseCucumberFeature).call(context, contents, normalizeSpecPath)
+    const p = await getCucumberParser(cucumberParser)
+    return p.call(context, contents, normalizeSpecPath)
 }
 
 export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) {
+    if (options.specs.length === 0) {
+        return []
+    }
     const testMap = options.framework !== 'cucumber' ? await parseWithWdio(this, options) : undefined
 
     const getTestData = function (spec: string) {

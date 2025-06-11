@@ -9,6 +9,9 @@
         },
         "./cucumber": {
             "import": "./dist/parsers/cucumber.js"
+        },
+        "./windows": {
+            "import": "./dist/config.js"
         }
     },
     "scripts": {
@@ -18,6 +21,8 @@
         "clean": "shx rm -rf out dist coverage"
     },
     "dependencies": {
+        "@babel/parser": "^7.27.5",
+        "@babel/types": "^7.27.6",
         "@cucumber/gherkin": "^32.1.0",
         "@cucumber/messages": "^27.2.0",
         "@vscode-wdio/constants": "workspace:*",
@@ -25,6 +30,7 @@
         "@vscode-wdio/utils": "workspace:*",
         "birpc": "^2.3.0",
         "import-meta-resolve": "^4.1.0",
+        "recast": "^0.23.11",
         "ws": "^8.18.1"
     },
     "devDependencies": {
