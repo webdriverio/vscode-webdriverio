@@ -1,0 +1,10 @@
+import '@wdio/types'
+export const config: WebdriverIO.Config = {
+    runner: 'local',
+    tsConfigPath: './tsconfig.json',
+
+    specs: ['tests/*.test.ts'],
+    exclude: [],
+    maxInstances: 10,
+    capabilities: [
+        {

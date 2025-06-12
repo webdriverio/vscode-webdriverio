@@ -24,7 +24,7 @@ const workspacePath = path.resolve(rootDir, 'samples/smoke/update-config/')
 const testsPath = path.join(workspacePath, 'tests')
 const spec = {
     before: path.resolve(testsPath, 'before.spec.ts'),
-    after: path.resolve(testsPath, 'after.test.ts.template'),
+    after: path.resolve(testsPath, 'error.spec.ts.template'),
 }
 
 describe('VS Code Extension Testing (Update config)', function () {
@@ -50,7 +50,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         shell.exec(`git checkout ${spec.before}`)
     })
 
-    it('should be resolved the defined tests after spec file is changed', async function () {
+    it('should be resolved the no tests after spec file is changed with invalid syntax', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -117,13 +117,7 @@ describe('VS Code Extension Testing (Update config)', function () {
                     {
                         text: 'before.spec.ts',
                         status: STATUS.NOT_YET_RUN,
-                        children: [
-                            {
-                                text: 'Updated Tests',
-                                status: STATUS.NOT_YET_RUN,
-                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.NOT_YET_RUN }],
-                            },
-                        ],
+                        children: [],
                     },
                     {
                         text: 'sample.spec.ts',
@@ -158,12 +152,47 @@ describe('VS Code Extension Testing (Update config)', function () {
                 children: [
                     {
                         text: 'before.spec.ts',
+                        status: STATUS.NOT_YET_RUN,
+                        children: [],
+                    },
+                    {
+                        text: 'sample.spec.ts',
                         status: STATUS.PASSED,
                         children: [
                             {
-                                text: 'Updated Tests',
+                                text: 'Sample 1',
                                 status: STATUS.PASSED,
-                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.PASSED }],
+                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.PASSED }],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ])
+    })
+
+    it('should reload valid test files', async function () {
+        const testingSection = await getTestingSection(sideBarView.getContent())
+        const items = await testingSection.getVisibleItems()
+
+        shell.exec(`git checkout ${spec.before}`)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
+        await clickTreeItemButton(browser, items[0], 'Run Test')
+        await waitForTestStatus(browser, items[0], STATUS.PASSED)
+        await expect(items).toMatchTreeStructure([
+            {
+                text: 'wdio.conf.ts',
+                status: STATUS.PASSED,
+                children: [
+                    {
+                        text: 'before.spec.ts',
+                        status: STATUS.PASSED,
+                        children: [
+                            {
+                                text: 'Before Tests',
+                                status: STATUS.PASSED,
+                                children: [{ text: 'TEST BEFORE 1', status: STATUS.PASSED }],
                             },
                         ],
                     },
