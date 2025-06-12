@@ -20,6 +20,10 @@
             "requireSource": "./src/reporter.ts",
             "require": "./dist/reporter.cjs"
         },
+        "./cucumber": {
+            "requireSource": "./src/cucumber.ts",
+            "require": "./dist/cucumber.cjs"
+        },
         "./windows": {
             "requireSource": "./src/windows.ts",
             "require": "./dist/windows.cjs"
