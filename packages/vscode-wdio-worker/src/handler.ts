@@ -57,21 +57,27 @@ export function createWorker(context: WorkerMetaContext): WorkerApi {
 export async function loadWdioConfig(this: WorkerMetaContext, options: LoadConfigOptions): Promise<WdioConfig> {
     this.log.debug(`Loading the config file: ${options.configFilePath}`)
 
-    // Create launcher instance
-    const launcher = await getLauncherInstance(options.configFilePath)
-    await launcher.initialize()
+    try {
+        // Create launcher instance
+        const launcher = await getLauncherInstance(options.configFilePath)
+        await launcher.initialize()
 
-    const configParser = await launcher.getProperty('configParser')
-    const specPatterns = configParser.getConfig().specs.flatMap((p) => p)
-    const specs = configParser.getSpecs().flatMap((specs) => {
-        return Array.isArray(specs) ? specs.map((spec) => normalizePath(spec)) : [normalizePath(specs)]
-    })
-    const framework = configParser.getConfig().framework
-    this.log.debug(`Successfully loaded the config file: ${options.configFilePath} (${specs.length} specs)`)
+        const configParser = await launcher.getProperty('configParser')
+        const specPatterns = configParser.getConfig().specs.flatMap((p) => p)
+        const specs = configParser.getSpecs().flatMap((specs) => {
+            return Array.isArray(specs) ? specs.map((spec) => normalizePath(spec)) : [normalizePath(specs)]
+        })
+        const framework = configParser.getConfig().framework
+        this.log.debug(`Successfully loaded the config file: ${options.configFilePath} (${specs.length} specs)`)
 
-    return {
-        framework,
-        specs,
-        specPatterns,
+        return {
+            framework,
+            specs,
+            specPatterns,
+        }
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        this.log.debug(`Failed to load the config file: ${options.configFilePath}`)
+        throw new Error(msg)
     }
 }
