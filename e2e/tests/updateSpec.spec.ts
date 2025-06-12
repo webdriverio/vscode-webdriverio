@@ -72,6 +72,17 @@ describe('VS Code Extension Testing (Update config)', function () {
                             },
                         ],
                     },
+                    {
+                        text: 'sample.spec.ts',
+                        status: STATUS.NOT_YET_RUN,
+                        children: [
+                            {
+                                text: 'Sample 1',
+                                status: STATUS.NOT_YET_RUN,
+                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.NOT_YET_RUN }],
+                            },
+                        ],
+                    },
                 ],
             },
         ])
@@ -94,10 +105,11 @@ describe('VS Code Extension Testing (Update config)', function () {
                 return regex.test(await target.getLabel())
             },
             {
-                timeoutMsg: 'The label "after.test.ts" is not found.',
+                timeoutMsg: 'The label "before.spec.ts" is not found.',
             }
         )
 
+        await new Promise((resolve) => setTimeout(resolve, 3000))
         await expect(items).toMatchTreeStructure([
             {
                 text: 'wdio.conf.ts',
@@ -111,6 +123,17 @@ describe('VS Code Extension Testing (Update config)', function () {
                                 text: 'Updated Tests',
                                 status: STATUS.NOT_YET_RUN,
                                 children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.NOT_YET_RUN }],
+                            },
+                        ],
+                    },
+                    {
+                        text: 'sample.spec.ts',
+                        status: STATUS.NOT_YET_RUN,
+                        children: [
+                            {
+                                text: 'Sample 1',
+                                status: STATUS.NOT_YET_RUN,
+                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.NOT_YET_RUN }],
                             },
                         ],
                     },
@@ -142,6 +165,17 @@ describe('VS Code Extension Testing (Update config)', function () {
                                 text: 'Updated Tests',
                                 status: STATUS.PASSED,
                                 children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.PASSED }],
+                            },
+                        ],
+                    },
+                    {
+                        text: 'sample.spec.ts',
+                        status: STATUS.PASSED,
+                        children: [
+                            {
+                                text: 'Sample 1',
+                                status: STATUS.PASSED,
+                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.PASSED }],
                             },
                         ],
                     },

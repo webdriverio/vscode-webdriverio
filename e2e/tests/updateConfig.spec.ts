@@ -68,13 +68,23 @@ describe('VS Code Extension Testing (Update config)', function () {
                             },
                         ],
                     },
+                    {
+                        text: 'sample.spec.ts',
+                        status: STATUS.NOT_YET_RUN,
+                        children: [
+                            {
+                                text: 'Sample 1',
+                                status: STATUS.NOT_YET_RUN,
+                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.NOT_YET_RUN }],
+                            },
+                        ],
+                    },
                 ],
             },
         ])
 
         // Emulate the changing configuration
         shell.cp('-f', afterConfig, beforeConfig)
-        await new Promise((resolve) => setTimeout(resolve, 3000))
         await browser.waitUntil(
             async () => {
                 if (!(await items[0].isExpanded())) {
