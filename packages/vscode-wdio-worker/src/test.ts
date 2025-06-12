@@ -3,7 +3,7 @@ import * as os from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 import { getLauncherInstance } from './cli.js'
-import { createTempConfigFile, isWindows } from './config.js'
+import { getTempConfigCreator, isWindows, type TempConfigFileCreator } from './utils.js'
 import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/api'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
 import type { LoggerInterface } from '@vscode-wdio/types/utils'
@@ -11,6 +11,8 @@ import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { RunCommandArguments } from '@wdio/cli'
 
 const VSCODE_REPORTER_PATH = resolve(__dirname, 'reporter.cjs')
+
+let tempConfigCreator: TempConfigFileCreator | undefined
 
 export async function runTest(this: WorkerMetaContext, options: RunTestOptions): Promise<TestResultData> {
     const outputDir = await getOutputDir.call(this)
@@ -43,7 +45,8 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
         }
 
         if (isWindows()) {
-            configFile = await createTempConfigFile(options.configPath, outputDir.json!)
+            const creator = await getTempConfigCreator(tempConfigCreator)
+            configFile = await creator(options.configPath, outputDir.json!)
             options.configPath = configFile
             wdioArgs.configPath = configFile
         }

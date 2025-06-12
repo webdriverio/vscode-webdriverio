@@ -19,6 +19,10 @@
         "./reporter": {
             "requireSource": "./src/reporter.ts",
             "require": "./dist/reporter.cjs"
+        },
+        "./windows": {
+            "requireSource": "./src/windows.ts",
+            "require": "./dist/windows.cjs"
         }
     },
     "scripts": {
