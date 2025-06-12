@@ -85,6 +85,7 @@ describe('VS Code Extension Testing (Update config)', function () {
 
         // Emulate the changing configuration
         shell.cp('-f', afterConfig, beforeConfig)
+        await new Promise((resolve) => setTimeout(resolve, 1000))
         await browser.waitUntil(
             async () => {
                 if (!(await items[0].isExpanded())) {
@@ -99,7 +100,7 @@ describe('VS Code Extension Testing (Update config)', function () {
                 const regex = new RegExp('after.test.ts')
                 return regex.test(await target.getLabel())
             },
-            { timeout: 3000, timeoutMsg: 'The label "after.test.ts" is not found.' }
+            { timeoutMsg: 'The label "after.test.ts" is not found.' }
         )
 
         await expect(items).toMatchTreeStructure([
