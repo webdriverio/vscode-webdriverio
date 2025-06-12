@@ -29,7 +29,7 @@ export async function convertTestData(testData: ReadSpecsResult): Promise<Vscode
  */
 function _convertTestData(testCase: TestData, uri: vscode.Uri): VscodeTestData {
     // Convert SourceRange to VSCode Range
-    const vsCodeRange = convertSourceRangeToVSCodeRange(testCase.range)
+    const vsCodeRange = testCase.range ? convertSourceRangeToVSCodeRange(testCase.range) : undefined
 
     // Convert children recursively
     const vsCodeChildren = testCase.children.map((child) => _convertTestData(child, uri))

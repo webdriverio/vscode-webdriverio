@@ -7,6 +7,7 @@ export type TestCodeParser = (fileContent: string, uri: string) => TestData[]
 export type CucumberTestData = Omit<TestData, 'type' | 'children'> & {
     type: 'feature' | 'scenario' | 'scenarioOutline' | 'step' | 'examples' | 'background' | 'rule'
     children: CucumberTestData[]
+    range: SourceRange
     metadata: {
         // Cucumber specific properties
         description?: string
