@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { resolve as winResolve } from 'node:path/posix'
 import { pathToFileURL } from 'node:url'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,7 +27,7 @@ vi.mock('node:path', async (importOriginal) => {
     return {
         default: {
             ...actual,
-            resolve: vi.fn((_, f) => actual.resolve(`/path/to/parser/${f}`)),
+            resolve: vi.fn((_, f) => winResolve(`/path/to/parser/${f}`)),
         },
     }
 })
