@@ -99,9 +99,7 @@ describe('VS Code Extension Testing (Update config)', function () {
                 const regex = new RegExp('after.test.ts')
                 return regex.test(await target.getLabel())
             },
-            {
-                timeoutMsg: 'The label "after.test.ts" is not found.',
-            }
+            { timeout: 3000, timeoutMsg: 'The label "after.test.ts" is not found.' }
         )
 
         await expect(items).toMatchTreeStructure([
