@@ -15,19 +15,24 @@
         "clean": "shx rm -rf out dist coverage"
     },
     "dependencies": {
-        "@babel/parser": "^7.27.0",
-        "@babel/types": "^7.27.0",
+        "@babel/parser": "^7.27.5",
+        "@babel/types": "^7.27.6",
         "@cucumber/gherkin": "^32.1.0",
         "@cucumber/messages": "^27.2.0",
         "@vscode-wdio/constants": "workspace:*",
         "@vscode-wdio/utils": "workspace:*",
         "birpc": "^2.3.0",
+        "import-meta-resolve": "^4.1.0",
         "recast": "^0.23.11",
         "ws": "^8.18.1"
     },
     "devDependencies": {
+        "@types/jasmine": "^5.1.7",
         "@types/ws": "^8.18.1",
         "@vscode-wdio/types": "workspace:*",
-        "@wdio/cli": "^9.12.4"
+        "@wdio/cli": "^9.12.4",
+        "@wdio/config": "^9.15.0",
+        "@wdio/jasmine-framework": "^9.12.6",
+        "@wdio/mocha-framework": "^9.15.0"
     }
 }
