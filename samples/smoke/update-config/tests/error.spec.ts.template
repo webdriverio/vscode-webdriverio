@@ -1,0 +1,10 @@
+/**
+ * This file has syntax errors
+ */
+
+import { expect } from '@wdio/globals'
+
+import { add } from '../index.js'
+
+describe('Updated Tests', () => {
+    it('TEST UPDATE AFTER

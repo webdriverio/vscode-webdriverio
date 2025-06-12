@@ -137,9 +137,12 @@ export class TestRepository extends MetadataRepository implements TestRepository
 
             log.debug(`Successfully reloaded ${specsToReload.length} spec files`)
         } catch (error) {
-            log.error(`Failed to reload spec files: ${(error as Error).message}`)
-            log.trace(`Failed to reload spec files: ${(error as Error).stack}`)
+            log.error(`Failed to reload spec files: ${this.wdioConfigPath}`)
+            const msg = error instanceof Error ? error.message : String(error)
+            log.debug(`Failed to reload spec files: ${msg}`)
 
+            this._fileMap.clear()
+            this._wdioConfigTestItem.children.replace([])
             // Make sure to reset busy state even if reload fails
             for (const spec of filePaths) {
                 const testItem = this.getSpecByFilePath(spec)

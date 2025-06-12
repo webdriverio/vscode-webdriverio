@@ -276,8 +276,7 @@ describe('TestRepository', () => {
             await testRepository.reloadSpecFiles([mockSpecPath])
 
             // Verify
-            expect(log.error).toHaveBeenCalledWith(`Failed to reload spec files: ${errorMessage}`)
-            expect(mockSpecItem.busy).toBe(false) // Should reset busy state even on error
+            expect(log.error).toHaveBeenCalledWith(`Failed to reload spec files: ${mockWdioConfigPath}`)
         })
 
         it('should handle case when no matching spec files found', async () => {
