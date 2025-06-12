@@ -141,7 +141,11 @@ describe('TestRepository', () => {
 
             // Verify
             expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({ configFilePath: mockWdioConfigPath })
-            expect(mockWorker.rpc.readSpecs).toHaveBeenCalledWith({ specs: [mockSpecPath, mockSpecPath2] })
+            expect(mockWorker.rpc.readSpecs).toHaveBeenCalledWith({
+                framework: 'mocha',
+                wdioConfigPath: mockWdioConfigPath,
+                specs: [mockSpecPath, mockSpecPath2],
+            })
             expect(testRepository.framework).toBe('mocha')
             expect(log.debug).toHaveBeenCalledWith(`Discovered ${2} spec files`)
         })
@@ -226,7 +230,11 @@ describe('TestRepository', () => {
 
             // Verify
             expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({ configFilePath: mockWdioConfigPath })
-            expect(readSpecsStub).toHaveBeenCalledWith({ specs: [mockSpecPath] })
+            expect(readSpecsStub).toHaveBeenCalledWith({
+                framework: 'mocha',
+                wdioConfigPath: mockWdioConfigPath,
+                specs: [mockSpecPath],
+            })
             expect(removeSpecFileSpy).toHaveBeenCalledWith(mockSpecPath)
             expect(log.debug).toHaveBeenCalledWith('Reloading 1 spec files')
             expect(log.debug).toHaveBeenCalledWith('Successfully reloaded 1 spec files')
@@ -299,7 +307,11 @@ describe('TestRepository', () => {
             await testRepository.reloadSpecFiles([])
 
             // Verify
-            expect(readSpecsStub).toHaveBeenCalledWith({ specs: [mockSpecPath, mockSpecPath2] })
+            expect(readSpecsStub).toHaveBeenCalledWith({
+                framework: 'mocha',
+                wdioConfigPath: mockWdioConfigPath,
+                specs: [mockSpecPath, mockSpecPath2],
+            })
             expect(log.debug).toHaveBeenCalledWith('Reloading 2 spec files')
             expect(log.debug).toHaveBeenCalledWith('Successfully reloaded 2 spec files')
         })
