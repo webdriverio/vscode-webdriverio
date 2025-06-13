@@ -340,7 +340,9 @@ describe('Cucumber Parser', () => {
             parseCucumberFeature.call(mockContext, basicFeatureContent, 'basic-feature.feature')
 
             // Verify debug log was called
-            expect(mockContext.log.debug).toHaveBeenCalledWith('Cucumber parser is used.')
+            expect(mockContext.log.debug).toHaveBeenCalledWith(
+                'Start parsing the cucumber feature file: basic-feature.feature'
+            )
         })
 
         it('should include proper source ranges for each element', () => {

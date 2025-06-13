@@ -1,10 +1,15 @@
 import * as fs from 'node:fs/promises'
 import path from 'node:path'
 
-import { parseCucumberFeature } from './cucumber.js'
 import { parseTestCases } from './js.js'
+import { getCucumberParser } from './utils.js'
 import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
+
+async function parseFeatureFile(context: WorkerMetaContext, contents: string, normalizeSpecPath: string) {
+    const p = await getCucumberParser(context)
+    return p.call(context, contents, normalizeSpecPath)
+}
 
 export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) {
     return await Promise.all(
@@ -14,7 +19,7 @@ export async function parse(this: WorkerMetaContext, options: ReadSpecsOptions) 
             const contents = await fs.readFile(normalizeSpecPath, { encoding: 'utf8' })
             try {
                 const testCases = isCucumberFeatureFile(normalizeSpecPath)
-                    ? parseCucumberFeature.call(this, contents, normalizeSpecPath) // Parse Cucumber feature file
+                    ? await parseFeatureFile(this, contents, normalizeSpecPath) // Parse Cucumber feature file
                     : parseTestCases.call(this, contents, normalizeSpecPath) // Parse JavaScript/TypeScript test file
 
                 this.log.debug(`Successfully parsed: ${normalizeSpecPath}`)

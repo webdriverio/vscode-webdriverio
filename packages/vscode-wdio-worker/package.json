@@ -9,6 +9,9 @@
         },
         "./windows": {
             "import": "./dist/config.js"
+        },
+        "./parser/cucumber": {
+            "import": "./dist/parsers/cucumber.js"
         }
     },
     "scripts": {

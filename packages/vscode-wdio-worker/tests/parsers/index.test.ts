@@ -5,9 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Import parse function from parsers
 
-import { parseCucumberFeature } from '../../src/parsers/cucumber.js'
 import { parse } from '../../src/parsers/index.js'
 import { parseTestCases } from '../../src/parsers/js.js'
+import { getCucumberParser } from '../../src/parsers/utils.js'
 import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
 import type { WorkerMetaContext, TestData, CucumberTestData } from '@vscode-wdio/types/worker'
 
@@ -18,8 +18,8 @@ vi.mock('node:fs/promises', () => ({
 }))
 
 // Mock the parsers
-vi.mock('../../src/parsers/cucumber.js', () => ({
-    parseCucumberFeature: vi.fn(),
+vi.mock('../../src/parsers/utils.js', () => ({
+    getCucumberParser: vi.fn(),
 }))
 
 vi.mock('../../src/parsers/js.js', () => ({
@@ -87,13 +87,14 @@ describe('Parser Index', () => {
             metadata: {},
         },
     ]
+    const mockCucumberParser = vi.fn(()=>cucumberMockTestData)
 
     beforeEach(() => {
         vi.resetAllMocks()
 
         // Mock the parseTestCases and parseCucumberFeature functions
         vi.mocked(parseTestCases).mockReturnValue(jsMockTestData)
-        vi.mocked(parseCucumberFeature).mockReturnValue(cucumberMockTestData)
+        vi.mocked(getCucumberParser).mockResolvedValue(mockCucumberParser)
     })
 
     afterEach(() => {
@@ -120,7 +121,7 @@ describe('Parser Index', () => {
 
             // Verify the correct parser was called
             expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.js'))
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(mockCucumberParser).not.toHaveBeenCalled()
 
             // Verify logging
             expect(mockContext.log.debug).toHaveBeenCalledWith(`Parse spec file: ${path.normalize('/path/to/test.js')}`)
@@ -148,7 +149,7 @@ describe('Parser Index', () => {
 
             // Verify the correct parser was called
             expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.ts'))
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(mockCucumberParser).not.toHaveBeenCalled()
         })
 
         it('should parse Cucumber feature files correctly', async () => {
@@ -169,7 +170,7 @@ describe('Parser Index', () => {
             expect(result[0].tests).toEqual(cucumberMockTestData)
 
             // Verify the correct parser was called
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
+            expect(mockCucumberParser).toHaveBeenCalledWith(
                 cucumberFeatureContent,
                 path.normalize('/path/to/test.feature')
             )
@@ -194,7 +195,7 @@ describe('Parser Index', () => {
             expect(result[0].tests).toEqual(cucumberMockTestData)
 
             // Verify the correct parser was called
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
+            expect(mockCucumberParser).toHaveBeenCalledWith(
                 cucumberFeatureContent,
                 path.normalize('/path/to/test.FEATURE')
             )
@@ -232,7 +233,7 @@ describe('Parser Index', () => {
 
             // Verify the correct parsers were called
             expect(parseTestCases).toHaveBeenCalledWith(jsTestContent, path.normalize('/path/to/test.js'))
-            expect(parseCucumberFeature).toHaveBeenCalledWith(
+            expect(mockCucumberParser).toHaveBeenCalledWith(
                 cucumberFeatureContent,
                 path.normalize('/path/to/test.feature')
             )
@@ -284,7 +285,7 @@ describe('Parser Index', () => {
             expect(result).toEqual([])
             expect(fs.readFile).not.toHaveBeenCalled()
             expect(parseTestCases).not.toHaveBeenCalled()
-            expect(parseCucumberFeature).not.toHaveBeenCalled()
+            expect(mockCucumberParser).not.toHaveBeenCalled()
         })
     })
 })
