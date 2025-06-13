@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { dynamicLoader } from '../utils.js'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { parseCucumberFeature } from './cucumber.js'
 import type { parseTestCases } from './js.js'
@@ -14,21 +15,14 @@ let cucumberParser: CucumberParser | undefined
 let astParser: AstParser | undefined
 
 export async function getCucumberParser(context: WorkerMetaContext): Promise<CucumberParser> {
-    if (cucumberParser) {
-        context.log.debug('Use cached Cucumber parser')
-        return cucumberParser
-    }
-    context.log.debug('Import Cucumber parser')
-    cucumberParser = (await import(CUCUMBER_PARSER_PATH)).parseCucumberFeature as CucumberParser
-    return cucumberParser
+    return (await dynamicLoader(
+        context,
+        cucumberParser,
+        CUCUMBER_PARSER_PATH,
+        'parseCucumberFeature'
+    )) as CucumberParser
 }
 
 export async function getAstParser(context: WorkerMetaContext): Promise<AstParser> {
-    if (astParser) {
-        context.log.debug('Use cached Ast parser')
-        return astParser
-    }
-    context.log.debug('Import Ast parser')
-    astParser = (await import(AST_PARSER_PATH)).parseTestCases as AstParser
-    return astParser
+    return (await dynamicLoader(context, astParser, AST_PARSER_PATH, 'parseTestCases')) as AstParser
 }
