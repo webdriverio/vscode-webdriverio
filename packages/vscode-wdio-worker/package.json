@@ -6,6 +6,9 @@
     "exports": {
         ".": {
             "import": "./dist/index.js"
+        },
+        "./windows": {
+            "import": "./dist/config.js"
         }
     },
     "scripts": {

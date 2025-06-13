@@ -5,8 +5,8 @@ import { join } from 'node:path'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { getLauncherInstance } from '../src/cli.js'
-import { createTempConfigFile, isWindows } from '../src/config.js'
 import { runTest } from '../src/test.js'
+import { getTempConfigCreator, isWindows } from '../src/utils.js'
 import type { Dirent } from 'node:fs'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
@@ -21,10 +21,11 @@ vi.mock('../src/cli.js', () => {
     )
     return { getLauncherInstance }
 })
-vi.mock('../src/config.js', () => {
+
+vi.mock('../src/utils.js', () => {
     return {
-        createTempConfigFile: vi.fn(async (config) => config),
         isWindows: vi.fn(() => false),
+        getTempConfigCreator: vi.fn(),
     }
 })
 
@@ -52,6 +53,7 @@ describe('runTest', () => {
     const mockResultDir = '/mock/tmp/dir/result-xyz123'
     const mockResultFile = 'wdio-0-0.json'
     const mockResultData = JSON.stringify({ some: 'test result' })
+    const mockTempConfigCreator = vi.fn(async () => '/path/to/customized/wdio.conf.ts')
 
     beforeEach(() => {
         // Reset mocks
@@ -63,9 +65,12 @@ describe('runTest', () => {
         vi.mocked(fs.mkdir).mockResolvedValue(undefined)
         vi.mocked(fs.mkdtemp).mockResolvedValue(mockResultDir)
         vi.mocked(fs.access).mockResolvedValue(undefined)
+        // @ts-ignore
         vi.mocked(fs.readdir).mockResolvedValue([mockResultFile as unknown as Dirent])
         vi.mocked(fs.readFile).mockResolvedValue(Buffer.from(mockResultData))
         vi.mocked(fs.rm).mockResolvedValue(undefined)
+
+        vi.mocked(getTempConfigCreator).mockResolvedValue(mockTempConfigCreator)
 
         // Mock console methods
         vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -104,7 +109,6 @@ describe('runTest', () => {
 
     it('should run tests successfully and return results on the windows', async () => {
         vi.mocked(isWindows).mockReturnValue(true)
-        vi.mocked(createTempConfigFile).mockResolvedValue('/path/to/customized/wdio.conf.ts')
         // Act
         const result = await runTest.call(mockContext, mockOptions)
 
@@ -122,7 +126,7 @@ describe('runTest', () => {
         expect(fs.mkdtemp).toHaveBeenCalledWith(join(mockTmpDir, 'vscode-webdriverio', 'result-'))
 
         // Verify createTempConfigFile were called
-        expect(createTempConfigFile).toHaveBeenCalledWith(mockConfigFile, mockResultDir)
+        expect(mockTempConfigCreator).toHaveBeenCalledWith(mockConfigFile, mockResultDir)
 
         // Verify result files were read
         expect(fs.readdir).toHaveBeenCalledWith(mockResultDir)
