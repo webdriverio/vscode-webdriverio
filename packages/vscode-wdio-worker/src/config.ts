@@ -7,7 +7,10 @@ import * as t from '@babel/types'
 import recast from 'recast'
 
 const reporterIdentifierName = 'VscodeJsonReporter'
-const VSCODE_REPORTER_PATH = path.resolve(__dirname, 'reporter.cjs')
+
+// This file is bundle as parser/ats.js at the package of vscode-webdriverio
+// So, the correct reporter path is parent directory
+const VSCODE_REPORTER_PATH = path.resolve(__dirname, '../reporter.cjs')
 /**
  * Since Windows cannot import by reporter file path due to issues with
  * the `initializePlugin` method of wdio-utils, the policy is to create a temporary configuration file.

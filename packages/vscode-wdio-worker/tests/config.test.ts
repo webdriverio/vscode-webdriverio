@@ -26,13 +26,13 @@ vi.mock('node:path', async (importOriginal) => {
     return {
         default: {
             ...actual,
-            resolve: vi.fn((_, f) => `/path/to/${f}`),
+            resolve: vi.fn((_, f) => actual.resolve(`/path/to/parser/${f}`)),
         },
     }
 })
 
 describe('config.ts', () => {
-    const VSCODE_REPORTER_PATH = path.resolve(__dirname, 'reporter.cjs')
+    const VSCODE_REPORTER_PATH = path.resolve(__dirname, '../reporter.cjs')
     const reporterPathUrl = pathToFileURL(VSCODE_REPORTER_PATH).href
 
     beforeEach(() => {
