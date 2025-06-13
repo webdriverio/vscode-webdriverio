@@ -12,7 +12,7 @@ import type { CucumberTestData, StepType, WorkerMetaContext } from '@vscode-wdio
  * @returns Array of test case information
  */
 export function parseCucumberFeature(this: WorkerMetaContext, fileContent: string, uri: string) {
-    this.log.debug('Cucumber parser is used.')
+    this.log.debug(`Start parsing the cucumber feature file: ${uri}`)
     try {
         // Initialize the parser components
         const builder = new AstBuilder(IdGenerator.uuid())

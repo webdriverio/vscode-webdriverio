@@ -60,6 +60,8 @@ if (entryPoints.length < 1) {
     throw new Error(`No export module found to build at: ${absWorkingDir}`)
 }
 
+const outdir = path.resolve(absWorkingDir, 'dist')
+
 const ctx = await context({
     sourceRoot: absWorkingDir,
     entryPoints,
@@ -69,10 +71,11 @@ const ctx = await context({
     sourcemap: !options.production,
     sourcesContent: false,
     platform: 'node',
-    outdir: path.resolve(absWorkingDir, 'dist'),
+    outdir,
     outExtension: { '.js': '.cjs' },
     external: ['vscode'],
     logLevel: 'silent',
+    metafile: true,
     plugins: [
         /* add to the end of plugins array */
         esbuildProblemMatcherPlugin,
@@ -81,6 +84,10 @@ const ctx = await context({
 if (options.watch) {
     await ctx.watch()
 } else {
-    await ctx.rebuild()
+    const result = await ctx.rebuild()
     await ctx.dispose()
+
+    if (!options.production) {
+        fss.writeFileSync(path.join(outdir, 'meta.json'), JSON.stringify(result.metafile))
+    }
 }

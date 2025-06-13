@@ -6,6 +6,15 @@
     "exports": {
         ".": {
             "import": "./dist/index.js"
+        },
+        "./windows": {
+            "import": "./dist/config.js"
+        },
+        "./parser/ast": {
+            "import": "./dist/parsers/js.js"
+        },
+        "./parser/cucumber": {
+            "import": "./dist/parsers/cucumber.js"
         }
     },
     "scripts": {
