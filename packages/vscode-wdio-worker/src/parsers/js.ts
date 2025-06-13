@@ -1,10 +1,10 @@
-import * as babelParser from '@babel/parser'
-import * as t from '@babel/types'
-import { parse, types } from 'recast'
+import { parse, visit, types as t } from 'recast'
+// @ts-ignore
+import typescriptParser from 'recast/parsers/typescript'
 import type { TestData, SourceRange, WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 /**
- * Parse WebdriverIO test files and extract test cases using Recast and Babel parser
+ * Parse WebdriverIO test files and extract test cases using Recast with TypeScript parser
  *
  * @param fileContent Content of the test file
  * @param uri File URI for error reporting
@@ -20,35 +20,9 @@ export function parseTestCases(this: WorkerMetaContext, fileContent: string, uri
     const testBlocksMap = new Map<string, TestData>()
 
     try {
-        // Parse the file content with Recast and Babel parser to handle TypeScript
+        // Parse the file content with Recast TypeScript parser
         const ast = parse(fileContent, {
-            parser: {
-                parse: (source: string) => {
-                    try {
-                        return babelParser.parse(source, {
-                            sourceType: 'module',
-                            plugins: [
-                                'typescript',
-                                'jsx',
-                                'decorators-legacy',
-                                'classProperties',
-                                'exportDefaultFrom',
-                                'exportNamespaceFrom',
-                                'dynamicImport',
-                                'objectRestSpread',
-                                'optionalChaining',
-                                'nullishCoalescingOperator',
-                            ],
-                            tokens: true,
-                            ranges: true,
-                        })
-                    } catch (parseError) {
-                        // Provide more detailed error information
-                        const errorMessage = (parseError as Error).message
-                        throw new Error(`Babel parser error: ${errorMessage}`)
-                    }
-                },
-            },
+            parser: typescriptParser,
         })
 
         // Process the AST to extract test blocks
@@ -65,15 +39,14 @@ export function parseTestCases(this: WorkerMetaContext, fileContent: string, uri
  * @param ast The parsed AST
  * @param testCases Array to store top-level test cases
  * @param testBlocksMap Map to track all test blocks for hierarchy building
- * @param fileContent Original file content for line calculations
  */
 function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, TestData>): void {
     // Stack to track current describe block context
     const blockStack: TestData[] = []
     const blockIdSet = new Set<string>()
 
-    // Traverse the AST
-    types.visit(ast, {
+    // Traverse the AST using recast's visit function
+    visit(ast, {
         // Visit call expressions to find describe, it, and test blocks
         visitCallExpression(path) {
             const node = path.node
@@ -125,13 +98,14 @@ function processAst(ast: any, testCases: TestData[], testBlocksMap: Map<string, 
                             if (callbackArg) {
                                 // Handle both regular and async functions
                                 if (
-                                    t.isArrowFunctionExpression(callbackArg as t.Node) ||
-                                    t.isFunctionExpression(callbackArg as t.Node)
+                                    t.namedTypes.ArrowFunctionExpression.check(callbackArg) ||
+                                    t.namedTypes.FunctionExpression.check(callbackArg)
                                 ) {
-                                    const body = (callbackArg as t.ArrowFunctionExpression | t.FunctionExpression).body
+                                    // @ts-ignore
+                                    const body = callbackArg.body
 
                                     // For arrow functions with expression body, we don't traverse
-                                    if (t.isBlockStatement(body)) {
+                                    if (t.namedTypes.BlockStatement.check(body)) {
                                         // For block statements, traverse the body
                                         this.traverse(path.get('arguments', 1))
                                     }
@@ -190,14 +164,14 @@ function createSourceRangeFromLocation(loc: any): SourceRange {
  */
 function isTestBlockCall(node: any): boolean {
     // Direct call (describe, it, test)
-    if (t.isIdentifier(node.callee) && ['describe', 'it', 'test'].includes(node.callee.name)) {
+    if (t.namedTypes.Identifier.check(node.callee) && ['describe', 'it', 'test'].includes(node.callee.name)) {
         return true
     }
 
     // Method chain call (describe.skip, it.only, etc.)
     if (
-        t.isMemberExpression(node.callee) &&
-        t.isIdentifier(node.callee.object) &&
+        t.namedTypes.MemberExpression.check(node.callee) &&
+        t.namedTypes.Identifier.check(node.callee.object) &&
         ['describe', 'it', 'test'].includes(node.callee.object.name)
     ) {
         return true
@@ -215,7 +189,7 @@ function isTestBlockCall(node: any): boolean {
  */
 function getTestBlockType(node: any): 'describe' | 'it' | 'test' | null {
     // Direct call
-    if (t.isIdentifier(node.callee)) {
+    if (t.namedTypes.Identifier.check(node.callee)) {
         if (node.callee.name === 'describe') {
             return 'describe'
         }
@@ -225,7 +199,7 @@ function getTestBlockType(node: any): 'describe' | 'it' | 'test' | null {
         if (node.callee.name === 'test') {
             return 'test'
         }
-    } else if (t.isMemberExpression(node.callee) && t.isIdentifier(node.callee.object)) {
+    } else if (t.namedTypes.MemberExpression.check(node.callee) && t.namedTypes.Identifier.check(node.callee.object)) {
         // Method chain call (e.g., describe.skip, it.only)
 
         if (node.callee.object.name === 'describe') {
@@ -255,17 +229,17 @@ function extractTestName(node: any): string | null {
     }
 
     // String literal
-    if (t.isStringLiteral(node)) {
+    if (t.namedTypes.Literal.check(node) && typeof node.value === 'string') {
         return node.value
     }
 
     // Template literal
-    if (t.isTemplateLiteral(node)) {
-        return node.quasis.map((q) => q.value.cooked).join('${...}')
+    if (t.namedTypes.TemplateLiteral.check(node)) {
+        return node.quasis.map((q: any) => q.value.cooked).join('${...}')
     }
 
     // Binary expression (string concatenation)
-    if (t.isBinaryExpression(node) && node.operator === '+') {
+    if (t.namedTypes.BinaryExpression.check(node) && node.operator === '+') {
         const left = extractTestName(node.left)
         const right = extractTestName(node.right)
 
