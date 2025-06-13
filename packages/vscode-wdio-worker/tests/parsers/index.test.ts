@@ -52,7 +52,7 @@ describe('Parser Index', () => {
             ],
         },
     ]
-    const mockAstParser = vi.fn(()=>jsMockTestData)
+    const mockAstParser = vi.fn(() => jsMockTestData)
 
     const cucumberMockTestData: CucumberTestData[] = [
         {
@@ -81,7 +81,7 @@ describe('Parser Index', () => {
             metadata: {},
         },
     ]
-    const mockCucumberParser = vi.fn(()=>cucumberMockTestData)
+    const mockCucumberParser = vi.fn(() => cucumberMockTestData)
 
     beforeEach(() => {
         vi.resetAllMocks()

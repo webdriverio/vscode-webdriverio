@@ -10,14 +10,13 @@ const VSCODE_WINDOWS_CONFIG_CREATOR_PATH = path.resolve(__dirname, 'parser/ast.c
 let tempConfigCreator: TempConfigFileCreator | undefined
 
 export async function getTempConfigCreator(context: WorkerMetaContext): Promise<TempConfigFileCreator> {
-    if (tempConfigCreator){
+    if (tempConfigCreator) {
         context.log.debug('Use cached TempConfigFileCreator')
         return tempConfigCreator
     }
     context.log.debug('Import TempConfigFileCreator')
-    tempConfigCreator =((await import(VSCODE_WINDOWS_CONFIG_CREATOR_PATH)).createTempConfigFile as TempConfigFileCreator)
+    tempConfigCreator = (await import(VSCODE_WINDOWS_CONFIG_CREATOR_PATH)).createTempConfigFile as TempConfigFileCreator
     return tempConfigCreator
-
 }
 
 export function isWindows() {
