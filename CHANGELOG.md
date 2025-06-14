@@ -12,6 +12,24 @@
 
 ---
 
+## v0.3.2 (2025-06-14)
+
+#### :bug: Bug Fix
+
+- `vscode-wdio-test`, `vscode-wdio-worker`
+    - [#58](https://github.com/webdriverio/vscode-webdriverio/pull/58) fix: update error handling for loading wdio config file ([@mato533](https://github.com/mato533))
+
+#### :nail_care: Polish
+
+- `vscode-wdio-worker`
+    - [#61](https://github.com/webdriverio/vscode-webdriverio/pull/61) chore: remove babel dependency ([@mato533](https://github.com/mato533))
+- `vscode-wdio-worker`, `vscode-webdriverio`
+    - [#60](https://github.com/webdriverio/vscode-webdriverio/pull/60) feat: module separation of worker module ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
 ## v0.3.1 (2025-06-10)
 
 #### :house: Internal
