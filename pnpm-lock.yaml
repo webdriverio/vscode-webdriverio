@@ -291,11 +291,8 @@ importers:
   packages/vscode-wdio-worker:
     dependencies:
       '@babel/parser':
-        specifier: ^7.27.0
+        specifier: ^7.27.5
         version: 7.27.5
-      '@babel/types':
-        specifier: ^7.27.0
-        version: 7.27.6
       '@cucumber/gherkin':
         specifier: ^32.1.0
         version: 32.1.2

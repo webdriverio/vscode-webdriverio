@@ -24,8 +24,7 @@
         "clean": "shx rm -rf out dist coverage"
     },
     "dependencies": {
-        "@babel/parser": "^7.27.0",
-        "@babel/types": "^7.27.0",
+        "@babel/parser": "^7.27.5",
         "@cucumber/gherkin": "^32.1.0",
         "@cucumber/messages": "^27.2.0",
         "@vscode-wdio/constants": "workspace:*",

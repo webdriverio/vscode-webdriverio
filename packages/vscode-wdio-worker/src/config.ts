@@ -2,72 +2,93 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import * as parser from '@babel/parser'
-import * as t from '@babel/types'
-import recast from 'recast'
+import { parse, print, visit, types as t } from 'recast'
+// @ts-ignore
+import typescriptParser from 'recast/parsers/typescript'
 
 const reporterIdentifierName = 'VscodeJsonReporter'
 
 // This file is bundle as parser/ats.js at the package of vscode-webdriverio
 // So, the correct reporter path is parent directory
 const VSCODE_REPORTER_PATH = path.resolve(__dirname, '../reporter.cjs')
+
+/**
+ * Create AST nodes using ast-types builders
+ */
+const b = t.builders
+
 /**
  * Since Windows cannot import by reporter file path due to issues with
  * the `initializePlugin` method of wdio-utils, the policy is to create a temporary configuration file.
  */
 export async function createTempConfigFile(filename: string, outDir: string) {
     const source = await fs.readFile(filename, { encoding: 'utf8' })
-    const ast = recast.parse(source, {
-        parser: {
-            parse(source: string) {
-                return parser.parse(source, {
-                    sourceType: 'unambiguous',
-                    plugins: ['typescript', 'jsx', 'topLevelAwait'],
-                })
-            },
-        },
+    const ast = parse(source, {
+        parser: typescriptParser,
     })
 
-    const reporterIdentifier = t.identifier(reporterIdentifierName)
-    const reporterConfigIdentifier = t.identifier(`${reporterIdentifierName}.default || ${reporterIdentifierName}`)
-    const reporterElement = t.arrayExpression([
+    const reporterIdentifier = b.identifier(reporterIdentifierName)
+    const reporterConfigIdentifier = b.identifier(`${reporterIdentifierName}.default || ${reporterIdentifierName}`)
+    const reporterElement = b.arrayExpression([
         reporterConfigIdentifier,
-        t.objectExpression([
-            t.objectProperty(t.identifier('stdout'), t.booleanLiteral(true)),
-            t.objectProperty(t.identifier('outputDir'), t.stringLiteral(outDir)),
+        b.objectExpression([
+            b.property('init', b.identifier('stdout'), b.literal(true)),
+            b.property('init', b.identifier('outputDir'), b.literal(outDir)),
         ]),
     ])
     let hasReporterImport = false
 
-    function addOrUpdateReporters(configObject: t.Node) {
-        if (!t.isObjectExpression(configObject)) {
+    function addOrUpdateReporters(configObject: any) {
+        if (!t.namedTypes.ObjectExpression.check(configObject)) {
             return
         }
 
-        const reportersProp = configObject.properties.find(
-            (prop) =>
-                t.isObjectProperty(prop) &&
-                ((t.isIdentifier(prop.key) && prop.key.name === 'reporters') ||
-                    (t.isStringLiteral(prop.key) && prop.key.value === 'reporters'))
-        )
+        // Find existing reporters property
+        let reportersProp = null
 
-        if (reportersProp && t.isObjectProperty(reportersProp) && t.isArrayExpression(reportersProp.value)) {
+        for (let i = 0; i < configObject.properties.length; i++) {
+            const prop = configObject.properties[i]
+
+            // Check for both Property and ObjectProperty nodes
+            if (t.namedTypes.Property.check(prop) || t.namedTypes.ObjectProperty?.check?.(prop)) {
+                const isReportersKey =
+                    (t.namedTypes.Identifier.check(prop.key) && prop.key.name === 'reporters') ||
+                    (t.namedTypes.Literal.check(prop.key) && prop.key.value === 'reporters')
+
+                if (isReportersKey) {
+                    reportersProp = prop
+                    break
+                }
+            }
+        }
+
+        if (reportersProp && t.namedTypes.ArrayExpression.check(reportersProp.value)) {
+            // Add to existing reporters array
             reportersProp.value.elements.push(reporterElement)
+        } else if (reportersProp) {
+            // Replace existing non-array reporters with array including existing value
+            const existingValue = reportersProp.value
+            //@ts-ignore
+            reportersProp.value = b.arrayExpression([existingValue, reporterElement])
         } else {
+            // Add new reporters property
             configObject.properties.push(
-                t.objectProperty(t.identifier('reporters'), t.arrayExpression([reporterElement]))
+                b.property('init', b.identifier('reporters'), b.arrayExpression([reporterElement]))
             )
         }
     }
 
-    recast.types.visit(ast, {
+    visit(ast, {
         visitImportDeclaration(path) {
             const { source, specifiers } = path.node
             if (
                 source.value === pathToFileURL(VSCODE_REPORTER_PATH).href &&
                 specifiers &&
                 //@ts-ignore
-                specifiers.some((s) => t.isImportDefaultSpecifier(s) && s.local.name === reporterIdentifierName)
+                specifiers.some(
+                    //@ts-ignore
+                    (s: any) => t.namedTypes.ImportDefaultSpecifier.check(s) && s.local.name === reporterIdentifierName
+                )
             ) {
                 hasReporterImport = true
             }
@@ -77,21 +98,20 @@ export async function createTempConfigFile(filename: string, outDir: string) {
         visitExportNamedDeclaration(path) {
             const decl = path.node.declaration
 
-            // @ts-ignore
-            if (t.isVariableDeclaration(decl)) {
+            if (t.namedTypes.VariableDeclaration.check(decl)) {
                 const first = decl.declarations[0]
 
-                if (t.isVariableDeclarator(first)) {
+                if (t.namedTypes.VariableDeclarator.check(first)) {
                     const id = first.id
                     const init = first.init
 
-                    if (t.isIdentifier(id) && id.name === 'config') {
-                        if (t.isObjectExpression(init)) {
+                    if (t.namedTypes.Identifier.check(id) && id.name === 'config') {
+                        if (t.namedTypes.ObjectExpression.check(init)) {
                             addOrUpdateReporters(init)
                         } else if (
-                            t.isCallExpression(init) &&
+                            t.namedTypes.CallExpression.check(init) &&
                             init.arguments.length > 0 &&
-                            t.isObjectExpression(init.arguments[0])
+                            t.namedTypes.ObjectExpression.check(init.arguments[0])
                         ) {
                             const configObject = init.arguments[0]
                             addOrUpdateReporters(configObject)
@@ -111,12 +131,10 @@ export async function createTempConfigFile(filename: string, outDir: string) {
             }
 
             if (
-                // @ts-ignore
-                t.isMemberExpression(left) &&
-                t.isIdentifier(left.object) &&
-                t.isIdentifier(left.property) &&
-                // @ts-ignore
-                t.isObjectExpression(right)
+                t.namedTypes.MemberExpression.check(left) &&
+                t.namedTypes.Identifier.check(left.object) &&
+                t.namedTypes.Identifier.check(left.property) &&
+                t.namedTypes.ObjectExpression.check(right)
             ) {
                 const leftName = `${left.object.name}.${left.property.name}`
                 if (['module.exports', 'exports.config'].includes(leftName)) {
@@ -128,13 +146,15 @@ export async function createTempConfigFile(filename: string, outDir: string) {
         },
 
         visitCallExpression(path) {
-            const node = path.node as t.Node
+            const node = path.node
 
             if (
-                t.isCallExpression(node) &&
-                t.isIdentifier(node.callee, { name: 'require' }) &&
+                t.namedTypes.CallExpression.check(node) &&
+                t.namedTypes.Identifier.check(node.callee) &&
+                node.callee.name === 'require' &&
                 node.arguments.length === 1 &&
-                t.isStringLiteral(node.arguments[0]) &&
+                t.namedTypes.Literal.check(node.arguments[0]) &&
+                typeof node.arguments[0].value === 'string' &&
                 node.arguments[0].value === pathToFileURL(VSCODE_REPORTER_PATH).href
             ) {
                 hasReporterImport = true
@@ -145,15 +165,15 @@ export async function createTempConfigFile(filename: string, outDir: string) {
     })
 
     if (!hasReporterImport) {
-        const importedModule = t.importDeclaration(
-            [t.importDefaultSpecifier(reporterIdentifier)],
-            t.stringLiteral(pathToFileURL(VSCODE_REPORTER_PATH).href)
+        const importedModule = b.importDeclaration(
+            [b.importDefaultSpecifier(reporterIdentifier)],
+            b.literal(pathToFileURL(VSCODE_REPORTER_PATH).href)
         )
 
         ast.program.body.unshift(importedModule)
     }
 
-    const output = recast.print(ast).code
+    const output = print(ast).code
     const ext = path.extname(filename)
     const _filename = path.join(path.dirname(filename), `wdio-vscode-${new Date().getTime()}${ext}`)
     await fs.writeFile(_filename, output)
