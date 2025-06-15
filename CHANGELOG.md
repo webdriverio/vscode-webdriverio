@@ -135,8 +135,22 @@
 
 #### Committers: 1
 
-- [@mato533](https://github.com/mato533)
+- [@mato533](https://github.com/mato533) 
 
 > Package as v0.1.117484166
+
+## v0.1.0 (2025-05-28)
+
+#### :memo: Documentation
+* [#35](https://github.com/webdriverio/vscode-webdriverio/pull/35) docs: update README about the current status ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+- [@mato533](https://github.com/mato533)
+
+## v0.1.0-next.0 (2025-05-27)
+
+#### :rocket: New Feature
+* All packages
+    * Initial release
 
 > Package as v0.1.1748333580
