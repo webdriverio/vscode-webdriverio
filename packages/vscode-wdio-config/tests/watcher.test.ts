@@ -5,8 +5,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
 import { ConfigFileWatcher } from '../src/watcher.js'
-import type { ServerManagerInterface } from '@vscode-wdio/types/api'
-import type { RepositoryManagerInterface } from '@vscode-wdio/types/test'
+import type { IWorkerManager } from '@vscode-wdio/types/server'
+import type { IRepositoryManager } from '@vscode-wdio/types/test'
 import type { ExtensionConfigManager } from '../src/index.js'
 
 // Mock dependencies
@@ -53,8 +53,8 @@ class MockTestFileWatcher extends FileWatcherManager {
 describe('ConfigFileWatcher', () => {
     let watcher: ConfigFileWatcher
     let mockConfigManager: ExtensionConfigManager
-    let mockServerManager: ServerManagerInterface
-    let mockRepositoryManager: RepositoryManagerInterface
+    let mockServerManager: IWorkerManager
+    let mockRepositoryManager: IRepositoryManager
     let mockRepo1: any
     let mockRepo2: any
     let mockUri: vscode.Uri
@@ -81,12 +81,12 @@ describe('ConfigFileWatcher', () => {
             repos: [mockRepo1, mockRepo2],
             addWdioConfig: vi.fn(),
             removeWdioConfig: vi.fn(),
-        } as unknown as RepositoryManagerInterface
+        } as unknown as IRepositoryManager
 
         // Create mock server manager
         mockServerManager = {
             reorganize: vi.fn().mockResolvedValue(undefined),
-        } as unknown as ServerManagerInterface
+        } as unknown as IWorkerManager
 
         // Create mock config manager
         mockConfigManager = {

@@ -8,25 +8,19 @@ import { TypedEventEmitter } from '@vscode-wdio/utils'
 import { createBirpc } from 'birpc'
 import getPort from 'get-port'
 
-import { IdleMonitor, type IdleMonitorInterface } from './idleMonitor.js'
+import { WorkerIdleMonitor } from './idleMonitor.js'
 import { createWss, loggingFn, resolveNodePath } from './utils.js'
 
-import type {
-    ExtensionApi,
-    WdioExtensionWorkerEvents,
-    WdioExtensionWorkerInterface,
-    WorkerApi,
-} from '@vscode-wdio/types/api'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+import type { ExtensionApi, WdioExtensionWorkerEvents, IWdioExtensionWorker, WorkerApi } from '@vscode-wdio/types/server'
+import type { IWorkerIdleMonitor } from '@vscode-wdio/types/worker'
 import type * as vscode from 'vscode'
 import type { WebSocketServer } from 'ws'
 
 const WORKER_PATH = resolve(__dirname, 'worker.cjs')
 
-export class WdioExtensionWorker
-    extends TypedEventEmitter<WdioExtensionWorkerEvents>
-    implements WdioExtensionWorkerInterface {
-    protected configManager: ExtensionConfigManagerInterface
+export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEvents> implements IWdioExtensionWorker {
+    protected configManager: IExtensionConfigManager
     public cid: string
     protected cwd: string
     protected disposables: vscode.Disposable[] = []
@@ -36,9 +30,9 @@ export class WdioExtensionWorker
     private _workerConnected = false
     private _server: Server | null = null
     private _wss: WebSocketServer | null = null
-    private _idleMonitor: IdleMonitorInterface
+    private _idleMonitor: IWorkerIdleMonitor
 
-    constructor(configManager: ExtensionConfigManagerInterface, cid: string = '#0', cwd: string) {
+    constructor(configManager: IExtensionConfigManager, cid: string = '#0', cwd: string) {
         super()
         this.cid = cid
         this.cwd = cwd
@@ -46,7 +40,7 @@ export class WdioExtensionWorker
 
         // Initialize idle monitor
         const idleTimeout = this.configManager.globalConfig.workerIdleTimeout
-        this._idleMonitor = new IdleMonitor(this.cid, { idleTimeout })
+        this._idleMonitor = new WorkerIdleMonitor(this.cid, { idleTimeout })
 
         // Forward idle timeout events
         this._idleMonitor.on('idleTimeout', () => {

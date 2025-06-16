@@ -1,7 +1,7 @@
-import type { MetadataRepositoryInterface, TestItemMetadata } from '@vscode-wdio/types/test'
+import type { IMetadataRepository, TestItemMetadata } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
 
-export class MetadataRepository implements MetadataRepositoryInterface {
+export class MetadataRepository implements IMetadataRepository {
     private static testMetadataRepository = new WeakMap<vscode.TestItem, TestItemMetadata>()
     public getMetadata(testItem: vscode.TestItem) {
         const metadata = MetadataRepository.testMetadataRepository.get(testItem)

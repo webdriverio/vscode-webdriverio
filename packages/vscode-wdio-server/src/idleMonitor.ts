@@ -2,63 +2,12 @@ import EventEmitter from 'node:events'
 
 import { log } from '@vscode-wdio/logger'
 
-export interface IdleMonitorOptions {
-    /**
-     * Idle timeout in seconds
-     * Set to 0 or negative value to disable timeout
-     */
-    idleTimeout: number
-}
-
-export interface IdleMonitorInterface {
-    /**
-     * Start monitoring for idle timeout
-     */
-    start(): void
-
-    /**
-     * Stop monitoring and clear any pending timeout
-     */
-    stop(): void
-
-    /**
-     * Reset the idle timer (called when worker is accessed)
-     */
-    resetTimer(): void
-
-    /**
-     * Update the idle timeout configuration
-     * @param timeout New timeout value in seconds (0 or negative to disable)
-     */
-    updateTimeout(timeout: number): void
-
-    /**
-     * Pause the idle timer (called when RPC operation starts)
-     */
-    pauseTimer(): void
-
-    /**
-     * Resume the idle timer (called when RPC operation completes)
-     */
-    resumeTimer(): void
-
-    /**
-     * Check if monitoring is currently active
-     */
-    isActive(): boolean
-
-    /**
-     * Add event listener for idle timeout events
-     * @param event Event name ('idleTimeout')
-     * @param listener Event listener function
-     */
-    on(event: 'idleTimeout', listener: () => void): this
-}
+import type { WorkerIdleMonitorOptions, IWorkerIdleMonitor } from '@vscode-wdio/types/worker'
 
 /**
  * Monitor worker idle state and emit timeout events
  */
-export class IdleMonitor extends EventEmitter implements IdleMonitorInterface {
+export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonitor {
     private _timer: NodeJS.Timeout | null = null
     private _isActive = false
     private _isPaused = false
@@ -66,7 +15,7 @@ export class IdleMonitor extends EventEmitter implements IdleMonitorInterface {
     private _isTimeoutDisabled = false
     private readonly _workerId: string
 
-    constructor(workerId: string, options: IdleMonitorOptions) {
+    constructor(workerId: string, options: WorkerIdleMonitorOptions) {
         super()
         this._workerId = workerId
         const timeoutSeconds = options.idleTimeout

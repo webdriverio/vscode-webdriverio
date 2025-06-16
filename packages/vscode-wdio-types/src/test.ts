@@ -1,11 +1,11 @@
 import type * as vscode from 'vscode'
-import type { WdioExtensionWorkerInterface } from './api.js'
-import type { ExtensionConfigManagerInterface } from './config.js'
+import type { IExtensionConfigManager } from './config.js'
+import type { IWdioExtensionWorker } from './server.js'
 
-export interface RepositoryManagerInterface extends vscode.Disposable {
+export interface IRepositoryManager extends vscode.Disposable {
     readonly controller: vscode.TestController
-    readonly configManager: ExtensionConfigManagerInterface
-    readonly repos: TestRepositoryInterface[]
+    readonly configManager: IExtensionConfigManager
+    readonly repos: ITestRepository[]
 
     initialize(): Promise<void>
     addWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string): Promise<void>
@@ -14,12 +14,12 @@ export interface RepositoryManagerInterface extends vscode.Disposable {
     refreshTests(): Promise<void>
 }
 
-export interface TestRepositoryInterface extends MetadataRepositoryInterface, vscode.Disposable {
+export interface ITestRepository extends IMetadataRepository, vscode.Disposable {
     readonly controller: vscode.TestController
     readonly wdioConfigPath: string
     specPatterns: string[]
     framework: string
-    getWorker(): Promise<WdioExtensionWorkerInterface>
+    getWorker(): Promise<IWdioExtensionWorker>
     discoverAllTests(): Promise<void>
     reloadSpecFiles(filePaths?: string[]): Promise<void>
     removeSpecFile(specPath: string): void
@@ -87,7 +87,7 @@ export type TestItemMetadata = {
     isConfigFile: boolean
     isSpecFile: boolean
     isTestcase: boolean
-    repository?: TestRepositoryInterface // only workspace dose not have repository
+    repository?: ITestRepository // only workspace dose not have repository
     runProfiles?: vscode.TestRunProfile[]
     type?: TestType
 }
@@ -95,8 +95,8 @@ export type TestItemMetadata = {
 export type TestItemMetadataWithRepository = Omit<TestItemMetadata, 'repository'> &
     Required<Pick<TestItemMetadata, 'repository'>>
 
-export interface MetadataRepositoryInterface {
+export interface IMetadataRepository {
     getMetadata(testItem: vscode.TestItem): TestItemMetadata
-    getRepository(testItem: vscode.TestItem): TestRepositoryInterface
+    getRepository(testItem: vscode.TestItem): ITestRepository
     setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata): void
 }

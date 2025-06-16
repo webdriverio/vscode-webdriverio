@@ -132,7 +132,7 @@ This Extension consists of several packages. Eventually, these packages will be 
 <br>
 **Service Layer**<br>
 @vscode-wdio/config (constants, logger, utils)<br>
-└── @vscode-wdio/api (constants, logger, utils)<br>
+└── @vscode-wdio/server (constants, logger, utils)<br>
 <br>
 **Integration Layer**<br>
 ├── @vscode-wdio/worker (constants, utils)<br>

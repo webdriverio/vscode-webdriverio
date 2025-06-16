@@ -1,13 +1,13 @@
 import { EventEmitter } from 'node:events'
 
-import type { TypedEventEmitterInterface } from '@vscode-wdio/types'
+import type { ITypedEventEmitter } from '@vscode-wdio/types'
 
 export * from './normalize.js'
 export * from './watcher.js'
 
 export class TypedEventEmitter<Events extends Record<string | symbol, any>>
     extends EventEmitter
-    implements TypedEventEmitterInterface<Events> {
+    implements ITypedEventEmitter<Events> {
     emit<K extends keyof Events>(event: K, data: Events[K]): boolean {
         return super.emit(event as string, data)
     }

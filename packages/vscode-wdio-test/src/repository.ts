@@ -9,16 +9,16 @@ import { convertPathToUri, convertTestData } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
 
-import type { ServerManagerInterface, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
-import type { VscodeTestData, TestRepositoryInterface } from '@vscode-wdio/types/test'
+import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
+import type { VscodeTestData, ITestRepository } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
 
 class WorkerProxy extends MetadataRepository {
-    private _worker: WdioExtensionWorkerInterface | undefined
+    private _worker: IWdioExtensionWorker | undefined
     constructor(
         private readonly _wdioConfigPath: string,
-        worker: WdioExtensionWorkerInterface,
-        private serverManager: ServerManagerInterface
+        worker: IWdioExtensionWorker,
+        private workerManager: IWorkerManager
     ) {
         super()
         this._worker = worker
@@ -29,7 +29,7 @@ class WorkerProxy extends MetadataRepository {
 
     async getWorker() {
         if (!this._worker) {
-            this._worker = await this.serverManager.getConnection(this._wdioConfigPath)
+            this._worker = await this.workerManager.getConnection(this._wdioConfigPath)
         }
         return this._worker
     }
@@ -39,19 +39,19 @@ class WorkerProxy extends MetadataRepository {
  * TestRepository class that manages all WebdriverIO tests at
  * the single WebdriverIO configuration file
  */
-export class TestRepository extends WorkerProxy implements TestRepositoryInterface {
+export class TestRepository extends WorkerProxy implements ITestRepository {
     private _specPatterns: string[] = []
     private _fileMap = new Map<string, vscode.TestItem>()
     private _framework: string | undefined = undefined
 
     constructor(
         public readonly controller: vscode.TestController,
-        _worker: WdioExtensionWorkerInterface,
+        _worker: IWdioExtensionWorker,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: vscode.TestItem,
-        serverManager: ServerManagerInterface
+        workerManager: IWorkerManager
     ) {
-        super(wdioConfigPath, _worker, serverManager)
+        super(wdioConfigPath, _worker, workerManager)
     }
 
     public get specPatterns() {

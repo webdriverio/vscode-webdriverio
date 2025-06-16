@@ -2,7 +2,7 @@ import { EXTENSION_ID, LOG_LEVEL } from '@vscode-wdio/constants'
 import * as vscode from 'vscode'
 
 import { FileLogger } from './fileLogger.js'
-import type { LoggerInterface, WdioLogLevel } from '@vscode-wdio/types'
+import type { ILogger, WdioLogLevel } from '@vscode-wdio/types'
 
 export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
     [LOG_LEVEL.TRACE]: 'TRACE',
@@ -13,7 +13,7 @@ export const LOG_LEVEL_NAMES: Record<LOG_LEVEL, string> = {
     [LOG_LEVEL.SILENT]: 'SILENT ',
 } as const
 
-export class VscodeWdioLogger implements LoggerInterface, vscode.Disposable {
+export class VscodeWdioLogger implements ILogger, vscode.Disposable {
     private _timezoneString: string | undefined
     private _disposables: vscode.Disposable[] = []
     private _logLevel: LOG_LEVEL

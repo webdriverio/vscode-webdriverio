@@ -2,7 +2,7 @@ import { log } from '@vscode-wdio/logger'
 import * as vscode from 'vscode'
 
 import type { ResultSet, TestSuite, Test } from '@vscode-wdio/types/reporter'
-import type { TestRepositoryInterface } from '@vscode-wdio/types/test'
+import type { ITestRepository } from '@vscode-wdio/types/test'
 
 /**
  * TestReporter class for handling WebdriverIO test results and updating VSCode TestItems
@@ -15,7 +15,7 @@ export class TestReporter {
      * @param _run The current test run
      */
     constructor(
-        private readonly _repository: TestRepositoryInterface,
+        private readonly _repository: ITestRepository,
         private readonly _run: vscode.TestRun
     ) {}
 

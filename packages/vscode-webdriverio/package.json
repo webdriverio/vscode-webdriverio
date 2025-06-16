@@ -45,7 +45,7 @@
     "clean": "shx rm -rf out dist coverage"
   },
   "devDependencies": {
-    "@vscode-wdio/api": "workspace:*",
+    "@vscode-wdio/server": "workspace:*",
     "@vscode-wdio/config": "workspace:*",
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/logger": "workspace:*",

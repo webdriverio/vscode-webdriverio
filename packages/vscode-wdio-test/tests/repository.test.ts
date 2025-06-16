@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 
 import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils.js'
 import { TestRepository } from '../src/repository.js'
-import type { ServerManagerInterface, WdioConfig, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
+import type { IWorkerManager, WdioConfig, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
@@ -26,11 +26,11 @@ describe('TestRepository', () => {
     let testController: vscode.TestController
     let wdioConfigTestItem: vscode.TestItem
     let testRepository: TestRepository
-    let mockWorker: WdioExtensionWorkerInterface
+    let mockWorker: IWdioExtensionWorker
     let readFile: ReturnType<typeof vi.fn>
     let readSpecsStub: ReturnType<typeof vi.fn>
     let runProfileDisposeStub: ReturnType<typeof vi.fn>
-    let serverManager: ServerManagerInterface
+    let workerManager: IWorkerManager
 
     beforeEach(() => {
         vi.resetAllMocks()
@@ -63,7 +63,7 @@ describe('TestRepository', () => {
                 }),
                 readSpecs: readSpecsStub,
             },
-        } as unknown as WdioExtensionWorkerInterface
+        } as unknown as IWdioExtensionWorker
 
         readFile = vi.fn()
         class MockTestRepository extends TestRepository {
@@ -72,7 +72,7 @@ describe('TestRepository', () => {
             }
         }
 
-        serverManager = vi.fn() as unknown as ServerManagerInterface
+        workerManager = vi.fn() as unknown as IWorkerManager
 
         // Create repository with mocked dependencies
         testRepository = new MockTestRepository(
@@ -80,7 +80,7 @@ describe('TestRepository', () => {
             mockWorker,
             mockWdioConfigPath,
             wdioConfigTestItem,
-            serverManager
+            workerManager
         )
 
         testRepository.setMetadata(wdioConfigTestItem, {
@@ -141,7 +141,7 @@ describe('TestRepository', () => {
                 mockWorker,
                 mockWdioConfigPath,
                 wdioConfigTestItem,
-                serverManager
+                workerManager
             )
 
             // Verify

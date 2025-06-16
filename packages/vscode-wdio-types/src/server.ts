@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
 import type { ResultSet } from './reporter.js'
 import type { TestData } from './test.js'
-import type { NumericLogLevel, TypedEventEmitterInterface } from './utils.js'
+import type { NumericLogLevel, ITypedEventEmitter } from './utils.js'
 
 export type WdioConfig = {
     specs: string[]
@@ -119,7 +119,7 @@ export interface WorkerRunnerOptions {
     astCollect: boolean
 }
 
-export interface WdioExtensionWorkerInterface extends TypedEventEmitterInterface<WdioExtensionWorkerEvents> {
+export interface IWdioExtensionWorker extends ITypedEventEmitter<WdioExtensionWorkerEvents> {
     cid: string
     rpc: WorkerApi
     start(): Promise<void>
@@ -137,8 +137,8 @@ export interface WdioExtensionWorkerEvents {
     shutdown: undefined
 }
 
-export interface ServerManagerInterface extends vscode.Disposable {
+export interface IWorkerManager extends vscode.Disposable {
     start(configPaths: string[]): Promise<void>
-    getConnection(configPaths: string): Promise<WdioExtensionWorkerInterface>
+    getConnection(configPaths: string): Promise<IWdioExtensionWorker>
     reorganize(configPaths: string[]): Promise<void>
 }

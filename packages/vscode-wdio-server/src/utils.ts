@@ -6,7 +6,7 @@ import which from 'which'
 import { WebSocketServer } from 'ws'
 
 import type { Server } from 'node:http'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { TestItemMetadataWithRepository } from '@vscode-wdio/types/test'
 import type { NumericLogLevel } from '@vscode-wdio/types/utils'
 import type * as vscode from 'vscode'
@@ -95,7 +95,7 @@ export function getCucumberSpec(testItem: vscode.TestItem, metadata: TestItemMet
     return baseSpec
 }
 
-export async function resolveNodePath(configManager: ExtensionConfigManagerInterface) {
+export async function resolveNodePath(configManager: IExtensionConfigManager) {
     log.debug('Resolving the Node executable path')
     const configuredPath = configManager.globalConfig.nodeExecutable
     if (configuredPath && (await checkExistence(configuredPath))) {

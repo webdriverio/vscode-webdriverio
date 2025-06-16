@@ -3,7 +3,7 @@ import { normalizePath } from '@vscode-wdio/utils/node'
 import { getLauncherInstance } from './cli.js'
 import { parse } from './parsers/index.js'
 import { runTest } from './test.js'
-import type { LoadConfigOptions, WdioConfig, WorkerApi } from '@vscode-wdio/types/api'
+import type { LoadConfigOptions, WdioConfig, WorkerApi } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 export function createWorker(context: WorkerMetaContext): WorkerApi {

@@ -4,9 +4,9 @@ import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 import { getLauncherInstance } from './cli.js'
 import { getTempConfigCreator, isWindows } from './utils.js'
-import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/api'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
-import type { LoggerInterface } from '@vscode-wdio/types/utils'
+import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/server'
+import type { ILogger } from '@vscode-wdio/types/utils'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { RunCommandArguments } from '@wdio/cli'
 
@@ -149,7 +149,7 @@ async function getOutputDir(this: WorkerMetaContext) {
     }
 }
 
-async function extractResultJson(log: LoggerInterface, outputDir: string | undefined): Promise<ResultSet[]> {
+async function extractResultJson(log: ILogger, outputDir: string | undefined): Promise<ResultSet[]> {
     if (outputDir) {
         try {
             await fs.access(outputDir, fs.constants.R_OK)
@@ -174,7 +174,7 @@ async function extractResultJson(log: LoggerInterface, outputDir: string | undef
     return []
 }
 
-async function removeResultDir(log: LoggerInterface, outputDir: string) {
+async function removeResultDir(log: ILogger, outputDir: string) {
     try {
         log.debug('Remove all files...')
         await fs.rm(outputDir, { recursive: true, force: true })

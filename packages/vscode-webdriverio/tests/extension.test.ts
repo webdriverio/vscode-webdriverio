@@ -1,6 +1,6 @@
-import { ServerManager } from '@vscode-wdio/api'
 import { ExtensionConfigManager } from '@vscode-wdio/config'
 import { log } from '@vscode-wdio/logger'
+import { WdioWorkerManager } from '@vscode-wdio/server'
 import { RepositoryManager } from '@vscode-wdio/test'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
@@ -25,12 +25,12 @@ vi.mock('vscode', async () => {
 })
 
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
-vi.mock('@vscode-wdio/api', () => {
-    const ServerManager = vi.fn()
-    ServerManager.prototype.start = vi.fn(() => Promise.resolve())
-    ServerManager.prototype.dispose = vi.fn(() => Promise.resolve())
+vi.mock('@vscode-wdio/server', () => {
+    const WdioWorkerManager = vi.fn()
+    WdioWorkerManager.prototype.start = vi.fn(() => Promise.resolve())
+    WdioWorkerManager.prototype.dispose = vi.fn(() => Promise.resolve())
 
-    return { ServerManager }
+    return { WdioWorkerManager }
 })
 vi.mock('@vscode-wdio/config', () => {
     const ExtensionConfigManager = vi.fn()
@@ -95,7 +95,7 @@ describe('extension', () => {
             // vi.mocked(TestRunner).mock.instances[0].run
             //
             expect(vi.mocked(ExtensionConfigManager).mock.instances[0].initialize).toHaveBeenCalled()
-            expect(vi.mocked(ServerManager).mock.instances[0].start).toHaveBeenCalled()
+            expect(vi.mocked(WdioWorkerManager).mock.instances[0].start).toHaveBeenCalled()
             expect(vi.mocked(RepositoryManager).mock.instances[0].initialize).toHaveBeenCalled()
             expect(vi.mocked(RepositoryManager).mock.instances[0].registerToTestController).toHaveBeenCalled()
 
@@ -106,7 +106,7 @@ describe('extension', () => {
         it('should handle server start error gracefully', async () => {
             // Arrange
             const errorMessage = 'Failed to start server'
-            vi.mocked(ServerManager.prototype.start).mockRejectedValueOnce(new Error(errorMessage))
+            vi.mocked(WdioWorkerManager.prototype.start).mockRejectedValueOnce(new Error(errorMessage))
 
             // Act
             await activate(fakeContext)
@@ -118,9 +118,9 @@ describe('extension', () => {
             )
         })
 
-        it('should continue activation even when serverManager.start rejects', async () => {
+        it('should continue activation even when workerManager.start rejects', async () => {
             // Arrange
-            vi.mocked(ServerManager.prototype.start).mockRejectedValueOnce(new Error('Server failed'))
+            vi.mocked(WdioWorkerManager.prototype.start).mockRejectedValueOnce(new Error('Server failed'))
 
             // Act
             await activate(fakeContext)

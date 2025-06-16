@@ -6,7 +6,7 @@ import { describe, it, vi, expect, beforeEach, afterEach } from 'vitest'
 import which from 'which'
 
 import { loggingFn, resolveNodePath } from '../src/utils.js'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
@@ -51,7 +51,7 @@ describe('resolveNodePath', () => {
         globalConfig: {
             nodeExecutable: '',
         },
-    } as unknown as ExtensionConfigManagerInterface
+    } as unknown as IExtensionConfigManager
 
     // Import which module after mocking
 

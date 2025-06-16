@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createTestItem } from '../../../tests/utils.js'
 import { TestRunner } from '../src/run.js'
-import type { WdioExtensionWorkerInterface } from '@vscode-wdio/types'
+import type { IWdioExtensionWorker } from '@vscode-wdio/types'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
 
 // Mock dependencies
@@ -14,7 +14,7 @@ vi.mock('../src/debug.js', () => ({}))
 
 describe('TestRunner', () => {
     let testRunner: TestRunner
-    let mockWorker: WdioExtensionWorkerInterface
+    let mockWorker: IWdioExtensionWorker
     let mockRpc: any
 
     beforeEach(() => {
@@ -35,7 +35,7 @@ describe('TestRunner', () => {
             removeListener: vi.fn(),
             ensureConnected: vi.fn().mockResolvedValue(undefined),
             rpc: mockRpc,
-        } as unknown as WdioExtensionWorkerInterface
+        } as unknown as IWdioExtensionWorker
 
         // Create test runner instance
         testRunner = new TestRunner(mockWorker)

@@ -4,18 +4,18 @@ import { log } from '@vscode-wdio/logger'
 import * as vscode from 'vscode'
 
 import { WdioExtensionWorker } from './worker.js'
-import type { ServerManagerInterface, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
-export class ServerManager implements ServerManagerInterface {
-    private _workerPool = new Map<string, WdioExtensionWorkerInterface>()
-    private _pendingOperations = new Map<string, Promise<WdioExtensionWorkerInterface | void>>()
+export class WdioWorkerManager implements IWorkerManager {
+    private _workerPool = new Map<string, IWdioExtensionWorker>()
+    private _pendingOperations = new Map<string, Promise<IWdioExtensionWorker | void>>()
     private latestId = 0
     // Semaphore to track the overall operation (for complete sequential execution)
     private _operationLock = false
     private _operationQueue: (() => Promise<void>)[] = []
 
-    constructor(private readonly configManager: ExtensionConfigManagerInterface) {
+    constructor(private readonly configManager: IExtensionConfigManager) {
         configManager.on('update:nodeExecutable', async (nodeExecutable: string | undefined) => {
             log.debug(`Restart worker using webdriverio.nodeExecutable: ${nodeExecutable}`)
             const cwds = Array.from(this._workerPool.keys())
@@ -117,7 +117,7 @@ export class ServerManager implements ServerManagerInterface {
             }
 
             // Start new workers
-            const startingPromises: Promise<WdioExtensionWorkerInterface>[] = []
+            const startingPromises: Promise<IWdioExtensionWorker>[] = []
             const workerCwds = Array.from(newConfigDirs)
             for (const cwd of workerCwds) {
                 if (!this._workerPool.has(cwd)) {
@@ -158,7 +158,7 @@ export class ServerManager implements ServerManagerInterface {
      * @param worker Worker to update
      * @param idleTimeout Idle timeout in milliseconds
      */
-    private async updateWorkerIdleTimeout(worker: WdioExtensionWorkerInterface, idleTimeout: number): Promise<void> {
+    private async updateWorkerIdleTimeout(worker: IWdioExtensionWorker, idleTimeout: number): Promise<void> {
         try {
             worker.updateIdleTimeout(idleTimeout)
             log.debug(`[server manager] successfully updated idle timeout for worker ${worker.cid}`)
@@ -229,7 +229,7 @@ export class ServerManager implements ServerManagerInterface {
         }
     }
 
-    private async startWorker(id: number, workerCwd: string): Promise<WdioExtensionWorkerInterface> {
+    private async startWorker(id: number, workerCwd: string): Promise<IWdioExtensionWorker> {
         // Return existing server if already created
         const existingServer = this._workerPool.get(workerCwd)
         if (existingServer) {
@@ -239,7 +239,7 @@ export class ServerManager implements ServerManagerInterface {
         // Return pending operation if one is in progress
         const pendingOperation = this._pendingOperations.get(`start:${workerCwd}`)
         if (pendingOperation) {
-            return pendingOperation as Promise<WdioExtensionWorkerInterface>
+            return pendingOperation as Promise<IWdioExtensionWorker>
         }
 
         // Start a new process and track it
@@ -282,7 +282,7 @@ export class ServerManager implements ServerManagerInterface {
         return worker
     }
 
-    private async stopWorker(configPath: string, worker: WdioExtensionWorkerInterface): Promise<void> {
+    private async stopWorker(configPath: string, worker: IWdioExtensionWorker): Promise<void> {
         // Return pending stop operation if one is in progress
         const pendingOperation = this._pendingOperations.get(`stop:${configPath}`)
         if (pendingOperation) {
@@ -301,7 +301,7 @@ export class ServerManager implements ServerManagerInterface {
         }
     }
 
-    private async executeStopWorker(configPath: string, worker: WdioExtensionWorkerInterface): Promise<void> {
+    private async executeStopWorker(configPath: string, worker: IWdioExtensionWorker): Promise<void> {
         log.trace(`shutdown the worker ${worker.cid} for ${configPath}`)
         await worker.stop()
         this._workerPool.delete(configPath)

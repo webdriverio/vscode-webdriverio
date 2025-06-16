@@ -4,7 +4,7 @@ import { getLauncherInstance } from '../src/cli.js'
 import { createWorker } from '../src/handler.js'
 import * as parsers from '../src/parsers/index.js'
 import * as test from '../src/test.js'
-import type { LoadConfigOptions, WorkerApi } from '@vscode-wdio/types/api'
+import type { LoadConfigOptions, WorkerApi } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { WebSocket } from 'ws'
 

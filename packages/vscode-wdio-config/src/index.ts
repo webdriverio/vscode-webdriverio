@@ -6,14 +6,9 @@ import { convertUriToPath, normalizePath } from '@vscode-wdio/utils'
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from './find.js'
-import type {
-    WebdriverIOConfig,
-    ConfigPropertyNames,
-    WorkspaceData,
-    ExtensionConfigManagerInterface,
-} from '@vscode-wdio/types'
+import type { WebdriverIOConfig, ConfigPropertyNames, WorkspaceData, IExtensionConfigManager } from '@vscode-wdio/types'
 
-export class ExtensionConfigManager extends EventEmitter implements ExtensionConfigManagerInterface {
+export class ExtensionConfigManager extends EventEmitter implements IExtensionConfigManager {
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebdriverIOConfig

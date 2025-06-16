@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { parse } from '../../src/parsers/index.js'
 import { getAstParser, getCucumberParser } from '../../src/parsers/utils.js'
-import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
+import type { ReadSpecsOptions } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext, TestData, CucumberTestData } from '@vscode-wdio/types/worker'
 
 // Mock fs module

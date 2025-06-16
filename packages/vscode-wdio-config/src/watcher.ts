@@ -1,14 +1,14 @@
 import { convertUriToPath, normalizePath, FileWatcherManager, type WatchPattern } from '@vscode-wdio/utils'
-import type { ServerManagerInterface } from '@vscode-wdio/types/api'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
-import type { RepositoryManagerInterface } from '@vscode-wdio/types/test'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+import type { IWorkerManager } from '@vscode-wdio/types/server'
+import type { IRepositoryManager } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
 
 export class ConfigFileWatcher extends FileWatcherManager {
     constructor(
-        public readonly configManager: ExtensionConfigManagerInterface,
-        private readonly serverManager: ServerManagerInterface,
-        private readonly repositoryManager: RepositoryManagerInterface,
+        public readonly configManager: IExtensionConfigManager,
+        private readonly workerManager: IWorkerManager,
+        private readonly repositoryManager: IRepositoryManager,
         private readonly testfileWatcher: FileWatcherManager
     ) {
         super()
@@ -53,7 +53,7 @@ export class ConfigFileWatcher extends FileWatcherManager {
         const workspaceUris = this.configManager.removeWdioConfig(wdioConfigPath)
         for (const workspaceUri of workspaceUris) {
             this.repositoryManager.removeWdioConfig(workspaceUri, wdioConfigPath)
-            await this.serverManager.reorganize(this.configManager.getWdioConfigPaths())
+            await this.workerManager.reorganize(this.configManager.getWdioConfigPaths())
         }
         this.testfileWatcher.refreshWatchers()
     }

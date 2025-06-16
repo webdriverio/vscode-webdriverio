@@ -8,8 +8,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createWss } from '../src/utils.js'
 import { WdioExtensionWorker } from '../src/worker.js'
-import type { ExtensionApi } from '@vscode-wdio/types/api'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+import type { ExtensionApi } from '@vscode-wdio/types/server'
 import type * as WebSocket from 'ws'
 
 // Mock dependencies
@@ -94,7 +94,7 @@ describe('WdioExtensionWorker', () => {
 
         // Create worker instance
         worker = new WdioExtensionWorker(
-            { globalConfig: { workerIdleTimeout: 600 } } as unknown as ExtensionConfigManagerInterface,
+            { globalConfig: { workerIdleTimeout: 600 } } as unknown as IExtensionConfigManager,
             '#1',
             '/test/path'
         )

@@ -6,7 +6,7 @@ import { WebSocket } from 'ws'
 import { createWorker } from './handler.js'
 import { getLogger } from './logger.js'
 import type { NumericLogLevel } from '@vscode-wdio/types'
-import type { ExtensionApi, WorkerApi } from '@vscode-wdio/types/api'
+import type { ExtensionApi, WorkerApi } from '@vscode-wdio/types/server'
 
 export function createRpcClient(cid: string, url: string) {
     let rpc: ExtensionApi | null = null

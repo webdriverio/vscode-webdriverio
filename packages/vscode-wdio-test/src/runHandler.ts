@@ -1,13 +1,13 @@
 import { dirname } from 'node:path'
 
-import { DebugRunner, TestRunner } from '@vscode-wdio/api'
 import { log } from '@vscode-wdio/logger'
+import { DebugRunner, TestRunner } from '@vscode-wdio/server'
 import * as vscode from 'vscode'
 
 import { TestReporter } from './reporter.js'
 import { getRootTestItem } from './utils.js'
 
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { RepositoryManager } from './manager.js'
 
 class TestQueue {
@@ -27,7 +27,7 @@ class TestQueue {
 }
 
 export function createHandler(
-    configManager: ExtensionConfigManagerInterface,
+    configManager: IExtensionConfigManager,
     repositoryManager: RepositoryManager,
     isDebug = false
 ) {
@@ -132,7 +132,7 @@ function conversionCucumberStep(this: RepositoryManager, testItem: vscode.TestIt
 
 function getWorkspaceFolder(
     this: RepositoryManager,
-    configManager: ExtensionConfigManagerInterface,
+    configManager: IExtensionConfigManager,
     testItem: vscode.TestItem
 ) {
     if (!configManager.isMultiWorkspace) {

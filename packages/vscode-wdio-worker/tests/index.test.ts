@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createRpcClient } from '../src/client.js'
 import { startWorker } from '../src/index.js'
-import type { ExtensionApi } from '@vscode-wdio/types/api'
-import type { LoggerInterface } from '@vscode-wdio/types/utils'
+import type { ExtensionApi } from '@vscode-wdio/types/server'
+import type { ILogger } from '@vscode-wdio/types/utils'
 import type { WebSocket } from 'ws'
 
 // Mock the modules
@@ -53,7 +53,7 @@ describe('worker/index', () => {
         vi.mocked(createRpcClient).mockReturnValue({
             ws: mockWs as unknown as WebSocket,
             client: vi.fn() as unknown as ExtensionApi,
-            log: mockLog as unknown as LoggerInterface,
+            log: mockLog as unknown as ILogger,
         })
     })
 
