@@ -1,4 +1,8 @@
 /* c8 ignore start */
+type ToEventConfig<T> = {
+    [K in keyof T as `update:${string & K}`]: T[K]
+}
+
 export interface WebdriverIOConfig {
     nodeExecutable: string | undefined
     configFilePattern: string[]
@@ -6,6 +10,8 @@ export interface WebdriverIOConfig {
     showOutput: boolean
     logLevel: string
 }
+
+export type WebdriverIOConfigEvent = ToEventConfig<WebdriverIOConfig>
 
 export const EXTENSION_ID = 'webdriverio'
 
