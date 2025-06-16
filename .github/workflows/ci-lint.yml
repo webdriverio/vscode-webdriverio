@@ -1,4 +1,4 @@
-name: Lint
+name: Static code analysis
 
 on:
   workflow_call:
@@ -27,13 +27,6 @@ jobs:
         uses: ./.github/workflows/actions/setup-workspace
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: ⬇️ Download Build Archive
-        uses: ./.github/workflows/actions/download-archive
-        with:
-          name: vscode-webdriverio
-          path: .
-          filename: vscode-webdriverio-build.zip
 
       - name: 📃 Run the lint
         run: pnpm run style:fix
