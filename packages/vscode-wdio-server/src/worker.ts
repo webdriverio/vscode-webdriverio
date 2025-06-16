@@ -206,7 +206,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
             // Start idle monitoring after successful connection
             this.idleMonitor.start()
             this.startHealthCheck()
-            log.debug('Worker process started successfully')
+            log.debug(`[${this.cid}] Worker process started successfully`)
         })
     }
 
