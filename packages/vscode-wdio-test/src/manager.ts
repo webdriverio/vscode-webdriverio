@@ -189,7 +189,7 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
         this._wdioConfigTestItems.push(configItem)
 
         const worker = await this.serverManager.getConnection(wdioConfigPath)
-        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem)
+        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem, this.serverManager)
         this._repos.add(repo)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))

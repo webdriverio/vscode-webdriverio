@@ -16,10 +16,10 @@ export interface RepositoryManagerInterface extends vscode.Disposable {
 
 export interface TestRepositoryInterface extends MetadataRepositoryInterface, vscode.Disposable {
     readonly controller: vscode.TestController
-    readonly worker: WdioExtensionWorkerInterface
     readonly wdioConfigPath: string
     specPatterns: string[]
     framework: string
+    getWorker(): Promise<WdioExtensionWorkerInterface>
     discoverAllTests(): Promise<void>
     reloadSpecFiles(filePaths?: string[]): Promise<void>
     removeSpecFile(specPath: string): void

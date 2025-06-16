@@ -1,8 +1,7 @@
-import type EventEmitter from 'node:events'
 import type * as vscode from 'vscode'
 import type { ResultSet } from './reporter.js'
 import type { TestData } from './test.js'
-import type { NumericLogLevel } from './utils.js'
+import type { NumericLogLevel, TypedEventEmitterInterface } from './utils.js'
 
 export type WdioConfig = {
     specs: string[]
@@ -120,24 +119,22 @@ export interface WorkerRunnerOptions {
     astCollect: boolean
 }
 
-export interface WdioExtensionWorkerInterface extends EventEmitter {
+export interface WdioExtensionWorkerInterface extends TypedEventEmitterInterface<WdioExtensionWorkerEvents> {
     cid: string
     rpc: WorkerApi
     start(): Promise<void>
     waitForStart(): Promise<void>
     stop(): Promise<void>
+    updateIdleTimeout(timeout: number): void
     isConnected(): boolean
     ensureConnected(): Promise<void>
-    emit<K extends keyof WdioExtensionWorkerEvents>(event: K, data: WdioExtensionWorkerEvents[K]): boolean
-    on<K extends keyof WdioExtensionWorkerEvents>(
-        event: K,
-        listener: (data: WdioExtensionWorkerEvents[K]) => void
-    ): this
 }
 
 export interface WdioExtensionWorkerEvents {
     stdout: string
     stderr: string
+    idleTimeout: undefined
+    shutdown: undefined
 }
 
 export interface ServerManagerInterface extends vscode.Disposable {

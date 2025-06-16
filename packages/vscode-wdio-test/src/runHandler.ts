@@ -78,7 +78,7 @@ export function createHandler(
 
             try {
                 const runner = !isDebug
-                    ? new TestRunner(testData.repository.worker)
+                    ? new TestRunner(await testData.repository.getWorker())
                     : new DebugRunner(
                         configManager,
                         getWorkspaceFolder.call(repositoryManager, configManager, testData.testItem),

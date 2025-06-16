@@ -7,6 +7,7 @@ import type { LoadConfigOptions, WdioConfig, WorkerApi } from '@vscode-wdio/type
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 export function createWorker(context: WorkerMetaContext): WorkerApi {
+    let _shutdownRequest: Promise<void> | null
     return {
         /**
          * Run WebdriverIO tests
@@ -31,25 +32,18 @@ export function createWorker(context: WorkerMetaContext): WorkerApi {
             context.log.info('Shutting down worker process')
             context.shutdownRequested = true
             context.log.info('Worker received shutdown request')
-
-            // Implement safe shutdown procedure
-            try {
-                // Give pending tasks a chance to complete
-                if (context.pendingCalls.length > 0) {
-                    await new Promise((resolve) => setTimeout(resolve, 500))
-                }
-
-                // Close WebSocket connection
-                context.ws.close()
-
-                // Set safety timeout in case WebSocket doesn't close
-                setTimeout(() => {
-                    process.exit(0)
-                }, 2000)
-            } catch (error) {
-                console.error('Error during shutdown:', error)
-                process.exit(1)
+            if (context.pendingCalls.length > 0) {
+                await new Promise((resolve) => setTimeout(resolve, 500))
             }
+            _shutdownRequest = new Promise((resolve) => {
+                // close after this request is returned.
+                setTimeout(() => {
+                    context.ws.close()
+                    resolve()
+                    process.exit(0)
+                }, 500)
+            })
+            context.log.info('Worker shutdown requested!')
         },
     }
 }
