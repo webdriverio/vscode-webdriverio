@@ -33,6 +33,7 @@ export class ExtensionConfigManager extends EventEmitter implements ExtensionCon
                 configFilePattern && configFilePattern.length > 0
                     ? configFilePattern
                     : [...DEFAULT_CONFIG_VALUES.configFilePattern],
+            workerIdleTimeout: config.get<number>('workerIdleTimeout', DEFAULT_CONFIG_VALUES.workerIdleTimeout),
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
             logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }
