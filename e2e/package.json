@@ -12,10 +12,10 @@
   "scripts": {
     "test:e2e": "run-s test:e2e:basic test:e2e:workspace",
     "test:e2e:basic": "run-s test:e2e:basic:*",
-    "test:e2e:basic:mocha": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=mocha xvfb-maybe pnpm run wdio",
-    "test:e2e:basic:jasmine": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=jasmine xvfb-maybe pnpm run wdio",
-    "test:e2e:basic:cucumber": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=cucumber xvfb-maybe pnpm run wdio",
-    "test:e2e:workspace": "cross-env VSCODE_WDIO_E2E_FRAMEWORK=workspace xvfb-maybe pnpm run wdio",
+    "test:e2e:basic:mocha": "cross-env VSCODE_WDIO_E2E_SCENARIO=mocha xvfb-maybe pnpm run wdio",
+    "test:e2e:basic:jasmine": "cross-env VSCODE_WDIO_E2E_SCENARIO=jasmine xvfb-maybe pnpm run wdio",
+    "test:e2e:basic:cucumber": "cross-env VSCODE_WDIO_E2E_SCENARIO=cucumber xvfb-maybe pnpm run wdio",
+    "test:e2e:workspace": "cross-env VSCODE_WDIO_E2E_SCENARIO=workspace xvfb-maybe pnpm run wdio",
     "test:smoke": "run-s test:smoke:*",
     "test:smoke:update-config": "xvfb-maybe wdio run ./wdioSmoke.conf.ts",
     "wdio": "wdio run ./wdio.conf.ts"

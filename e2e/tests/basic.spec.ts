@@ -15,7 +15,7 @@ import {
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
-const targetFramework = (process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha') as 'mocha' | 'jasmine'
+const targetFramework = (process.env.VSCODE_WDIO_E2E_SCENARIO || 'mocha') as 'mocha' | 'jasmine'
 
 const expected = createExpected(targetFramework)
 

@@ -9,7 +9,7 @@ import type { Frameworks } from '@wdio/types'
 type TestTargets = 'workspace' | 'mocha' | 'jasmine' | 'cucumber'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
-const target = (process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha') as TestTargets
+const target = (process.env.VSCODE_WDIO_E2E_SCENARIO || 'mocha') as TestTargets
 
 const minimumVersion = minVersion(pkg.engines.vscode)?.version || 'stable'
 
@@ -33,7 +33,15 @@ function defineSpecs(target: TestTargets) {
 const specs = defineSpecs(target)
 let screenshotCount = 0
 
-export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
+export function createBaseConfig(workspacePath: string, userSettings = {}): WebdriverIO.Config {
+    const resolvedUserSettings = Object.assign(
+        {},
+        {
+            'webdriverio.logLevel': 'trace',
+        },
+        userSettings
+    )
+
     return {
         runner: 'local',
         tsConfigPath: './tsconfig.json',
@@ -47,9 +55,7 @@ export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
                     // points to directory where extension package.json is located
                     extensionPath: path.resolve('../packages/vscode-webdriverio'),
                     // optional VS Code settings
-                    userSettings: {
-                        'webdriverio.logLevel': 'trace',
-                    },
+                    userSettings: resolvedUserSettings,
                     workspacePath: path.resolve(workspacePath),
                 },
                 'wdio:enforceWebDriverClassic': true,
