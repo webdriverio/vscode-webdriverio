@@ -91,8 +91,8 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
             return
         }
 
-        this._pauseCounter--
-        if (this._pauseCounter < 1) {
+        this._pauseCounter = this._pauseCounter - 1 < 0 ? 0 : this._pauseCounter - 1
+        if (this._pauseCounter < 1 && !this._timer) {
             this.startTimer()
             log.trace(`[${this._workerId}] IdleMonitor timer resumed`)
         }
