@@ -78,7 +78,9 @@ describe('RepositoryManager', () => {
 
         // Setup ServerManager mock
         serverManager = new ServerManager(configManager)
-        vi.spyOn(serverManager, 'getConnection').mockResolvedValue({} as unknown as WdioExtensionWorkerInterface)
+        vi.spyOn(serverManager, 'getConnection').mockResolvedValue({
+            on: vi.fn(),
+        } as unknown as WdioExtensionWorkerInterface)
 
         // Stub configManager
         vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
@@ -159,7 +161,9 @@ describe('RepositoryManager', () => {
                 },
             ]
             vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
-            vi.spyOn(serverManager, 'getConnection').mockResolvedValue({} as unknown as WdioExtensionWorkerInterface)
+            vi.spyOn(serverManager, 'getConnection').mockResolvedValue({
+                on: vi.fn(),
+            } as unknown as WdioExtensionWorkerInterface)
 
             await repositoryManager.initialize()
             repositoryManager.registerToTestController()

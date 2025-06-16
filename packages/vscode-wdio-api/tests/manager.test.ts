@@ -19,6 +19,7 @@ vi.mock('../src/worker.js', () => {
     WdioExtensionWorker.prototype.start = vi.fn().mockResolvedValue(undefined)
     WdioExtensionWorker.prototype.waitForStart = vi.fn().mockResolvedValue(undefined)
     WdioExtensionWorker.prototype.stop = vi.fn().mockResolvedValue(undefined)
+    WdioExtensionWorker.prototype.on = vi.fn()
     return { WdioExtensionWorker }
 })
 
@@ -35,6 +36,9 @@ vi.mock('../src/utils.js', async (importActual) => {
 })
 
 const mockConfigManager = {
+    globalConfig: {
+        workerIdleTimeout: 600,
+    },
     on: vi.fn(),
 } as unknown as ExtensionConfigManagerInterface
 
@@ -297,14 +301,14 @@ describe('ServerManager', () => {
             const stopWorker = (serverManager as any).stopWorker.bind(serverManager)
 
             // Get the worker from the server pool
-            const worker = (serverManager as any)._serverPool.get('/path/to')
+            const worker = (serverManager as any)._workerPool.get('/path/to')
 
             // Execute
             await stopWorker('/path/to', worker)
 
             // Assert
             expect(worker.stop).toHaveBeenCalledTimes(1)
-            expect((serverManager as any)._serverPool.has('/path/to')).toBe(false)
+            expect((serverManager as any)._workerPool.has('/path/to')).toBe(false)
         })
 
         it('should return the same promise for concurrent stop calls', async () => {
@@ -315,7 +319,7 @@ describe('ServerManager', () => {
             const stopWorker = (serverManager as any).stopWorker.bind(serverManager)
 
             // Get the worker from the server pool
-            const worker = (serverManager as any)._serverPool.get('/path/to')
+            const worker = (serverManager as any)._workerPool.get('/path/to')
 
             // Add tracking
             let executeStopWorkerCalls = 0

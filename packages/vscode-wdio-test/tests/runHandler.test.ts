@@ -242,7 +242,7 @@ describe('Run Handler', () => {
             // Setup
             const mockSpecTestData = createTestItem('spec1', {
                 isConfigFile: true,
-                repository: { worker: {}, framework: 'mocha' },
+                repository: { getWorker: vi.fn(), framework: 'mocha' },
             })
             testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
 
@@ -277,7 +277,7 @@ describe('Run Handler', () => {
             // Setup
             const mockSpecTestData = createTestItem('spec1', {
                 isSpecFile: true,
-                repository: { worker: {} },
+                repository: { getWorker: vi.fn() },
             })
             testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
 
@@ -332,7 +332,7 @@ describe('Run Handler', () => {
             const mockParentTestData = createTestItem('scenario1', {
                 type: 'scenario',
                 isTestcase: true,
-                repository: { framework: 'cucumber', worker: {} },
+                repository: { framework: 'cucumber', getWorker: vi.fn() },
             })
 
             const mockStepTestData = createTestItem(
@@ -340,7 +340,7 @@ describe('Run Handler', () => {
                 {
                     type: 'step',
                     isTestcase: true,
-                    repository: { framework: 'cucumber', worker: {} },
+                    repository: { framework: 'cucumber', getWorker: vi.fn() },
                 },
                 mockParentTestData.testItem
             )
@@ -371,7 +371,7 @@ describe('Run Handler', () => {
             // Setup
             const mockTestData = createTestItem('test1', {
                 isSpecFile: true,
-                repository: { framework: 'mocha', worker: {} },
+                repository: { framework: 'mocha', getWorker: vi.fn() },
             })
             testItemMap.set(mockTestData.testItem, mockTestData.metadata)
 

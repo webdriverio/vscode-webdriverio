@@ -26,7 +26,11 @@ vi.mock('vscode', async () => {
 // Mock logger
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
 
-const mockConfigManager = {} as unknown as ExtensionConfigManagerInterface
+const mockConfigManager = {
+    globalConfig: {
+        workerIdleTimeout: 600,
+    },
+} as unknown as ExtensionConfigManagerInterface
 
 describe('DebugRunner', () => {
     let workspaceFolder: vscode.WorkspaceFolder
