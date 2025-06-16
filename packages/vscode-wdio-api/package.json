@@ -1,31 +1,31 @@
 {
-    "name": "@vscode-wdio/api",
-    "version": "0.3.2",
-    "private": true,
-    "type": "module",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js"
-        }
-    },
-    "scripts": {
-        "build": "tsc -p .",
-        "build:production": "pnpm clean && pnpm run build",
-        "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean": "shx rm -rf out dist coverage"
-    },
-    "dependencies": {
-        "@vscode-wdio/constants": "workspace:*",
-        "@vscode-wdio/logger": "workspace:*",
-        "@vscode-wdio/utils": "workspace:*",
-        "birpc": "^2.3.0",
-        "get-port": "^7.1.0",
-        "which": "^5.0.0",
-        "ws": "^8.18.1"
-    },
-    "devDependencies": {
-        "@types/which": "^3.0.4",
-        "@types/ws": "^8.18.1",
-        "@vscode-wdio/types": "workspace:*"
+  "name": "@vscode-wdio/api",
+  "version": "0.3.2",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
     }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "build:production": "pnpm clean && pnpm run build",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "clean": "shx rm -rf out dist coverage"
+  },
+  "dependencies": {
+    "@vscode-wdio/constants": "workspace:*",
+    "@vscode-wdio/logger": "workspace:*",
+    "@vscode-wdio/utils": "workspace:*",
+    "birpc": "^2.3.0",
+    "get-port": "^7.1.0",
+    "which": "^5.0.0",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/which": "^3.0.4",
+    "@types/ws": "^8.18.1",
+    "@vscode-wdio/types": "workspace:*"
+  }
 }

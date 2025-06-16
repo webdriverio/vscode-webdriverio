@@ -1,126 +1,126 @@
 {
-    "name": "vscode-webdriverio",
-    "displayName": "WebdriverIO",
-    "description": "WebdriverIO for the vscode",
-    "version": "0.3.2",
-    "type": "module",
-    "author": "WebdriverIO Team",
-    "license": "MIT",
-    "main": "./dist/extension.cjs",
-    "exports": {
-        ".": {
-            "requireSource": "./src/extension.ts",
-            "require": "./dist/extension.cjs"
-        },
-        "./worker": {
-            "requireSource": "./src/worker.ts",
-            "require": "./dist/worker.cjs"
-        },
-        "./reporter": {
-            "requireSource": "./src/reporter.ts",
-            "require": "./dist/reporter.cjs"
-        },
-        "./parser/ast": {
-            "requireSource": "./src/parser/ast.ts",
-            "require": "./dist/parser/ast.cjs"
-        },
-        "./parser/cucumber": {
-            "requireSource": "./src/parser/cucumber.ts",
-            "require": "./dist/parser/cucumber.cjs"
-        }
+  "name": "vscode-webdriverio",
+  "displayName": "WebdriverIO",
+  "description": "WebdriverIO for the vscode",
+  "version": "0.3.2",
+  "type": "module",
+  "author": "WebdriverIO Team",
+  "license": "MIT",
+  "main": "./dist/extension.cjs",
+  "exports": {
+    ".": {
+      "requireSource": "./src/extension.ts",
+      "require": "./dist/extension.cjs"
     },
-    "scripts": {
-        "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
-        "build:production": "pnpm clean && pnpm typecheck && pnpm run build --production",
-        "prepackage": "run-s prepackage:*",
-        "prepackage:copy": "pnpm --filter @vscode-wdio/release run copy",
-        "prepackage:convert-emoji": "pnpm --filter @vscode-wdio/release run convert-emoji",
-        "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
-        "package": "vsce package",
-        "publish": "tsx ./scripts/publish.ts",
-        "postpublish": "pnpm --filter @vscode-wdio/release run push",
-        "package:next": "pnpm run package --pre-release",
-        "publish:next": "pnpm run publish --pre-release",
-        "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean": "shx rm -rf out dist coverage"
+    "./worker": {
+      "requireSource": "./src/worker.ts",
+      "require": "./dist/worker.cjs"
     },
-    "devDependencies": {
-        "@vscode-wdio/api": "workspace:*",
-        "@vscode-wdio/config": "workspace:*",
-        "@vscode-wdio/constants": "workspace:*",
-        "@vscode-wdio/logger": "workspace:*",
-        "@vscode-wdio/reporter": "workspace:*",
-        "@vscode-wdio/test": "workspace:*",
-        "@vscode-wdio/types": "workspace:*",
-        "@vscode-wdio/utils": "workspace:*",
-        "@vscode-wdio/worker": "workspace:*",
-        "@vscode/vsce": "^3.4.2"
+    "./reporter": {
+      "requireSource": "./src/reporter.ts",
+      "require": "./dist/reporter.cjs"
     },
-    "publisher": "WebdriverIO",
-    "homepage": "https://webdriver.io",
-    "icon": "assets/icon.png",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/webdriverio/vscode-webdriverio.git"
+    "./parser/ast": {
+      "requireSource": "./src/parser/ast.ts",
+      "require": "./dist/parser/ast.cjs"
     },
-    "bugs": {
-        "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
-    },
-    "keywords": [
-        "WebdriverIO",
-        "test",
-        "typescript",
-        "javascript"
-    ],
-    "categories": [
-        "Testing"
-    ],
-    "engines": {
-        "vscode": "^1.96.0"
-    },
-    "activationEvents": [
-        "onLanguage:javascript",
-        "onLanguage:typescript",
-        "workspaceContains:**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}",
-        "workspaceContains:**/node_modules/.bin/wdio"
-    ],
-    "contributes": {
-        "configuration": {
-            "title": "WebdriverIO",
-            "properties": {
-                "webdriverio.nodeExecutable": {
-                    "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
-                    "type": "string"
-                },
-                "webdriverio.configFilePattern": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "default": [
-                        "**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}"
-                    ],
-                    "description": "Glob pattern for WebdriverIO configuration file"
-                },
-                "webdriverio.logLevel": {
-                    "type": "string",
-                    "enum": [
-                        "trace",
-                        "debug",
-                        "info",
-                        "warn",
-                        "error",
-                        "silent"
-                    ],
-                    "default": "info",
-                    "description": "Set the logLevel"
-                },
-                "webdriverio.showOutput": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show WebdriverIO output in the test result"
-                }
-            }
-        }
+    "./parser/cucumber": {
+      "requireSource": "./src/parser/cucumber.ts",
+      "require": "./dist/parser/cucumber.cjs"
     }
+  },
+  "scripts": {
+    "build": "pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio",
+    "build:production": "pnpm clean && pnpm typecheck && pnpm run build --production",
+    "prepackage": "run-s prepackage:*",
+    "prepackage:copy": "pnpm --filter @vscode-wdio/release run copy",
+    "prepackage:convert-emoji": "pnpm --filter @vscode-wdio/release run convert-emoji",
+    "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
+    "package": "vsce package",
+    "publish": "tsx ./scripts/publish.ts",
+    "postpublish": "pnpm --filter @vscode-wdio/release run push",
+    "package:next": "pnpm run package --pre-release",
+    "publish:next": "pnpm run publish --pre-release",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "clean": "shx rm -rf out dist coverage"
+  },
+  "devDependencies": {
+    "@vscode-wdio/api": "workspace:*",
+    "@vscode-wdio/config": "workspace:*",
+    "@vscode-wdio/constants": "workspace:*",
+    "@vscode-wdio/logger": "workspace:*",
+    "@vscode-wdio/reporter": "workspace:*",
+    "@vscode-wdio/test": "workspace:*",
+    "@vscode-wdio/types": "workspace:*",
+    "@vscode-wdio/utils": "workspace:*",
+    "@vscode-wdio/worker": "workspace:*",
+    "@vscode/vsce": "^3.4.2"
+  },
+  "publisher": "WebdriverIO",
+  "homepage": "https://webdriver.io",
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webdriverio/vscode-webdriverio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/webdriverio/vscode-webdriverio/issues"
+  },
+  "keywords": [
+    "WebdriverIO",
+    "test",
+    "typescript",
+    "javascript"
+  ],
+  "categories": [
+    "Testing"
+  ],
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "workspaceContains:**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}",
+    "workspaceContains:**/node_modules/.bin/wdio"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "WebdriverIO",
+      "properties": {
+        "webdriverio.nodeExecutable": {
+          "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
+          "type": "string"
+        },
+        "webdriverio.configFilePattern": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}"
+          ],
+          "description": "Glob pattern for WebdriverIO configuration file"
+        },
+        "webdriverio.logLevel": {
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "silent"
+          ],
+          "default": "info",
+          "description": "Set the logLevel"
+        },
+        "webdriverio.showOutput": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show WebdriverIO output in the test result"
+        }
+      }
+    }
+  }
 }

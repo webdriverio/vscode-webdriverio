@@ -1,9 +1,9 @@
 {
-    "compilerOptions": {
-        "baseUrl": ".",
-        "rootDir": ".",
-        "lib": ["es2022", "dom"],
-        "types": ["node", "mocha", "@wdio/globals/types", "@wdio/mocha-framework"]
-    },
-    "include": ["tests", "wdio.conf.ts"]
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": ".",
+    "lib": ["es2022", "dom"],
+    "types": ["node", "mocha", "@wdio/globals/types", "@wdio/mocha-framework"]
+  },
+  "include": ["tests", "wdio.conf.ts"]
 }

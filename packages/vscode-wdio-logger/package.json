@@ -1,24 +1,24 @@
 {
-    "name": "@vscode-wdio/logger",
-    "version": "0.3.2",
-    "private": true,
-    "type": "module",
-    "exports": {
-        ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
-    },
-    "scripts": {
-        "build": "tsc -p .",
-        "build:production": "pnpm clean && pnpm run build",
-        "typecheck": "tsc --noEmit --project tsconfig.json",
-        "clean": "shx rm -rf out dist coverage"
-    },
-    "dependencies": {
-        "@vscode-wdio/constants": "workspace:*"
-    },
-    "devDependencies": {
-        "@vscode-wdio/types": "workspace:*"
+  "name": "@vscode-wdio/logger",
+  "version": "0.3.2",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "build:production": "pnpm clean && pnpm run build",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "clean": "shx rm -rf out dist coverage"
+  },
+  "dependencies": {
+    "@vscode-wdio/constants": "workspace:*"
+  },
+  "devDependencies": {
+    "@vscode-wdio/types": "workspace:*"
+  }
 }

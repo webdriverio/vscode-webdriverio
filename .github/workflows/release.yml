@@ -26,6 +26,14 @@ on:
         options:
           - 'yes'
           - 'no'
+      force-bump:
+        description: 'Skip the lerna changed check? (If "yes", `lerna version` will be executed with `--force-publish`)'
+        required: true
+        type: choice
+        default: 'no'
+        options:
+          - 'yes'
+          - 'no'
       dryRun:
         description: 'Dry run? If yes, this workflow will NOT push to remote and NOT publish the extension.'
         required: true
@@ -76,8 +84,11 @@ jobs:
 
       - name: 🚧 Bump the version
         id: bump
-        run: |
-          pnpm lerna version ${{github.event.inputs.releaseType}} --force-publish --no-push --exact --preid next --yes -m "chore(release): %s"
+        run: >
+          pnpm lerna version
+          ${{ github.event.inputs.releaseType }}
+          ${{ github.event.inputs.force-bump == 'yes' && '--force-publish' || '' }}
+          --no-push --exact --preid next --yes -m "chore(release): %s"
         env:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.result }}

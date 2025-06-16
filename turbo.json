@@ -1,32 +1,33 @@
 {
-    "$schema": "https://turbo.build/schema.json",
-    "globalEnv": ["GITHUB_*", "VSCODE_WDIO_*", "VSCE_PAT"],
-    "tasks": {
-        "clean": {},
-        "build": {
-            "dependsOn": ["^build"],
-            "outputs": ["dist"]
-        },
-        "build:production": {
-            "dependsOn": ["^build:production"],
-            "outputs": ["dist"],
-            "cache": false
-        },
-        "typecheck": {
-            "dependsOn": ["^build", "^typecheck"],
-            "cache": false
-        },
-        "vscode-webdriverio#package": {
-            "dependsOn": ["build:production"]
-        },
-        "vscode-webdriverio#publish": {
-            "dependsOn": ["package"]
-        },
-        "vscode-webdriverio#package:next": {
-            "dependsOn": ["build:production"]
-        },
-        "vscode-webdriverio#publish:next": {
-            "dependsOn": ["package:next"]
-        }
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["GITHUB_*", "VSCODE_WDIO_*", "VSCE_PAT"],
+  "tasks": {
+    "clean": {
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist"]
+    },
+    "build:production": {
+      "dependsOn": ["^build:production"],
+      "outputs": ["dist"],
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "^typecheck"]
+    },
+    "vscode-webdriverio#package": {
+      "dependsOn": ["build:production"]
+    },
+    "vscode-webdriverio#publish": {
+      "dependsOn": ["package"]
+    },
+    "vscode-webdriverio#package:next": {
+      "dependsOn": ["build:production"]
+    },
+    "vscode-webdriverio#publish:next": {
+      "dependsOn": ["package:next"]
     }
+  }
 }
