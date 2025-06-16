@@ -22,8 +22,10 @@ function defineSpecs(target: TestTargets) {
 
 const specs = defineSpecs(target)
 
+const settings = target === 'timeout' ? { 'webdriverio.logLevel': 'debug', 'webdriverio.workerIdleTimeout': 2 } : {}
+
 export const config: WebdriverIO.Config = {
-    ...createBaseConfig(workspace, { 'webdriverio.logLevel': 'debug', 'webdriverio.workerIdleTimeout': 2 }),
+    ...createBaseConfig(workspace, settings),
     specs,
     maxInstances: 1,
 }
