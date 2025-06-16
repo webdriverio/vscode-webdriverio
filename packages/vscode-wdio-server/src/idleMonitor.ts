@@ -2,7 +2,7 @@ import EventEmitter from 'node:events'
 
 import { log } from '@vscode-wdio/logger'
 
-import type { WorkerIdleMonitorOptions, IWorkerIdleMonitor } from '@vscode-wdio/types/worker'
+import type { WorkerIdleMonitorOptions, IWorkerIdleMonitor } from '@vscode-wdio/types/server'
 
 /**
  * Monitor worker idle state and emit timeout events
@@ -10,7 +10,7 @@ import type { WorkerIdleMonitorOptions, IWorkerIdleMonitor } from '@vscode-wdio/
 export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonitor {
     private _timer: NodeJS.Timeout | null = null
     private _isActive = false
-    private _isPaused = false
+    private _pauseCounter = 0
     private _idleTimeout: number
     private _isTimeoutDisabled = false
     private readonly _workerId: string
@@ -52,7 +52,7 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
         }
 
         this._isActive = false
-        this._isPaused = false
+        this._pauseCounter = 0
         this.clearTimer()
         log.debug(`[${this._workerId}] IdleMonitor stopped`)
     }
@@ -61,7 +61,7 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
      * Reset the idle timer (called when worker is accessed)
      */
     public resetTimer(): void {
-        if (!this._isActive || this._isPaused || this._isTimeoutDisabled) {
+        if (!this._isActive || this._pauseCounter > 0 || this._isTimeoutDisabled) {
             return
         }
 
@@ -78,7 +78,7 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
             return
         }
 
-        this._isPaused = true
+        this._pauseCounter++
         this.clearTimer()
         log.trace(`[${this._workerId}] IdleMonitor timer paused`)
     }
@@ -91,9 +91,11 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
             return
         }
 
-        this._isPaused = false
-        this.startTimer()
-        log.trace(`[${this._workerId}] IdleMonitor timer resumed`)
+        this._pauseCounter--
+        if (this._pauseCounter < 1) {
+            this.startTimer()
+            log.trace(`[${this._workerId}] IdleMonitor timer resumed`)
+        }
     }
 
     /**
@@ -144,7 +146,7 @@ export class WorkerIdleMonitor extends EventEmitter implements IWorkerIdleMonito
      * Start a new timer with current timeout value
      */
     private startTimer(): void {
-        if (this._isPaused || this._isTimeoutDisabled) {
+        if (this._pauseCounter > 0 || this._isTimeoutDisabled) {
             return
         }
 

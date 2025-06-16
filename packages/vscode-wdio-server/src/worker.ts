@@ -12,8 +12,13 @@ import { WorkerIdleMonitor } from './idleMonitor.js'
 import { createWss, loggingFn, resolveNodePath } from './utils.js'
 
 import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
-import type { ExtensionApi, WdioExtensionWorkerEvents, IWdioExtensionWorker, WorkerApi } from '@vscode-wdio/types/server'
-import type { IWorkerIdleMonitor } from '@vscode-wdio/types/worker'
+import type {
+    ExtensionApi,
+    WdioExtensionWorkerEvents,
+    IWdioExtensionWorker,
+    WorkerApi,
+    IWorkerIdleMonitor,
+} from '@vscode-wdio/types/server'
 import type * as vscode from 'vscode'
 import type { WebSocketServer } from 'ws'
 
@@ -23,6 +28,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
     protected configManager: IExtensionConfigManager
     public cid: string
     protected cwd: string
+    public idleMonitor: IWorkerIdleMonitor
     protected disposables: vscode.Disposable[] = []
     private _workerProcess: ChildProcess | null = null
     private _workerRpc: WorkerApi | null = null
@@ -30,7 +36,6 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
     private _workerConnected = false
     private _server: Server | null = null
     private _wss: WebSocketServer | null = null
-    private _idleMonitor: IWorkerIdleMonitor
 
     constructor(configManager: IExtensionConfigManager, cid: string = '#0', cwd: string) {
         super()
@@ -40,10 +45,10 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
 
         // Initialize idle monitor
         const idleTimeout = this.configManager.globalConfig.workerIdleTimeout
-        this._idleMonitor = new WorkerIdleMonitor(this.cid, { idleTimeout })
+        this.idleMonitor = new WorkerIdleMonitor(this.cid, { idleTimeout })
 
         // Forward idle timeout events
-        this._idleMonitor.on('idleTimeout', () => {
+        this.idleMonitor.on('idleTimeout', () => {
             this.emit('idleTimeout', undefined)
         })
 
@@ -131,7 +136,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
             this._workerConnected = false
 
             // Stop idle monitoring when worker process exits
-            this._idleMonitor.stop()
+            this.idleMonitor.stop()
         })
     }
 
@@ -185,7 +190,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
                         this._workerRpc = null
 
                         // Stop idle monitoring when connection is closed
-                        this._idleMonitor.stop()
+                        this.idleMonitor.stop()
                     }
                 })
 
@@ -199,7 +204,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
             })
         }).then(() => {
             // Start idle monitoring after successful connection
-            this._idleMonitor.start()
+            this.idleMonitor.start()
             this.startHealthCheck()
             log.debug('Worker process started successfully')
         })
@@ -210,7 +215,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
      */
     public async stop(): Promise<void> {
         // Stop idle monitoring first
-        this._idleMonitor.stop()
+        this.idleMonitor.stop()
 
         let shutdownSucceeded = false
 
@@ -296,18 +301,18 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
         }
 
         // Reset idle timer when RPC is accessed
-        this._idleMonitor.resetTimer()
+        this.idleMonitor.resetTimer()
 
         return new Proxy(this._workerRpc, {
             get: <K extends keyof WorkerApi>(target: WorkerApi, prop: K): any => {
                 const originalMethod = target[prop]
                 if (typeof originalMethod === 'function') {
                     return (async (...args: any[]) => {
-                        this._idleMonitor.pauseTimer()
+                        this.idleMonitor.pauseTimer()
                         try {
                             return await (originalMethod as Function).apply(target, args)
                         } finally {
-                            this._idleMonitor.resumeTimer()
+                            this.idleMonitor.resumeTimer()
                         }
                     }) as WorkerApi[K]
                 }
@@ -338,7 +343,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
      * @param timeout Idle timeout in milliseconds
      */
     public updateIdleTimeout(timeout: number): void {
-        this._idleMonitor.updateTimeout(timeout)
+        this.idleMonitor.updateTimeout(timeout)
     }
 
     private startHealthCheck() {

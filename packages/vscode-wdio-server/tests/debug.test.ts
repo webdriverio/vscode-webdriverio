@@ -64,6 +64,10 @@ describe('DebugRunner', () => {
             setDebugTerminationCallback: vi.fn().mockImplementation((callback: () => void) => {
                 terminationCallback = callback
             }),
+            idleMonitor: {
+                pauseTimer: vi.fn(),
+                resumeTimer: vi.fn(),
+            },
         } as unknown as WdioExtensionDebugWorker
 
         mockWorkerResult = {

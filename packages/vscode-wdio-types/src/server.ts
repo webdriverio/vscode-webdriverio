@@ -122,10 +122,10 @@ export interface WorkerRunnerOptions {
 export interface IWdioExtensionWorker extends ITypedEventEmitter<WdioExtensionWorkerEvents> {
     cid: string
     rpc: WorkerApi
+    idleMonitor: IWorkerIdleMonitor
     start(): Promise<void>
     waitForStart(): Promise<void>
     stop(): Promise<void>
-    updateIdleTimeout(timeout: number): void
     isConnected(): boolean
     ensureConnected(): Promise<void>
 }
@@ -141,4 +141,57 @@ export interface IWorkerManager extends vscode.Disposable {
     start(configPaths: string[]): Promise<void>
     getConnection(configPaths: string): Promise<IWdioExtensionWorker>
     reorganize(configPaths: string[]): Promise<void>
+}
+
+export interface IWorkerIdleMonitor {
+    /**
+     * Start monitoring for idle timeout
+     */
+    start(): void
+
+    /**
+     * Stop monitoring and clear any pending timeout
+     */
+    stop(): void
+
+    /**
+     * Reset the idle timer (called when worker is accessed)
+     */
+    resetTimer(): void
+
+    /**
+     * Update the idle timeout configuration
+     * @param timeout New timeout value in seconds (0 or negative to disable)
+     */
+    updateTimeout(timeout: number): void
+
+    /**
+     * Pause the idle timer (called when RPC operation starts)
+     */
+    pauseTimer(): void
+
+    /**
+     * Resume the idle timer (called when RPC operation completes)
+     */
+    resumeTimer(): void
+
+    /**
+     * Check if monitoring is currently active
+     */
+    isActive(): boolean
+
+    /**
+     * Add event listener for idle timeout events
+     * @param event Event name ('idleTimeout')
+     * @param listener Event listener function
+     */
+    on(event: 'idleTimeout', listener: () => void): this
+}
+
+export interface WorkerIdleMonitorOptions {
+    /**
+     * Idle timeout in seconds
+     * Set to 0 or negative value to disable timeout
+     */
+    idleTimeout: number
 }

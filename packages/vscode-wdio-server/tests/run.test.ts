@@ -35,6 +35,10 @@ describe('TestRunner', () => {
             removeListener: vi.fn(),
             ensureConnected: vi.fn().mockResolvedValue(undefined),
             rpc: mockRpc,
+            idleMonitor: {
+                pauseTimer: vi.fn(),
+                resumeTimer: vi.fn(),
+            },
         } as unknown as IWdioExtensionWorker
 
         // Create test runner instance

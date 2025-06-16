@@ -160,7 +160,7 @@ export class WdioWorkerManager implements IWorkerManager {
      */
     private async updateWorkerIdleTimeout(worker: IWdioExtensionWorker, idleTimeout: number): Promise<void> {
         try {
-            worker.updateIdleTimeout(idleTimeout)
+            worker.idleMonitor.updateTimeout(idleTimeout)
             log.debug(`[server manager] successfully updated idle timeout for worker ${worker.cid}`)
         } catch (error) {
             const errorMessage = `Failed to update idle timeout for worker ${worker.cid}: ${error instanceof Error ? error.message : String(error)}`

@@ -16,7 +16,9 @@ export class TestRunner implements vscode.Disposable {
     private _stderr = ''
     private _listeners: Listeners | undefined
 
-    constructor(protected worker: IWdioExtensionWorker) {}
+    constructor(protected worker: IWdioExtensionWorker) {
+        worker.idleMonitor.pauseTimer()
+    }
 
     public get stdout() {
         return this._stdout
@@ -153,6 +155,6 @@ export class TestRunner implements vscode.Disposable {
     }
 
     async dispose() {
-        // noting to do
+        this.worker.idleMonitor.resumeTimer()
     }
 }
