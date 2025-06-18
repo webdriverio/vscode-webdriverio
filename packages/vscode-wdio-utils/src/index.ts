@@ -4,6 +4,7 @@ import type { ITypedEventEmitter } from '@vscode-wdio/types'
 
 export * from './normalize.js'
 export * from './watcher.js'
+export * from './env.js'
 
 export class TypedEventEmitter<Events extends Record<string | symbol, any>>
     extends EventEmitter
