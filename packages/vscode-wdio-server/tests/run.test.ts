@@ -3,8 +3,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createTestItem } from '../../../tests/utils.js'
 import { TestRunner } from '../src/run.js'
-import type { IWdioExtensionWorker } from '@vscode-wdio/types'
+import type { IExtensionConfigManager, IWdioExtensionWorker } from '@vscode-wdio/types'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
+import type * as vscode from 'vscode'
 
 // Mock dependencies
 vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))
@@ -13,12 +14,24 @@ vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'
 vi.mock('../src/debug.js', () => ({}))
 
 describe('TestRunner', () => {
+    let workspaceFolder: vscode.WorkspaceFolder
     let testRunner: TestRunner
     let mockWorker: IWdioExtensionWorker
     let mockRpc: any
+    let mockConfigManager: IExtensionConfigManager
 
     beforeEach(() => {
         vi.resetAllMocks()
+        workspaceFolder = {
+            uri: { fsPath: '/workspace' } as vscode.Uri,
+            name: 'Test Workspace',
+            index: 0,
+        }
+        mockConfigManager = {
+            globalConfig: {
+                workerIdleTimeout: 600,
+            },
+        } as unknown as IExtensionConfigManager
 
         // Create mock worker
         mockRpc = {
@@ -42,7 +55,7 @@ describe('TestRunner', () => {
         } as unknown as IWdioExtensionWorker
 
         // Create test runner instance
-        testRunner = new TestRunner(mockWorker)
+        testRunner = new TestRunner(mockConfigManager, workspaceFolder, mockWorker)
     })
 
     afterEach(() => {

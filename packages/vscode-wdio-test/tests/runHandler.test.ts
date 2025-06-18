@@ -46,6 +46,7 @@ vi.mock('../src/utils.js', async (importActual) => {
     const actual = await importActual<typeof import('../src/utils.js')>()
     return {
         ...actual,
+        getWorkspaceFolder: vi.fn(),
         createReporter: vi.fn(),
     }
 })
@@ -146,7 +147,7 @@ describe('Run Handler', () => {
             } as unknown as vscode.TestRunRequest
 
             // Setup TestRunner mock
-            const mockTestRunner = new TestRunner({} as any)
+            const mockTestRunner = new TestRunner({} as any, {} as any, {} as any)
             ;(mockTestRunner.run as any).mockResolvedValue({
                 detail: [],
                 log: 'Test completed',
@@ -183,7 +184,7 @@ describe('Run Handler', () => {
             const request = {} as vscode.TestRunRequest
 
             // Setup TestRunner mock
-            const mockTestRunner = new TestRunner({} as any)
+            const mockTestRunner = new TestRunner({} as any, {} as any, {} as any)
             ;(mockTestRunner.run as any).mockResolvedValue({
                 detail: [],
                 log: 'Test completed',

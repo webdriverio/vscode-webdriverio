@@ -1,6 +1,7 @@
 import { log } from '@vscode-wdio/logger'
 
 import { getGrep, getRange, getCucumberSpec, getSpec } from './utils.js'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 
 import type { RunTestOptions, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 import type { TestItemMetadata, TestItemMetadataWithRepository } from '@vscode-wdio/types/test'
@@ -16,7 +17,11 @@ export class TestRunner implements vscode.Disposable {
     private _stderr = ''
     private _listeners: Listeners | undefined
 
-    constructor(protected worker: IWdioExtensionWorker) {
+    constructor(
+        protected configManager: IExtensionConfigManager,
+        protected workspaceFolder: vscode.WorkspaceFolder | undefined,
+        protected worker: IWdioExtensionWorker
+    ) {
         worker.idleMonitor.pauseTimer()
     }
 
