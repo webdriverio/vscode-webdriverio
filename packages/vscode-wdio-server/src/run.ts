@@ -85,6 +85,7 @@ export class TestRunner implements vscode.Disposable {
             specs,
             grep,
             range,
+            env: { paths: [], override: false }, // TODO: implement the logic for envFile
         }
     }
 

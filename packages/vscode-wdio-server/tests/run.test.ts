@@ -87,6 +87,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js'],
                 grep: 'MyTest',
                 range: testData.testItem.range,
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
             })
 
             // Verify listeners were removed
@@ -118,6 +119,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
             })
 
             // Verify result
@@ -140,6 +142,7 @@ describe('TestRunner', () => {
                 specs: [],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
             })
 
             // Verify result
@@ -162,6 +165,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js:11:21'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
             })
 
             // Verify result
@@ -202,6 +206,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js:11:21'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
             })
 
             // Verify result

@@ -36,7 +36,16 @@ export type WorkerApi = {
     shutdown(): Promise<void>
 }
 
-export interface ReadSpecsOptions {
+export interface EnvOptions {
+    paths: string[]
+    override: boolean
+}
+
+export interface CommonRequestOptions {
+    env: EnvOptions
+}
+
+export interface ReadSpecsOptions extends CommonRequestOptions {
     specs: string[]
 }
 
@@ -45,7 +54,7 @@ export type ReadSpecsResult = {
     tests: TestData[]
 }
 
-export interface LoadConfigOptions {
+export interface LoadConfigOptions extends CommonRequestOptions {
     configFilePath: string
 }
 
@@ -58,7 +67,7 @@ export type ExtensionApi = {
 }
 
 // Test run options
-export interface RunTestOptions {
+export interface RunTestOptions extends CommonRequestOptions {
     // Path to WebdriverIO config file
     configPath: string
     // Spec files to run (optional)
@@ -81,42 +90,6 @@ export interface TestResultData {
     error?: string
     // The detail test result (this is set the stringified json data)
     json: ResultSet[]
-}
-
-export interface EventReady {
-    type: 'ready'
-    configs: string[]
-    workspaceSource: string | false
-}
-
-export interface EventDebug {
-    type: 'debug'
-    args: string[]
-}
-
-export interface EventError {
-    type: 'error'
-    error: string
-}
-
-export type WorkerEvent = EventReady | EventDebug | EventError
-
-export interface WorkerInitMetadata {
-    id: string
-    cwd: string
-    arguments?: string
-    configFile?: string
-    workspaceFile?: string
-    env: Record<string, any> | undefined
-    pnpApi?: string
-    pnpLoader?: string
-}
-
-export interface WorkerRunnerOptions {
-    type: 'init'
-    meta: WorkerInitMetadata
-    debug: boolean
-    astCollect: boolean
 }
 
 export interface IWdioExtensionWorker extends ITypedEventEmitter<WdioExtensionWorkerEvents> {

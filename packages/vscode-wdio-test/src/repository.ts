@@ -71,7 +71,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     public async discoverAllTests(): Promise<void> {
         try {
             const worker = await this.getWorker()
-            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const config = await worker.rpc.loadWdioConfig({
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
+                configFilePath: this.wdioConfigPath,
+            })
 
             if (!config) {
                 return
@@ -105,7 +108,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     public async reloadSpecFiles(filePaths: string[] = []): Promise<void> {
         try {
             const worker = await this.getWorker()
-            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const config = await worker.rpc.loadWdioConfig({
+                env: { paths: [], override: false }, // TODO: implement the logic for envFile
+                configFilePath: this.wdioConfigPath,
+            })
             if (!config) {
                 return
             }
@@ -192,7 +198,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
         const worker = await this.getWorker()
-        const testData = await worker.rpc.readSpecs({ specs })
+        const testData = await worker.rpc.readSpecs({
+            env: { paths: [], override: false }, // TODO: implement the logic for envFile
+            specs,
+        })
 
         const fileTestItems = (
             await Promise.all(
