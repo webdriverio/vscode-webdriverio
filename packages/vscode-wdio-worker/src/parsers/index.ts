@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises'
 import path from 'node:path'
 
 import { getAstParser, getCucumberParser } from './utils.js'
-import type { ReadSpecsOptions } from '@vscode-wdio/types/api'
+import type { ReadSpecsOptions } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 async function parseFeatureFile(context: WorkerMetaContext, contents: string, normalizeSpecPath: string) {

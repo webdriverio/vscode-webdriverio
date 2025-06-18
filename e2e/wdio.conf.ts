@@ -2,6 +2,7 @@ import * as path from 'node:path'
 import * as url from 'node:url'
 
 import { minVersion } from 'semver'
+import shell from 'shelljs'
 
 import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
 import type { Frameworks } from '@wdio/types'
@@ -9,7 +10,7 @@ import type { Frameworks } from '@wdio/types'
 type TestTargets = 'workspace' | 'mocha' | 'jasmine' | 'cucumber'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
-const target = (process.env.VSCODE_WDIO_E2E_FRAMEWORK || 'mocha') as TestTargets
+const target = (process.env.VSCODE_WDIO_E2E_SCENARIO || 'mocha') as TestTargets
 
 const minimumVersion = minVersion(pkg.engines.vscode)?.version || 'stable'
 
@@ -33,7 +34,15 @@ function defineSpecs(target: TestTargets) {
 const specs = defineSpecs(target)
 let screenshotCount = 0
 
-export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
+export function createBaseConfig(workspacePath: string, userSettings = {}): WebdriverIO.Config {
+    const resolvedUserSettings = Object.assign(
+        {},
+        {
+            'webdriverio.logLevel': 'trace',
+        },
+        userSettings
+    )
+
     return {
         runner: 'local',
         tsConfigPath: './tsconfig.json',
@@ -47,9 +56,7 @@ export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
                     // points to directory where extension package.json is located
                     extensionPath: path.resolve('../packages/vscode-webdriverio'),
                     // optional VS Code settings
-                    userSettings: {
-                        'webdriverio.logLevel': 'trace',
-                    },
+                    userSettings: resolvedUserSettings,
                     workspacePath: path.resolve(workspacePath),
                 },
                 'wdio:enforceWebDriverClassic': true,
@@ -69,6 +76,14 @@ export function createBaseConfig(workspacePath: string): WebdriverIO.Config {
             ui: 'bdd',
             timeout: 6000000,
             require: ['assertions/index.ts'],
+        },
+        before: async function (_capabilities, _specs, _browser) {
+            if (process.platform === 'linux') {
+                const result = shell.exec('xdotool search --onlyvisible --name code')
+                const windowId = result.stdout.trim()
+                shell.exec(`xdotool windowmove ${windowId} 0 0`)
+                shell.exec(`xdotool windowsize ${windowId} 100% 100%`)
+            }
         },
         afterTest: async function (_test: unknown, _context: unknown, result: Frameworks.TestResult) {
             if (!result.passed) {

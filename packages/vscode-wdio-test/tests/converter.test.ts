@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import { convertPathToUri, convertTestData, isCucumberFeatureFile } from '../src/converter.js'
-import type { ReadSpecsResult } from '@vscode-wdio/types/api'
+import type { ReadSpecsResult } from '@vscode-wdio/types/server'
 
 // Mock dependencies
 vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))

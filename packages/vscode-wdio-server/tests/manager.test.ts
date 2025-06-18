@@ -2,9 +2,9 @@ import { dirname, join, normalize } from 'node:path'
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
-import { ServerManager } from '../src/manager.js'
+import { WdioWorkerManager } from '../src/manager.js'
 import { WdioExtensionWorker } from '../src/worker.js'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 
 vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))
 
@@ -19,6 +19,7 @@ vi.mock('../src/worker.js', () => {
     WdioExtensionWorker.prototype.start = vi.fn().mockResolvedValue(undefined)
     WdioExtensionWorker.prototype.waitForStart = vi.fn().mockResolvedValue(undefined)
     WdioExtensionWorker.prototype.stop = vi.fn().mockResolvedValue(undefined)
+    WdioExtensionWorker.prototype.on = vi.fn()
     return { WdioExtensionWorker }
 })
 
@@ -35,16 +36,19 @@ vi.mock('../src/utils.js', async (importActual) => {
 })
 
 const mockConfigManager = {
+    globalConfig: {
+        workerIdleTimeout: 600,
+    },
     on: vi.fn(),
-} as unknown as ExtensionConfigManagerInterface
+} as unknown as IExtensionConfigManager
 
 describe('ServerManager', () => {
-    let serverManager: ServerManager
+    let workerManager: WdioWorkerManager
 
     // Create a fresh instance of ServerManager before each test
     beforeEach(() => {
         vi.resetAllMocks()
-        serverManager = new ServerManager(mockConfigManager)
+        workerManager = new WdioWorkerManager(mockConfigManager)
     })
 
     afterEach(() => {
@@ -57,7 +61,7 @@ describe('ServerManager', () => {
             const configPaths = ['/path/to/wdio.config.js', '/path/to/wdio.config.ts', '/another/path/wdio.config.js']
 
             // Execute
-            await serverManager.start(configPaths)
+            await workerManager.start(configPaths)
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(2)
@@ -70,7 +74,7 @@ describe('ServerManager', () => {
         })
 
         it('should handle empty config paths array', async () => {
-            await serverManager.start([])
+            await workerManager.start([])
 
             expect(WdioExtensionWorker).not.toHaveBeenCalled()
         })
@@ -82,13 +86,13 @@ describe('ServerManager', () => {
             const configPath = join(process.cwd(), 'path', 'to', '/wdio.config.js')
 
             // First call to create server
-            const result = await serverManager.getConnection(configPath)
+            const result = await workerManager.getConnection(configPath)
 
             // Reset mocks before second call
             vi.clearAllMocks()
 
             // Execute - second call should use existing server
-            const cachedResult = await serverManager.getConnection(configPath)
+            const cachedResult = await workerManager.getConnection(configPath)
 
             // Assert - WdioExtensionWorker constructor should not be called again
             expect(WdioExtensionWorker).not.toHaveBeenCalled()
@@ -102,7 +106,7 @@ describe('ServerManager', () => {
             const wdioDirName = dirname(configPath)
 
             // Execute
-            const result = await serverManager.getConnection(configPath)
+            const result = await workerManager.getConnection(configPath)
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(1)
@@ -113,10 +117,10 @@ describe('ServerManager', () => {
 
         it('should increment the id for each new worker', async () => {
             // Setup - create first worker
-            await serverManager.getConnection('/path/to/wdio.config.js')
+            await workerManager.getConnection('/path/to/wdio.config.js')
 
             // Execute - create second worker with different path
-            await serverManager.getConnection('/another/path/wdio.config.js')
+            await workerManager.getConnection('/another/path/wdio.config.js')
 
             // Assert
             expect(WdioExtensionWorker).toHaveBeenCalledTimes(2)
@@ -130,10 +134,10 @@ describe('ServerManager', () => {
             // Setup - create multiple workers
             const configPaths = ['/path/to/wdio.config.js', '/another/path/wdio.config.js']
 
-            await serverManager.start(configPaths)
+            await workerManager.start(configPaths)
 
             // Execute
-            await serverManager.dispose()
+            await workerManager.dispose()
 
             // Assert
             expect(vi.mocked(WdioExtensionWorker).mock.instances.length).toBe(2)
@@ -142,7 +146,7 @@ describe('ServerManager', () => {
 
         it('should handle empty server pool', async () => {
             // Execute
-            await serverManager.dispose()
+            await workerManager.dispose()
 
             // Assert - should not throw an error
             expect(WdioExtensionWorker).not.toHaveBeenCalled()
@@ -152,12 +156,12 @@ describe('ServerManager', () => {
     describe('reorganize', () => {
         it('should stop unnecessary workers and start new ones', async () => {
             // Setup - create initial workers
-            await serverManager.start(['/path/to/wdio.config.js', '/another/path/wdio.config.js'])
+            await workerManager.start(['/path/to/wdio.config.js', '/another/path/wdio.config.js'])
 
             vi.clearAllMocks()
 
             // Execute - reorganize with different paths
-            await serverManager.reorganize(['/path/to/wdio.config.js', '/new/path/wdio.config.js'])
+            await workerManager.reorganize(['/path/to/wdio.config.js', '/new/path/wdio.config.js'])
 
             // Assert
             // Should stop one worker
@@ -178,8 +182,8 @@ describe('ServerManager', () => {
             const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
             // Mock createWorker to add delay and tracking
-            const originalCreateWorker = (serverManager as any).createWorker.bind(serverManager)
-            vi.spyOn(serverManager as any, 'createWorker').mockImplementation((async (
+            const originalCreateWorker = (workerManager as any).createWorker.bind(workerManager)
+            vi.spyOn(workerManager as any, 'createWorker').mockImplementation((async (
                 id: number,
                 configPath: string
             ) => {
@@ -189,9 +193,9 @@ describe('ServerManager', () => {
             }) as any)
 
             // Execute multiple operations concurrently
-            const promise1 = serverManager.getConnection('/path/1/wdio.config.js')
-            const promise2 = serverManager.getConnection('/path/2/wdio.config.js')
-            const promise3 = serverManager.getConnection('/path/3/wdio.config.js')
+            const promise1 = workerManager.getConnection('/path/1/wdio.config.js')
+            const promise2 = workerManager.getConnection('/path/2/wdio.config.js')
+            const promise3 = workerManager.getConnection('/path/3/wdio.config.js')
 
             // Wait for all operations to complete
             await Promise.all([promise1, promise2, promise3])
@@ -208,8 +212,8 @@ describe('ServerManager', () => {
             const startCount = { count: 0 }
 
             // Mock createWorker to track calls
-            const originalCreateWorker = (serverManager as any).createWorker.bind(serverManager)
-            vi.spyOn(serverManager as any, 'createWorker').mockImplementation((async (
+            const originalCreateWorker = (workerManager as any).createWorker.bind(workerManager)
+            vi.spyOn(workerManager as any, 'createWorker').mockImplementation((async (
                 id: number,
                 configPath: string
             ) => {
@@ -221,7 +225,7 @@ describe('ServerManager', () => {
             // Execute multiple operations for the same path concurrently
             const promises = Array(5)
                 .fill(null)
-                .map(() => serverManager.getConnection('/same/path/wdio.config.js'))
+                .map(() => workerManager.getConnection('/same/path/wdio.config.js'))
 
             // Wait for all operations to complete
             const results = await Promise.all(promises)
@@ -244,7 +248,7 @@ describe('ServerManager', () => {
             const configPath = '/path/to/wdio.config.js'
 
             // Access private method using any cast
-            const startWorker = (serverManager as any).startWorker.bind(serverManager)
+            const startWorker = (workerManager as any).startWorker.bind(workerManager)
 
             // Execute
             const result = await startWorker(id, configPath)
@@ -264,11 +268,11 @@ describe('ServerManager', () => {
             const configPath = '/path/to/wdio.config.js'
 
             // Access private method using any cast
-            const startWorker = (serverManager as any).startWorker.bind(serverManager)
+            const startWorker = (workerManager as any).startWorker.bind(workerManager)
 
             // Add tracking to see if createWorker is called multiple times
             let createWorkerCalls = 0
-            vi.spyOn(serverManager as any, 'createWorker').mockImplementation((async (id: number, path: string) => {
+            vi.spyOn(workerManager as any, 'createWorker').mockImplementation((async (id: number, path: string) => {
                 createWorkerCalls++
                 // Mock delay to ensure operations overlap
                 await new Promise((resolve) => setTimeout(resolve, 50))
@@ -291,35 +295,35 @@ describe('ServerManager', () => {
     describe('stopWorker', () => {
         it('should stop a worker and remove it from the server pool', async () => {
             // Setup - create a worker first
-            await serverManager.getConnection('/path/to/wdio.config.js')
+            await workerManager.getConnection('/path/to/wdio.config.js')
 
             // Access private methods using any cast
-            const stopWorker = (serverManager as any).stopWorker.bind(serverManager)
+            const stopWorker = (workerManager as any).stopWorker.bind(workerManager)
 
             // Get the worker from the server pool
-            const worker = (serverManager as any)._serverPool.get('/path/to')
+            const worker = (workerManager as any)._workerPool.get('/path/to')
 
             // Execute
             await stopWorker('/path/to', worker)
 
             // Assert
             expect(worker.stop).toHaveBeenCalledTimes(1)
-            expect((serverManager as any)._serverPool.has('/path/to')).toBe(false)
+            expect((workerManager as any)._workerPool.has('/path/to')).toBe(false)
         })
 
         it('should return the same promise for concurrent stop calls', async () => {
             // Setup - create a worker first
-            await serverManager.getConnection('/path/to/wdio.config.js')
+            await workerManager.getConnection('/path/to/wdio.config.js')
 
             // Access private methods using any cast
-            const stopWorker = (serverManager as any).stopWorker.bind(serverManager)
+            const stopWorker = (workerManager as any).stopWorker.bind(workerManager)
 
             // Get the worker from the server pool
-            const worker = (serverManager as any)._serverPool.get('/path/to')
+            const worker = (workerManager as any)._workerPool.get('/path/to')
 
             // Add tracking
             let executeStopWorkerCalls = 0
-            vi.spyOn(serverManager as any, 'executeStopWorker').mockImplementation(async () => {
+            vi.spyOn(workerManager as any, 'executeStopWorker').mockImplementation(async () => {
                 executeStopWorkerCalls++
                 // Mock delay to ensure operations overlap
                 await new Promise((resolve) => setTimeout(resolve, 50))

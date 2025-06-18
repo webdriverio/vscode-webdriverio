@@ -1,15 +1,15 @@
 import { LOG_LEVEL } from '@vscode-wdio/constants'
-import type { LoggerInterface, NumericLogLevel } from '@vscode-wdio/types'
-import type { ExtensionApi } from '@vscode-wdio/types/api'
+import type { ILogger, NumericLogLevel } from '@vscode-wdio/types'
+import type { ExtensionApi } from '@vscode-wdio/types/server'
 
-const weakLoggers = new WeakMap<ExtensionApi, LoggerInterface>()
+const weakLoggers = new WeakMap<ExtensionApi, ILogger>()
 
 export function getLogger(client: ExtensionApi) {
     const logger = weakLoggers.get(client)
     if (logger) {
         return logger
     }
-    class Logger implements LoggerInterface {
+    class Logger implements ILogger {
         constructor(private readonly _client: ExtensionApi) {}
 
         private log(loglevel: NumericLogLevel, message: unknown) {

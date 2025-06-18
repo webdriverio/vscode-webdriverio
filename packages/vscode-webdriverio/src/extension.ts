@@ -1,7 +1,7 @@
-import { ServerManager } from '@vscode-wdio/api'
 import { ConfigFileWatcher, ExtensionConfigManager } from '@vscode-wdio/config'
 import { EXTENSION_ID } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
+import { WdioWorkerManager } from '@vscode-wdio/server'
 import { RepositoryManager, TestfileWatcher } from '@vscode-wdio/test'
 import * as vscode from 'vscode'
 
@@ -25,7 +25,7 @@ class WdioExtension implements vscode.Disposable {
     constructor(
         private controller = vscode.tests.createTestController(EXTENSION_ID, 'WebdriverIO'),
         private configManager = new ExtensionConfigManager(),
-        private serverManager = new ServerManager(configManager)
+        private workerManager = new WdioWorkerManager(configManager)
     ) {}
 
     async activate() {
@@ -35,14 +35,14 @@ class WdioExtension implements vscode.Disposable {
         const configPaths = this.configManager.getWdioConfigPaths()
 
         // Start worker process asynchronously
-        const starting = this.serverManager.start(configPaths)
+        const starting = this.workerManager.start(configPaths)
 
         // Create Manages and watchers
-        const repositoryManager = new RepositoryManager(this.controller, this.configManager, this.serverManager)
+        const repositoryManager = new RepositoryManager(this.controller, this.configManager, this.workerManager)
         const testfileWatcher = new TestfileWatcher(repositoryManager)
         const configFileWatcher = new ConfigFileWatcher(
             this.configManager,
-            this.serverManager,
+            this.workerManager,
             repositoryManager,
             testfileWatcher
         )
@@ -52,7 +52,7 @@ class WdioExtension implements vscode.Disposable {
             testfileWatcher,
             configFileWatcher,
             repositoryManager,
-            this.serverManager,
+            this.workerManager,
             this.configManager,
             this.controller,
         ]

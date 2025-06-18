@@ -2,7 +2,7 @@ import { LOG_LEVEL } from '@vscode-wdio/constants'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { getLogger } from '../src/logger.js'
-import type { ExtensionApi } from '@vscode-wdio/types/api'
+import type { ExtensionApi } from '@vscode-wdio/types/server'
 
 describe('Logger', () => {
     // Mock the ExtensionApi client

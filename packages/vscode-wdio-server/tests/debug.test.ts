@@ -7,7 +7,7 @@ import { DebugRunner, DebugSessionTerminatedError, WdioExtensionDebugWorker } fr
 import * as runModule from '../src/run.js'
 import * as workerModule from '../src/worker.js'
 
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 
 // Mock VSCode
 vi.mock('vscode', async () => {
@@ -26,7 +26,11 @@ vi.mock('vscode', async () => {
 // Mock logger
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
 
-const mockConfigManager = {} as unknown as ExtensionConfigManagerInterface
+const mockConfigManager = {
+    globalConfig: {
+        workerIdleTimeout: 600,
+    },
+} as unknown as IExtensionConfigManager
 
 describe('DebugRunner', () => {
     let workspaceFolder: vscode.WorkspaceFolder
@@ -60,6 +64,10 @@ describe('DebugRunner', () => {
             setDebugTerminationCallback: vi.fn().mockImplementation((callback: () => void) => {
                 terminationCallback = callback
             }),
+            idleMonitor: {
+                pauseTimer: vi.fn(),
+                resumeTimer: vi.fn(),
+            },
         } as unknown as WdioExtensionDebugWorker
 
         mockWorkerResult = {

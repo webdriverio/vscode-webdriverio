@@ -159,39 +159,7 @@ importers:
         specifier: ^7.7.2
         version: 7.7.2
 
-  packages/vscode-wdio-api:
-    dependencies:
-      '@vscode-wdio/constants':
-        specifier: workspace:*
-        version: link:../vscode-wdio-constants
-      '@vscode-wdio/logger':
-        specifier: workspace:*
-        version: link:../vscode-wdio-logger
-      '@vscode-wdio/utils':
-        specifier: workspace:*
-        version: link:../vscode-wdio-utils
-      birpc:
-        specifier: ^2.3.0
-        version: 2.4.0
-      get-port:
-        specifier: ^7.1.0
-        version: 7.1.0
-      which:
-        specifier: ^5.0.0
-        version: 5.0.0
-      ws:
-        specifier: ^8.18.1
-        version: 8.18.2
-    devDependencies:
-      '@types/which':
-        specifier: ^3.0.4
-        version: 3.0.4
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      '@vscode-wdio/types':
-        specifier: workspace:*
-        version: link:../vscode-wdio-types
+  infra/xvfb-patch: {}
 
   packages/vscode-wdio-config:
     dependencies:
@@ -240,11 +208,42 @@ importers:
         specifier: ^9.13.0
         version: 9.15.0
 
+  packages/vscode-wdio-server:
+    dependencies:
+      '@vscode-wdio/constants':
+        specifier: workspace:*
+        version: link:../vscode-wdio-constants
+      '@vscode-wdio/logger':
+        specifier: workspace:*
+        version: link:../vscode-wdio-logger
+      '@vscode-wdio/utils':
+        specifier: workspace:*
+        version: link:../vscode-wdio-utils
+      birpc:
+        specifier: ^2.3.0
+        version: 2.4.0
+      get-port:
+        specifier: ^7.1.0
+        version: 7.1.0
+      which:
+        specifier: ^5.0.0
+        version: 5.0.0
+      ws:
+        specifier: ^8.18.1
+        version: 8.18.2
+    devDependencies:
+      '@types/which':
+        specifier: ^3.0.4
+        version: 3.0.4
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
+      '@vscode-wdio/types':
+        specifier: workspace:*
+        version: link:../vscode-wdio-types
+
   packages/vscode-wdio-test:
     dependencies:
-      '@vscode-wdio/api':
-        specifier: workspace:*
-        version: link:../vscode-wdio-api
       '@vscode-wdio/config':
         specifier: workspace:*
         version: link:../vscode-wdio-config
@@ -254,6 +253,9 @@ importers:
       '@vscode-wdio/logger':
         specifier: workspace:*
         version: link:../vscode-wdio-logger
+      '@vscode-wdio/server':
+        specifier: workspace:*
+        version: link:../vscode-wdio-server
       '@vscode-wdio/utils':
         specifier: workspace:*
         version: link:../vscode-wdio-utils
@@ -327,9 +329,6 @@ importers:
 
   packages/vscode-webdriverio:
     devDependencies:
-      '@vscode-wdio/api':
-        specifier: workspace:*
-        version: link:../vscode-wdio-api
       '@vscode-wdio/config':
         specifier: workspace:*
         version: link:../vscode-wdio-config
@@ -342,6 +341,9 @@ importers:
       '@vscode-wdio/reporter':
         specifier: workspace:*
         version: link:../vscode-wdio-reporter
+      '@vscode-wdio/server':
+        specifier: workspace:*
+        version: link:../vscode-wdio-server
       '@vscode-wdio/test':
         specifier: workspace:*
         version: link:../vscode-wdio-test

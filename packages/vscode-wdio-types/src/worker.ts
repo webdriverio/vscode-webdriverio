@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws'
 import type { SourceRange, TestData } from './test.js'
-import type { LoggerInterface } from './utils.js'
+import type { ILogger } from './utils.js'
 
 export type TestCodeParser = (fileContent: string, uri: string) => TestData[]
 
@@ -31,7 +31,7 @@ export type { SourceRange, TestData }
 
 export interface WorkerMetaContext {
     cwd: string
-    log: LoggerInterface
+    log: ILogger
     ws: WebSocket
     shutdownRequested: boolean
     pendingCalls: Array<() => void>

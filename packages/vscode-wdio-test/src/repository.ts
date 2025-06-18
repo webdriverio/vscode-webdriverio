@@ -9,26 +9,49 @@ import { convertPathToUri, convertTestData } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
 
-import type { WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
-import type { VscodeTestData, TestRepositoryInterface } from '@vscode-wdio/types/test'
+import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
+import type { VscodeTestData, ITestRepository } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
+
+class WorkerProxy extends MetadataRepository {
+    private _worker: IWdioExtensionWorker | undefined
+    constructor(
+        private readonly _wdioConfigPath: string,
+        worker: IWdioExtensionWorker,
+        private workerManager: IWorkerManager
+    ) {
+        super()
+        this._worker = worker
+        this._worker.on('shutdown', () => {
+            this._worker = undefined
+        })
+    }
+
+    async getWorker() {
+        if (!this._worker) {
+            this._worker = await this.workerManager.getConnection(this._wdioConfigPath)
+        }
+        return this._worker
+    }
+}
 
 /**
  * TestRepository class that manages all WebdriverIO tests at
  * the single WebdriverIO configuration file
  */
-export class TestRepository extends MetadataRepository implements TestRepositoryInterface {
+export class TestRepository extends WorkerProxy implements ITestRepository {
     private _specPatterns: string[] = []
     private _fileMap = new Map<string, vscode.TestItem>()
     private _framework: string | undefined = undefined
 
     constructor(
         public readonly controller: vscode.TestController,
-        public readonly worker: WdioExtensionWorkerInterface,
+        _worker: IWdioExtensionWorker,
         public readonly wdioConfigPath: string,
-        private _wdioConfigTestItem: vscode.TestItem
+        private _wdioConfigTestItem: vscode.TestItem,
+        workerManager: IWorkerManager
     ) {
-        super()
+        super(wdioConfigPath, _worker, workerManager)
     }
 
     public get specPatterns() {
@@ -47,7 +70,8 @@ export class TestRepository extends MetadataRepository implements TestRepository
      */
     public async discoverAllTests(): Promise<void> {
         try {
-            const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const worker = await this.getWorker()
+            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
 
             if (!config) {
                 return
@@ -80,7 +104,8 @@ export class TestRepository extends MetadataRepository implements TestRepository
      */
     public async reloadSpecFiles(filePaths: string[] = []): Promise<void> {
         try {
-            const config = await this.worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const worker = await this.getWorker()
+            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
             if (!config) {
                 return
             }
@@ -166,7 +191,8 @@ export class TestRepository extends MetadataRepository implements TestRepository
             this._fileMap.clear()
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
-        const testData = await this.worker.rpc.readSpecs({ specs })
+        const worker = await this.getWorker()
+        const testData = await worker.rpc.readSpecs({ specs })
 
         const fileTestItems = (
             await Promise.all(
@@ -323,7 +349,7 @@ export class TestRepository extends MetadataRepository implements TestRepository
             // The path of the Spec file is the third one, as it is the next level after Workspace,WdioConfig.
             const candidatePath = key.split(TEST_ID_SEPARATOR)[2]
             if (normalizedSpecFilePath === normalizePath(candidatePath)) {
-                log.trace(`Detected spec file :${value}`)
+                log.trace(`Detected spec file :${normalizedSpecFilePath}`)
                 return value
             }
         }

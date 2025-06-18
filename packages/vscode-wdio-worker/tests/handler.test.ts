@@ -4,7 +4,7 @@ import { getLauncherInstance } from '../src/cli.js'
 import { createWorker } from '../src/handler.js'
 import * as parsers from '../src/parsers/index.js'
 import * as test from '../src/test.js'
-import type { LoadConfigOptions, WorkerApi } from '@vscode-wdio/types/api'
+import type { LoadConfigOptions, WorkerApi } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 import type { WebSocket } from 'ws'
 
@@ -143,11 +143,14 @@ describe('handler', () => {
     })
 
     it('should close WebSocket connection during shutdown', async () => {
+        vi.useFakeTimers()
+
         // Act
         await workerApi.shutdown()
-
+        vi.advanceTimersByTime(1000)
         // Assert
         expect(mockContext.ws.close).toHaveBeenCalled()
+        vi.useRealTimers()
     })
 
     it('should set a safety timeout during shutdown', async () => {
@@ -155,30 +158,16 @@ describe('handler', () => {
         await workerApi.shutdown()
 
         // Assert
-        expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), 2000)
+        expect(mockSetTimeout).toHaveBeenCalledWith(expect.any(Function), 500)
 
         // Verify the safety timeout callback will exit with code 0
-        const safetyCallback = timeoutCallbacks.find((tc) => tc.ms === 2000)?.callback
+        const safetyCallback = timeoutCallbacks.find((tc) => tc.ms === 500)?.callback
         if (safetyCallback) {
             safetyCallback()
             expect(mockExit).toHaveBeenCalledWith(0)
         } else {
             throw new Error('Safety timeout callback not found')
         }
-    })
-
-    it('should handle errors during shutdown', async () => {
-        // Arrange - Make ws.close throw an error
-        mockContext.ws.close = vi.fn().mockImplementation(() => {
-            throw new Error('WebSocket close error')
-        })
-
-        // Act
-        await workerApi.shutdown()
-
-        // Assert
-        expect(mockConsoleError).toHaveBeenCalledWith('Error during shutdown:', expect.any(Error))
-        expect(mockExit).toHaveBeenCalledWith(1)
     })
 
     describe('loadWdioConfig', () => {

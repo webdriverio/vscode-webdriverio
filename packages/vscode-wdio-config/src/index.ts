@@ -6,14 +6,9 @@ import { convertUriToPath, normalizePath } from '@vscode-wdio/utils'
 import * as vscode from 'vscode'
 
 import { findWdioConfig } from './find.js'
-import type {
-    WebdriverIOConfig,
-    ConfigPropertyNames,
-    WorkspaceData,
-    ExtensionConfigManagerInterface,
-} from '@vscode-wdio/types'
+import type { WebdriverIOConfig, ConfigPropertyNames, WorkspaceData, IExtensionConfigManager } from '@vscode-wdio/types'
 
-export class ExtensionConfigManager extends EventEmitter implements ExtensionConfigManagerInterface {
+export class ExtensionConfigManager extends EventEmitter implements IExtensionConfigManager {
     private _isInitialized = false
     private _isMultiWorkspace = false
     private _globalConfig: WebdriverIOConfig
@@ -33,6 +28,7 @@ export class ExtensionConfigManager extends EventEmitter implements ExtensionCon
                 configFilePattern && configFilePattern.length > 0
                     ? configFilePattern
                     : [...DEFAULT_CONFIG_VALUES.configFilePattern],
+            workerIdleTimeout: config.get<number>('workerIdleTimeout', DEFAULT_CONFIG_VALUES.workerIdleTimeout),
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
             logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }

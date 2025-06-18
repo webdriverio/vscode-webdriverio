@@ -5,7 +5,6 @@ import {
     STATUS,
     clearAllTestResults,
     clickTitleActionButton,
-    clickTreeItemButton,
     collapseAllTests,
     getTestingSection,
     openTestingView,
@@ -54,7 +53,18 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         await expect(items).toMatchTreeStructure(expected.notRun)
     })
 
-    it('should run at top Level', async function () {
+    it('should shutdown the work process after idle timeout was reached', async function () {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+
+        await expect(workbench).hasExpectedLog(/Worker#0 process shutdown gracefully/)
+
+        const bottomBar = workbench.getBottomBar()
+        const outputView = await bottomBar.openOutputView()
+        await outputView.selectChannel('WebdriverIO')
+        await outputView.clearText()
+    })
+
+    it('should start work process and run test successfully', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -64,26 +74,10 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
+        // assert that start work process
+        await expect(workbench).hasExpectedLog(/\[#1\] Worker process started successfully/)
+
+        // assert that run test successfully
         await expect(items).toMatchTreeStructure(expected.runAll)
-    })
-
-    it('should run Scenario level even if select step level test', async function () {
-        const testingSection = await getTestingSection(sideBarView.getContent())
-        const items = await testingSection.getVisibleItems()
-
-        await waitForResolved(browser, items[0])
-
-        const target = await items[0]
-            .getChildren()
-            .then((items) => items[0].getChildren())
-            .then((items) => items[0].getChildren())
-            .then((items) => items[0].getChildren())
-            .then((items) => items[1])
-
-        await clickTreeItemButton(browser, target, 'Run Test')
-
-        await waitForTestStatus(browser, items[0], STATUS.PASSED)
-
-        await expect(items).toMatchTreeStructure(expected.runPartially)
     })
 })

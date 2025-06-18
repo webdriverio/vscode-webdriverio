@@ -9,11 +9,8 @@ import { MetadataRepository } from './metadata.js'
 import { TestRepository } from './repository.js'
 import { createRunProfile } from './utils.js'
 import type { ExtensionConfigManager } from '@vscode-wdio/config'
-import type { ServerManagerInterface as ServerManager } from '@vscode-wdio/types/api'
-import type {
-    RepositoryManagerInterface,
-    TestRepositoryInterface as TestRepositoryInterface,
-} from '@vscode-wdio/types/test'
+import type { IWorkerManager } from '@vscode-wdio/types/server'
+import type { IRepositoryManager, ITestRepository } from '@vscode-wdio/types/test'
 
 /**
  * workspace                                        -- managed by this class
@@ -25,8 +22,8 @@ import type {
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
-export class RepositoryManager extends MetadataRepository implements RepositoryManagerInterface {
-    private readonly _repos = new Set<TestRepositoryInterface>()
+export class RepositoryManager extends MetadataRepository implements IRepositoryManager {
+    private readonly _repos = new Set<ITestRepository>()
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: vscode.TestItem[] = []
     private _wdioConfigTestItems: vscode.TestItem[] = []
@@ -36,7 +33,7 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
     constructor(
         public readonly controller: vscode.TestController,
         public readonly configManager: ExtensionConfigManager,
-        private readonly serverManager: ServerManager
+        private readonly workerManager: IWorkerManager
     ) {
         super()
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
@@ -66,7 +63,7 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
                         )
                 )
                 .then(() => this.registerToTestController())
-                .then(() => this.serverManager.reorganize(configManager.getWdioConfigPaths()))
+                .then(() => this.workerManager.reorganize(configManager.getWdioConfigPaths()))
         })
     }
 
@@ -188,8 +185,8 @@ export class RepositoryManager extends MetadataRepository implements RepositoryM
         workspaceTestItem.children.add(configItem)
         this._wdioConfigTestItems.push(configItem)
 
-        const worker = await this.serverManager.getConnection(wdioConfigPath)
-        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem)
+        const worker = await this.workerManager.getConnection(wdioConfigPath)
+        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem, this.workerManager)
         this._repos.add(repo)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))

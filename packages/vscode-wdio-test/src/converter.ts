@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import * as vscode from 'vscode'
-import type { ReadSpecsResult } from '@vscode-wdio/types/api'
+import type { ReadSpecsResult } from '@vscode-wdio/types/server'
 import type { TestData, SourceRange, VscodeTestData } from '@vscode-wdio/types/test'
 /**
  * Convert the parser's TestData to VSCode compatible TestData

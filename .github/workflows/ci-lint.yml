@@ -1,4 +1,4 @@
-name: Lint
+name: Static code analysis
 
 on:
   workflow_call:
@@ -11,12 +11,7 @@ env:
 jobs:
   lint:
     name: Lint
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ['20']
-        os: ['ubuntu-latest']
-    runs-on: ${{ matrix.os }}
+    runs-on: 'ubuntu-latest'
     steps:
       - name: 👷 Checkout
         uses: actions/checkout@v4.2.2
@@ -26,14 +21,7 @@ jobs:
       - name: 🛠️ Setup workspace
         uses: ./.github/workflows/actions/setup-workspace
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: ⬇️ Download Build Archive
-        uses: ./.github/workflows/actions/download-archive
-        with:
-          name: vscode-webdriverio
-          path: .
-          filename: vscode-webdriverio-build.zip
+          node-version: '20'
 
       - name: 📃 Run the lint
         run: pnpm run style:fix

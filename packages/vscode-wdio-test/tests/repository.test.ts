@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 
 import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils.js'
 import { TestRepository } from '../src/repository.js'
-import type { WdioConfig, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
+import type { IWorkerManager, WdioConfig, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
@@ -26,10 +26,11 @@ describe('TestRepository', () => {
     let testController: vscode.TestController
     let wdioConfigTestItem: vscode.TestItem
     let testRepository: TestRepository
-    let mockWorker: WdioExtensionWorkerInterface
+    let mockWorker: IWdioExtensionWorker
     let readFile: ReturnType<typeof vi.fn>
     let readSpecsStub: ReturnType<typeof vi.fn>
     let runProfileDisposeStub: ReturnType<typeof vi.fn>
+    let workerManager: IWorkerManager
 
     beforeEach(() => {
         vi.resetAllMocks()
@@ -54,6 +55,7 @@ describe('TestRepository', () => {
         ])
 
         mockWorker = {
+            on: vi.fn(),
             rpc: {
                 loadWdioConfig: vi.fn().mockResolvedValue({
                     framework: 'mocha',
@@ -61,7 +63,7 @@ describe('TestRepository', () => {
                 }),
                 readSpecs: readSpecsStub,
             },
-        } as unknown as WdioExtensionWorkerInterface
+        } as unknown as IWdioExtensionWorker
 
         readFile = vi.fn()
         class MockTestRepository extends TestRepository {
@@ -70,8 +72,16 @@ describe('TestRepository', () => {
             }
         }
 
+        workerManager = vi.fn() as unknown as IWorkerManager
+
         // Create repository with mocked dependencies
-        testRepository = new MockTestRepository(testController, mockWorker, mockWdioConfigPath, wdioConfigTestItem)
+        testRepository = new MockTestRepository(
+            testController,
+            mockWorker,
+            mockWdioConfigPath,
+            wdioConfigTestItem,
+            workerManager
+        )
 
         testRepository.setMetadata(wdioConfigTestItem, {
             uri: mockWdioConfigUri,
@@ -94,10 +104,10 @@ describe('TestRepository', () => {
 
     // Group 1: Initialization and basic functionality
     describe('Initialization and Resource Management', () => {
-        it('should initialize with provided dependencies', () => {
+        it('should initialize with provided dependencies', async () => {
             // Verify
             expect(testRepository.controller).toBe(testController)
-            expect(testRepository.worker).toBe(mockWorker)
+            expect(await testRepository.getWorker()).toBe(mockWorker)
             expect(testRepository.wdioConfigPath).toBe(mockWdioConfigPath)
         })
 
@@ -126,7 +136,13 @@ describe('TestRepository', () => {
 
         it('should throw error if framework is accessed before loading config', () => {
             // Create new instance without loading config
-            const repo = new TestRepository(testController, mockWorker, mockWdioConfigPath, wdioConfigTestItem)
+            const repo = new TestRepository(
+                testController,
+                mockWorker,
+                mockWdioConfigPath,
+                wdioConfigTestItem,
+                workerManager
+            )
 
             // Verify
             expect(() => repo.framework).toThrow('The configuration for WebdriverIO is not loaded')

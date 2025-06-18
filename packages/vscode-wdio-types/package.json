@@ -8,10 +8,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./api": {
-      "importSource": "./src/api.ts",
-      "types": "./dist/api.d.ts",
-      "import": "./dist/api.js"
+    "./server": {
+      "importSource": "./src/server.ts",
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js"
     },
     "./config": {
       "importSource": "./src/config.ts",

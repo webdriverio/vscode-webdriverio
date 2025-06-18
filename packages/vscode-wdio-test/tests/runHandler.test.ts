@@ -1,11 +1,11 @@
-import { TestRunner } from '@vscode-wdio/api'
 import { log } from '@vscode-wdio/logger'
+import { TestRunner } from '@vscode-wdio/server'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createTestItem } from '../../../tests/utils.js'
 import { TestReporter } from '../src/reporter.js'
 import { createHandler } from '../src/runHandler.js'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { TestItemMetadata } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../src/index.js'
@@ -50,7 +50,7 @@ vi.mock('../src/utils.js', async (importActual) => {
     }
 })
 
-vi.mock('@vscode-wdio/api', () => {
+vi.mock('@vscode-wdio/server', () => {
     const TestRunner = vi.fn()
     TestRunner.prototype.run = vi.fn()
     TestRunner.prototype.stdout = null
@@ -70,7 +70,7 @@ vi.mock('../../src/config/index.js', () => ({
 describe('Run Handler', () => {
     let mockTestRun: vscode.TestRun
     let mockToken: vscode.CancellationToken
-    let mockConfigManager: ExtensionConfigManagerInterface
+    let mockConfigManager: IExtensionConfigManager
     let runHandler: ReturnType<typeof createHandler>
     let testItemMap: WeakMap<vscode.TestItem, TestItemMetadata>
     let mockRepositoryManager: RepositoryManager
@@ -97,7 +97,7 @@ describe('Run Handler', () => {
             globalConfig: {
                 showOutput: true,
             },
-        } as unknown as ExtensionConfigManagerInterface
+        } as unknown as IExtensionConfigManager
 
         testItemMap = new WeakMap<vscode.TestItem, TestItemMetadata>()
         const mockGetMetadata = vi.fn().mockImplementation((testItem: vscode.TestItem) => testItemMap.get(testItem))
@@ -242,7 +242,7 @@ describe('Run Handler', () => {
             // Setup
             const mockSpecTestData = createTestItem('spec1', {
                 isConfigFile: true,
-                repository: { worker: {}, framework: 'mocha' },
+                repository: { getWorker: vi.fn(), framework: 'mocha' },
             })
             testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
 
@@ -277,7 +277,7 @@ describe('Run Handler', () => {
             // Setup
             const mockSpecTestData = createTestItem('spec1', {
                 isSpecFile: true,
-                repository: { worker: {} },
+                repository: { getWorker: vi.fn() },
             })
             testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
 
@@ -332,7 +332,7 @@ describe('Run Handler', () => {
             const mockParentTestData = createTestItem('scenario1', {
                 type: 'scenario',
                 isTestcase: true,
-                repository: { framework: 'cucumber', worker: {} },
+                repository: { framework: 'cucumber', getWorker: vi.fn() },
             })
 
             const mockStepTestData = createTestItem(
@@ -340,7 +340,7 @@ describe('Run Handler', () => {
                 {
                     type: 'step',
                     isTestcase: true,
-                    repository: { framework: 'cucumber', worker: {} },
+                    repository: { framework: 'cucumber', getWorker: vi.fn() },
                 },
                 mockParentTestData.testItem
             )
@@ -371,7 +371,7 @@ describe('Run Handler', () => {
             // Setup
             const mockTestData = createTestItem('test1', {
                 isSpecFile: true,
-                repository: { framework: 'mocha', worker: {} },
+                repository: { framework: 'mocha', getWorker: vi.fn() },
             })
             testItemMap.set(mockTestData.testItem, mockTestData.metadata)
 

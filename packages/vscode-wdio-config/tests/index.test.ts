@@ -87,8 +87,10 @@ describe('ExtensionConfigManager', () => {
             // Verify
             expect(instance.globalConfig).toEqual({
                 configFilePattern: customConfigFilePattern,
+                nodeExecutable: undefined,
                 showOutput: customShowOutput,
                 logLevel: customLogLevel,
+                workerIdleTimeout: 600,
             })
         })
 

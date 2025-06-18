@@ -8,8 +8,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createWss } from '../src/utils.js'
 import { WdioExtensionWorker } from '../src/worker.js'
-import type { ExtensionApi } from '@vscode-wdio/types/api'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+import type { ExtensionApi } from '@vscode-wdio/types/server'
 import type * as WebSocket from 'ws'
 
 // Mock dependencies
@@ -25,6 +25,9 @@ vi.mock('birpc', () => {
     }
 })
 vi.mock('get-port')
+
+vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))
+
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
 
 vi.mock('../src/utils.js', () => {
@@ -90,7 +93,11 @@ describe('WdioExtensionWorker', () => {
         vi.mocked(createBirpc).mockReturnValue(mockBirpc)
 
         // Create worker instance
-        worker = new WdioExtensionWorker({} as unknown as ExtensionConfigManagerInterface, '#1', '/test/path')
+        worker = new WdioExtensionWorker(
+            { globalConfig: { workerIdleTimeout: 600 } } as unknown as IExtensionConfigManager,
+            '#1',
+            '/test/path'
+        )
     })
 
     afterEach(() => {
@@ -387,7 +394,7 @@ describe('WdioExtensionWorker', () => {
             ;(worker as any)._workerConnected = true
 
             // Verify RPC is returned
-            expect(worker.rpc).toBe(mockBirpc)
+            expect(worker.rpc.loadWdioConfig).toBe(mockBirpc.loadWdioConfig)
         })
 
         it('should throw error when not connected', () => {

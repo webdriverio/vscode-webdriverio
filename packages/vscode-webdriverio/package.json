@@ -45,7 +45,7 @@
     "clean": "shx rm -rf out dist coverage"
   },
   "devDependencies": {
-    "@vscode-wdio/api": "workspace:*",
+    "@vscode-wdio/server": "workspace:*",
     "@vscode-wdio/config": "workspace:*",
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/logger": "workspace:*",
@@ -100,7 +100,12 @@
           "default": [
             "**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}"
           ],
-          "description": "Glob pattern for WebdriverIO configuration file"
+          "markdownDescription": "Glob pattern for WebdriverIO configuration file"
+        },
+        "webdriverio.workerIdleTimeout": {
+          "markdownDescription": "If no processing is performed in the Worker for the set amount of time(defined by seconds), the Worker is terminated. If processing is requested again, it will be started automatically.",
+          "type": "number",
+          "default": 600
         },
         "webdriverio.logLevel": {
           "type": "string",
@@ -113,12 +118,12 @@
             "silent"
           ],
           "default": "info",
-          "description": "Set the logLevel"
+          "markdownDescription": "Set the logLevel"
         },
         "webdriverio.showOutput": {
           "type": "boolean",
           "default": true,
-          "description": "Show WebdriverIO output in the test result"
+          "markdownDescription": "Show WebdriverIO output in the test result"
         }
       }
     }

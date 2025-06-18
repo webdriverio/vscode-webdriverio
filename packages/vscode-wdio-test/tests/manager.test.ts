@@ -1,8 +1,8 @@
 import { join } from 'node:path'
 
-import { ServerManager } from '@vscode-wdio/api'
 import { ExtensionConfigManager } from '@vscode-wdio/config'
 import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
+import { WdioWorkerManager } from '@vscode-wdio/server'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as vscode from 'vscode'
 
@@ -10,8 +10,8 @@ import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils
 import { RepositoryManager } from '../src/manager.js'
 import { TestRepository } from '../src/repository.js'
 
-import type { WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
 import type { WorkspaceData } from '@vscode-wdio/types/config'
+import type { IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
 // Mock dependencies
 vi.mock('vscode', async () => {
@@ -38,7 +38,7 @@ vi.mock('../src/utils.js', () => {
 describe('RepositoryManager', () => {
     let fakeWorkspaceFolder: vscode.WorkspaceFolder
     let fakeWorkspaces: WorkspaceData[]
-    let serverManager: ServerManager
+    let workerManager: WdioWorkerManager
     let clearTestsStub: ReturnType<typeof vi.fn>
     let discoverAllTestsStub: ReturnType<typeof vi.fn>
     let controller: vscode.TestController
@@ -77,8 +77,10 @@ describe('RepositoryManager', () => {
         ]
 
         // Setup ServerManager mock
-        serverManager = new ServerManager(configManager)
-        vi.spyOn(serverManager, 'getConnection').mockResolvedValue({} as unknown as WdioExtensionWorkerInterface)
+        workerManager = new WdioWorkerManager(configManager)
+        vi.spyOn(workerManager, 'getConnection').mockResolvedValue({
+            on: vi.fn(),
+        } as unknown as IWdioExtensionWorker)
 
         // Stub configManager
         vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
@@ -90,7 +92,7 @@ describe('RepositoryManager', () => {
         vi.spyOn(TestRepository.prototype, 'discoverAllTests').mockImplementation(discoverAllTestsStub)
         vi.spyOn(TestRepository.prototype, 'clearTests').mockImplementation(clearTestsStub)
 
-        repositoryManager = new RepositoryManager(controller, configManager, serverManager)
+        repositoryManager = new RepositoryManager(controller, configManager, workerManager)
     })
 
     afterEach(() => {
@@ -113,7 +115,7 @@ describe('RepositoryManager', () => {
             expect((repositoryManager as any)._workspaceTestItems.length).toBe(1)
             expect((repositoryManager as any)._wdioConfigTestItems.length).toBe(1)
 
-            expect(serverManager.getConnection).toHaveBeenCalledWith(fakeWorkspaces[0].wdioConfigFiles[0])
+            expect(workerManager.getConnection).toHaveBeenCalledWith(fakeWorkspaces[0].wdioConfigFiles[0])
         })
     })
 
@@ -159,7 +161,9 @@ describe('RepositoryManager', () => {
                 },
             ]
             vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
-            vi.spyOn(serverManager, 'getConnection').mockResolvedValue({} as unknown as WdioExtensionWorkerInterface)
+            vi.spyOn(workerManager, 'getConnection').mockResolvedValue({
+                on: vi.fn(),
+            } as unknown as IWdioExtensionWorker)
 
             await repositoryManager.initialize()
             repositoryManager.registerToTestController()

@@ -1,5 +1,5 @@
 import type { MatcherContext } from 'expect'
-import type { TreeItem } from 'wdio-vscode-service'
+import type { BottomBarPanel, TreeItem, Workbench } from 'wdio-vscode-service'
 import type { STATUS } from '../helpers/index.ts'
 
 export interface ExpectedTreeItem {
@@ -92,8 +92,38 @@ try {
             async toMatchTreeStructure(tree: TreeItem[], expectedStructure: ExpectedTreeItem[]) {
                 return await expectTreeToMatchStructure.call(this as unknown as MatcherContext, tree, expectedStructure)
             },
+            async hasExpectedLog(workbench: Workbench, expectedLog: RegExp | string) {
+                const bottomBar = workbench.getBottomBar()
+
+                const outputView = await bottomBar.openOutputView()
+                await outputView.selectChannel('WebdriverIO')
+                await clickGlobalAction(bottomBar, bottomBar.locators.maximize)
+                const logs = await outputView.getText()
+
+                const regexp = typeof expectedLog === 'string' ? new RegExp(expectedLog) : expectedLog
+
+                const pass = logs.some((log) => regexp.test(log))
+
+                await clickGlobalAction(bottomBar, bottomBar.locators.restore)
+                const message = pass ? 'The log outputs include expected text.' : 'The expected text is not included'
+                return { pass, message: () => message }
+            },
         })
     }
 } catch (error) {
     console.warn('Failed to extend expect:', error)
+}
+
+async function clickGlobalAction(bottomBar: BottomBarPanel, label: string) {
+    let action
+    try {
+        action = (await bottomBar.elem
+            .$(bottomBar.locators.globalActions)
+            .$(`.//a[contains(@aria-label, '${label}') and @role='checkbox']`)) as WebdriverIO.Element
+    } catch {
+        // the panel is already maximized
+    }
+    if (action) {
+        await action.click({})
+    }
 }

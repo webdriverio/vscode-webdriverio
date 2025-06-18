@@ -2,7 +2,7 @@ import { log } from '@vscode-wdio/logger'
 
 import { getGrep, getRange, getCucumberSpec, getSpec } from './utils.js'
 
-import type { RunTestOptions, WdioExtensionWorkerInterface } from '@vscode-wdio/types/api'
+import type { RunTestOptions, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 import type { TestItemMetadata, TestItemMetadataWithRepository } from '@vscode-wdio/types/test'
 import type * as vscode from 'vscode'
 
@@ -16,7 +16,9 @@ export class TestRunner implements vscode.Disposable {
     private _stderr = ''
     private _listeners: Listeners | undefined
 
-    constructor(protected worker: WdioExtensionWorkerInterface) {}
+    constructor(protected worker: IWdioExtensionWorker) {
+        worker.idleMonitor.pauseTimer()
+    }
 
     public get stdout() {
         return this._stdout
@@ -153,6 +155,6 @@ export class TestRunner implements vscode.Disposable {
     }
 
     async dispose() {
-        // noting to do
+        this.worker.idleMonitor.resumeTimer()
     }
 }

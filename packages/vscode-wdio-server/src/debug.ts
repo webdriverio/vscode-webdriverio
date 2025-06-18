@@ -5,7 +5,7 @@ import * as vscode from 'vscode'
 
 import { TestRunner } from './run.js'
 import { WdioExtensionWorker } from './worker.js'
-import type { ExtensionConfigManagerInterface } from '@vscode-wdio/types/config'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { TestItemMetadata } from '@vscode-wdio/types/test'
 
 let debuggerId = 0
@@ -23,7 +23,7 @@ export class DebugRunner extends TestRunner {
     private _runController: AbortController | null = null
 
     constructor(
-        configManager: ExtensionConfigManagerInterface,
+        configManager: IExtensionConfigManager,
         workspaceFolder: vscode.WorkspaceFolder | undefined,
         token: vscode.CancellationToken,
         workerCwd: string,
@@ -80,7 +80,7 @@ export class WdioExtensionDebugWorker extends WdioExtensionWorker {
     private _debugTerminationCallback: (() => void) | null = null
 
     constructor(
-        configManager: ExtensionConfigManagerInterface,
+        configManager: IExtensionConfigManager,
         cid: string = '#0',
         cwd: string,
         private _workspaceFolder: vscode.WorkspaceFolder | undefined,

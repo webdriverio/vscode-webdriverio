@@ -21,33 +21,41 @@ jobs:
       os: 'ubuntu-latest'
 
   lint:
-    name: Lint
-    needs: [build]
+    name: Static code analysis
     uses: ./.github/workflows/ci-lint.yml
 
   typecheck:
     name: Typecheck
-    needs: [build]
+    needs: [lint, build]
     uses: ./.github/workflows/ci-typecheck.yml
 
   unit:
     name: Unit
-    needs: [build]
+    needs: [lint, build]
     uses: ./.github/workflows/ci-unit.yml
 
   e2e:
     name: E2E
-    needs: [build]
+    needs: [lint, build]
     uses: ./.github/workflows/ci-e2e.yml
 
   compatibility:
     name: Compatibility
-    needs: [build]
+    needs: [lint, build]
     uses: ./.github/workflows/ci-e2e.yml
     with:
       compatibility-mode: 'yes'
 
-  smoke:
-    name: Smoke
-    needs: [build, e2e]
+  smoke-config:
+    name: Smoke - Update Config
+    needs: [lint, build, e2e]
     uses: ./.github/workflows/ci-smoke.yml
+    with:
+      scenario: 'config'
+
+  smoke-timeout:
+    name: Smoke - Worker idle timeout
+    needs: [lint, build, e2e]
+    uses: ./.github/workflows/ci-smoke.yml
+    with:
+      scenario: 'timeout'

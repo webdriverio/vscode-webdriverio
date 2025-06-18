@@ -1,7 +1,6 @@
-import type EventEmitter from 'node:events'
 import type { DEFAULT_CONFIG_VALUES } from '@vscode-wdio/constants'
 import type * as vscode from 'vscode'
-import type { WebdriverIOConfig } from './utils.js'
+import type { ITypedEventEmitter, WebdriverIOConfig } from './utils.js'
 
 export type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
 
@@ -10,7 +9,13 @@ export type WorkspaceData = {
     wdioConfigFiles: string[]
 }
 
-export interface ExtensionConfigManagerInterface extends EventEmitter, vscode.Disposable {
+type ToEventConfig<T> = {
+    [K in keyof T as `update:${string & K}`]: T[K]
+}
+
+export type WebdriverIOConfigEvent = ToEventConfig<WebdriverIOConfig>
+
+export interface IExtensionConfigManager extends ITypedEventEmitter<WebdriverIOConfigEvent>, vscode.Disposable {
     isMultiWorkspace: boolean
     globalConfig: WebdriverIOConfig
     workspaces: WorkspaceData[]
