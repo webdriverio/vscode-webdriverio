@@ -1,16 +1,8 @@
 /* c8 ignore start */
 
-export interface WebdriverIOConfig {
-    nodeExecutable: string | undefined
-    configFilePattern: string[]
-    workerIdleTimeout: number
-    showOutput: boolean
-    logLevel: string
-}
-
 export const EXTENSION_ID = 'webdriverio'
 
-export const DEFAULT_CONFIG_VALUES: WebdriverIOConfig = {
+export const DEFAULT_CONFIG_VALUES = {
     nodeExecutable: undefined,
     configFilePattern: ['**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}'],
     workerIdleTimeout: 600,

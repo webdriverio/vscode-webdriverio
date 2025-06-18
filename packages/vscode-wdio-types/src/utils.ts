@@ -1,6 +1,5 @@
 import type { EventEmitter } from 'node:events'
 import type { LOG_LEVEL } from '@vscode-wdio/constants'
-export type { WebdriverIOConfig } from '@vscode-wdio/constants'
 
 export type WdioLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent'
 

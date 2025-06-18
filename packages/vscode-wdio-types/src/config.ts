@@ -1,8 +1,25 @@
 import type { DEFAULT_CONFIG_VALUES } from '@vscode-wdio/constants'
 import type * as vscode from 'vscode'
-import type { ITypedEventEmitter, WebdriverIOConfig } from './utils.js'
+import type { ITypedEventEmitter } from './utils.js'
 
 export type ConfigPropertyNames = typeof DEFAULT_CONFIG_VALUES extends Record<infer K, any> ? K[] : never
+
+type WidenLiteral<T> = T extends readonly (infer U)[]
+    ? WidenLiteral<U>[]
+    : T extends number
+        ? number
+        : T extends string
+            ? string
+            : T extends boolean
+                ? boolean
+                : T extends object
+                    ? { [K in keyof T]: WidenLiteral<T[K]> }
+                    : T
+type DefaultConfigs = WidenLiteral<typeof DEFAULT_CONFIG_VALUES>
+
+export type WebdriverIOConfig = Omit<DefaultConfigs, 'nodeExecutable'> & {
+    nodeExecutable: string | undefined
+}
 
 export type WorkspaceData = {
     workspaceFolder: vscode.WorkspaceFolder
