@@ -23,16 +23,23 @@ class WorkerProxy extends MetadataRepository {
     ) {
         super()
         this._worker = worker
-        this._worker.on('shutdown', () => {
-            this._worker = undefined
-        })
+        this.setListener()
     }
 
     async getWorker() {
         if (!this._worker) {
             this._worker = await this.workerManager.getConnection(this._wdioConfigPath)
+            this.setListener()
         }
         return this._worker
+    }
+
+    private setListener() {
+        if (this._worker) {
+            this._worker.on('shutdown', () => {
+                this._worker = undefined
+            })
+        }
     }
 }
 

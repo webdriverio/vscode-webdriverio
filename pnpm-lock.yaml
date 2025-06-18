@@ -310,6 +310,9 @@ importers:
       birpc:
         specifier: ^2.3.0
         version: 2.4.0
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       recast:
         specifier: ^0.23.11
         version: 0.23.11
@@ -10120,7 +10123,7 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.4.7
+      dotenv: 16.5.0
 
   dotenv@16.4.7: {}
 

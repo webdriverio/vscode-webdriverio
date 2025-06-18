@@ -29,6 +29,13 @@ vi.mock('../src/cli.js', () => {
     return { getLauncherInstance }
 })
 
+vi.mock('../src/hook.js', () => {
+    const EnvHook = vi.fn()
+    EnvHook.prototype.before = vi.fn()
+    EnvHook.prototype.after = vi.fn()
+    return { EnvHook }
+})
+
 describe('handler', () => {
     // Mock context
     const mockContext: WorkerMetaContext = {
@@ -190,6 +197,10 @@ describe('handler', () => {
 
         const mockOptions: LoadConfigOptions = {
             configFilePath: '/path/to/wdio.conf.js',
+            env: {
+                paths: [],
+                override: false,
+            },
         }
 
         it('should load WebdriverIO config and return framework and specs', async () => {
