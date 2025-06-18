@@ -4,6 +4,10 @@ on:
   workflow_call:
     # Make this a reusable workflow, no value needed
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+    inputs:
+      scenario:
+        description: 'Smoke scenario'
+        type: string
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
@@ -40,16 +44,21 @@ jobs:
         with:
           path: e2e/.wdio-vscode-service
 
+      - name: 🖥️ Set screen resolution
+        uses: ./.github/workflows/actions/set-screen-resolution
+
       - name: 🚂 Run the smoke test
-        run: pnpm run test:smoke
+        env:
+          E2E_SCENARIO: ${{ inputs.scenario }}
+        run: pnpm --filter @vscode-wdio/e2e run test:smoke:${E2E_SCENARIO}
         shell: bash
 
       - name: 📦 Upload Test Logs on Failure
         uses: ./.github/workflows/actions/upload-archive
         if: failure()
         with:
-          name: smoke-logs-${{ matrix.os }}
-          output: smoke-logs-${{ matrix.os }}.zip
+          name: smoke-${{ inputs.scenario }}--logs-${{ matrix.os }}
+          output: smoke-${{ inputs.scenario }}-logs-${{ matrix.os }}.zip
           paths: e2e/logs
 
       - name: 🐛 Debug Build

@@ -47,6 +47,9 @@ jobs:
         with:
           path: e2e/.wdio-vscode-service
 
+      - name: 🖥️ Set screen resolution
+        uses: ./.github/workflows/actions/set-screen-resolution
+
       - name: 🧪 Run the e2e test
         env:
           E2E_SCENARIO: ${{ matrix.scenario }}
