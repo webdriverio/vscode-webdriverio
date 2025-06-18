@@ -52,7 +52,7 @@ jobs:
 
 
             Unfortunately we can't help you without a reproducible example in this matter. Please read
-            our [contributing guidelines](https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTION.md#reporting-new-issues)
+            our [contributing guidelines](https://github.com/webdriverio/vscode-webdriverio/blob/main/CONTRIBUTING.md#reporting-new-issues)
             on how to create a reproducible example. If you can't provide a reproducible example we will
             close this issue in 7 days.
 
