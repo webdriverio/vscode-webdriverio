@@ -21,6 +21,7 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
 
         const configFilePattern = config.get<string[]>('configFilePattern')
+        const envFiles = config.get<string[]>('envFiles')
 
         this._globalConfig = {
             nodeExecutable: config.get<string | undefined>('nodeExecutable', DEFAULT_CONFIG_VALUES.nodeExecutable),
@@ -29,6 +30,8 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
                     ? configFilePattern
                     : [...DEFAULT_CONFIG_VALUES.configFilePattern],
             workerIdleTimeout: config.get<number>('workerIdleTimeout', DEFAULT_CONFIG_VALUES.workerIdleTimeout),
+            envFiles: envFiles && envFiles.length > 0 ? envFiles : [...DEFAULT_CONFIG_VALUES.envFiles],
+            overrideEnv: this.resolveBooleanConfig(config, 'overrideEnv', DEFAULT_CONFIG_VALUES.overrideEnv),
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
             logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }

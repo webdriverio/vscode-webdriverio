@@ -6,6 +6,8 @@ export const DEFAULT_CONFIG_VALUES = {
     nodeExecutable: undefined,
     configFilePattern: ['**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}'],
     workerIdleTimeout: 600,
+    envFiles: [],
+    overrideEnv: false,
     showOutput: true,
     logLevel: 'info',
 } as const

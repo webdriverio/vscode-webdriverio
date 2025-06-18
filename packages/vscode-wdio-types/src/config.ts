@@ -17,8 +17,9 @@ type WidenLiteral<T> = T extends readonly (infer U)[]
                     : T
 type DefaultConfigs = WidenLiteral<typeof DEFAULT_CONFIG_VALUES>
 
-export type WebdriverIOConfig = Omit<DefaultConfigs, 'nodeExecutable'> & {
+export type WebdriverIOConfig = Omit<DefaultConfigs, 'nodeExecutable' | 'envFiles'> & {
     nodeExecutable: string | undefined
+    envFiles: string[]
 }
 
 export type WorkspaceData = {

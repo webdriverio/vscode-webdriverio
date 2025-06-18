@@ -67,6 +67,8 @@ describe('ExtensionConfigManager', () => {
             const customConfigFilePattern = ['custom/path/wdio.*.conf.ts']
             const customShowOutput = false
             const customLogLevel = 'warn'
+            const customEnvFiles = ['.env', '.env.local']
+            const customOverrideEnv = true
 
             mockConfiguration.get.mockImplementation((key, defaultValue) => {
                 if (key === 'configFilePattern') {
@@ -78,6 +80,12 @@ describe('ExtensionConfigManager', () => {
                 if (key === 'logLevel') {
                     return customLogLevel
                 }
+                if (key === 'envFiles') {
+                    return customEnvFiles
+                }
+                if (key === 'overrideEnv') {
+                    return customOverrideEnv
+                }
                 return defaultValue
             })
 
@@ -88,6 +96,8 @@ describe('ExtensionConfigManager', () => {
             expect(instance.globalConfig).toEqual({
                 configFilePattern: customConfigFilePattern,
                 nodeExecutable: undefined,
+                envFiles: customEnvFiles,
+                overrideEnv: customOverrideEnv,
                 showOutput: customShowOutput,
                 logLevel: customLogLevel,
                 workerIdleTimeout: 600,
