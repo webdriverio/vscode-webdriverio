@@ -3,11 +3,12 @@ import * as path from 'node:path'
 
 import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
-import { normalizePath } from '@vscode-wdio/utils'
+import { getEnvOptions, normalizePath } from '@vscode-wdio/utils'
 
 import { convertPathToUri, convertTestData } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
+import type { IExtensionConfigManager } from '@vscode-wdio/types'
 
 import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 import type { VscodeTestData, ITestRepository } from '@vscode-wdio/types/test'
@@ -45,11 +46,13 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     private _framework: string | undefined = undefined
 
     constructor(
+        public readonly configManager: IExtensionConfigManager,
         public readonly controller: vscode.TestController,
         _worker: IWdioExtensionWorker,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: vscode.TestItem,
-        workerManager: IWorkerManager
+        workerManager: IWorkerManager,
+        private _workspaceFolder: vscode.WorkspaceFolder
     ) {
         super(wdioConfigPath, _worker, workerManager)
     }
@@ -65,6 +68,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         return this._framework
     }
 
+    private async getEnvOptions() {
+        return await getEnvOptions(this.configManager, this._workspaceFolder)
+    }
+
     /**
      * Discover and register all tests from WebdriverIO configuration
      */
@@ -72,7 +79,7 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         try {
             const worker = await this.getWorker()
             const config = await worker.rpc.loadWdioConfig({
-                env: { paths: [], override: false }, // TODO: implement the logic for envFile
+                env: await this.getEnvOptions(),
                 configFilePath: this.wdioConfigPath,
             })
 
@@ -109,7 +116,7 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         try {
             const worker = await this.getWorker()
             const config = await worker.rpc.loadWdioConfig({
-                env: { paths: [], override: false }, // TODO: implement the logic for envFile
+                env: await this.getEnvOptions(),
                 configFilePath: this.wdioConfigPath,
             })
             if (!config) {
@@ -199,7 +206,7 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
         const worker = await this.getWorker()
         const testData = await worker.rpc.readSpecs({
-            env: { paths: [], override: false }, // TODO: implement the logic for envFile
+            env: await this.getEnvOptions(),
             specs,
         })
 

@@ -7,7 +7,7 @@ import * as vscode from 'vscode'
 import { convertPathToUri } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { TestRepository } from './repository.js'
-import { createRunProfile } from './utils.js'
+import { createRunProfile, getWorkspaceFolder } from './utils.js'
 import type { ExtensionConfigManager } from '@vscode-wdio/config'
 import type { IWorkerManager } from '@vscode-wdio/types/server'
 import type { IRepositoryManager, ITestRepository } from '@vscode-wdio/types/test'
@@ -186,7 +186,16 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         this._wdioConfigTestItems.push(configItem)
 
         const worker = await this.workerManager.getConnection(wdioConfigPath)
-        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem, this.workerManager)
+        const workspaceFolder = getWorkspaceFolder.call(this, this.configManager, configItem)
+        const repo = new TestRepository(
+            this.configManager,
+            this.controller,
+            worker,
+            wdioConfigPath,
+            configItem,
+            this.workerManager,
+            workspaceFolder
+        )
         this._repos.add(repo)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
