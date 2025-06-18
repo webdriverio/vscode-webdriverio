@@ -1,0 +1,41 @@
+name: 'vscode-webdriverio Set screen resolution'
+description: 'Set screen resolution'
+inputs:
+  width:
+    description: 'screen width'
+    default: '1920'
+  height:
+    description: 'screen height'
+    default: '1080'
+runs:
+  using: 'composite'
+  steps:
+    # https://github.com/actions/runner-images/issues/2935
+    - name: Set display resolution on Windows
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Set-DisplayResolution -Width ${{ inputs.width }} -Height ${{ inputs.height }} -Force
+
+    # I don't know the details, but it appears that it needs to be maximized at the Webdriver level
+    # because it does not launch in full screen on Linux.
+    # However, as the following Issue states, Electron(base of vscode) can not be muximize by webdriver protocol.
+    # https://github.com/electron/electron/issues/33942
+    # Therefore, GUI-based methods are used to maximize the screen.
+    # The process of maximizing screen size using xdotool is done in the before hook of wdio.conf.ts.
+    - name: Set display resolution on Linux
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        pnpm --filter @vscode-wdio/xvfb-patch run patch -w ${{ inputs.width }} -h ${{ inputs.height }}
+        echo "::group::apt install -y xdotool"
+        sudo apt install -y xdotool
+        echo "::endgroup::"
+
+    # already use FHD resolution
+    - name: Set display resolution on MacOS
+      if: runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install displayplacer
+        displayplacer list

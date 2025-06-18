@@ -2,6 +2,7 @@ import * as path from 'node:path'
 import * as url from 'node:url'
 
 import { minVersion } from 'semver'
+import shell from 'shelljs'
 
 import pkg from '../packages/vscode-webdriverio/package.json' with { type: 'json' }
 import type { Frameworks } from '@wdio/types'
@@ -75,6 +76,14 @@ export function createBaseConfig(workspacePath: string, userSettings = {}): Webd
             ui: 'bdd',
             timeout: 6000000,
             require: ['assertions/index.ts'],
+        },
+        before: async function (_capabilities, _specs, _browser) {
+            if (process.platform === 'linux') {
+                const result = shell.exec('xdotool search --onlyvisible --name code')
+                const windowId = result.stdout.trim()
+                shell.exec(`xdotool windowmove ${windowId} 0 0`)
+                shell.exec(`xdotool windowsize ${windowId} 100% 100%`)
+            }
         },
         afterTest: async function (_test: unknown, _context: unknown, result: Frameworks.TestResult) {
             if (!result.passed) {
