@@ -24,7 +24,7 @@ export class DebugRunner extends TestRunner {
 
     constructor(
         configManager: IExtensionConfigManager,
-        workspaceFolder: vscode.WorkspaceFolder | undefined,
+        workspaceFolder: vscode.WorkspaceFolder,
         token: vscode.CancellationToken,
         workerCwd: string,
         _worker?: WdioExtensionDebugWorker

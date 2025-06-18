@@ -19,7 +19,7 @@ export class TestRunner implements vscode.Disposable {
 
     constructor(
         protected configManager: IExtensionConfigManager,
-        protected workspaceFolder: vscode.WorkspaceFolder | undefined,
+        protected workspaceFolder: vscode.WorkspaceFolder,
         protected worker: IWdioExtensionWorker
     ) {
         worker.idleMonitor.pauseTimer()

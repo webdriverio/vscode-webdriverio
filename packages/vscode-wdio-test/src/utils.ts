@@ -73,8 +73,16 @@ export function getWorkspaceFolder(
     testItem: vscode.TestItem
 ) {
     if (!configManager.isMultiWorkspace) {
-        return vscode.workspace.getWorkspaceFolder(configManager.getWorkspaces()[0].uri)
+        return getWorkspace(configManager.getWorkspaces()[0].uri)
     }
     const metadata = this.getMetadata(getRootTestItem(testItem))
-    return vscode.workspace.getWorkspaceFolder(metadata.uri)
+    return getWorkspace(metadata.uri)
+}
+
+function getWorkspace(uri: vscode.Uri) {
+    const workspace = vscode.workspace.getWorkspaceFolder(uri)
+    if (!workspace) {
+        throw new Error(`Workspace is not found: ${uri.fsPath}`)
+    }
+    return workspace
 }
