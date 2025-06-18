@@ -78,11 +78,13 @@ For example:
 
 This extension contributes the following settings:
 
-- `webdriverio.nodeExecutable`: The path to the Node.js executable. If not assigned, WebdriverIO try to resolve the node path from environment valuables of `PATH`.
 - `webdriverio.configFilePattern`: Glob pattern for WebdriverIO configuration file
+- `webdriverio.nodeExecutable`: The path to the Node.js executable. If not assigned, WebdriverIO try to resolve the node path from environment valuables of `PATH`.
 - `webdriverio.workerIdleTimeout`: If no processing is performed in the Worker for the set amount of time(defined by seconds), the Worker is terminated. If processing is requested again, it will be started automatically.
-- `webdriverio.logLevel`: Set the logLevel
+- `webdriverio.envFiles`: A list of `.env` files, from which environment variables are loaded when WebdriverIO is run from the file set in this parameter.<br>If a variable is defined in more than one `.env` file, the first value set will take precedence unless the `webdriverio.overrideEnv` is set.
+- `webdriverio.overrideEnv`: Override any environment variables that have already been set on your machine with values from your `.env` file(s).<br>See also `webdriverio.envFiles`
 - `webdriverio.showOutput`: Show WebdriverIO output in the test result when set `true` this option
+- `webdriverio.logLevel`: Set the logLevel
 
 ## Remarks
 
