@@ -1,4 +1,5 @@
 import { log } from '@vscode-wdio/logger'
+import { getEnvOptions } from '@vscode-wdio/utils'
 
 import { getGrep, getRange, getCucumberSpec, getSpec } from './utils.js'
 import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
@@ -41,7 +42,7 @@ export class TestRunner implements vscode.Disposable {
         this.validateTestItem(metadata)
 
         // Create test execution options
-        const testOptions = this.createTestOptions(test, metadata)
+        const testOptions = await this.createTestOptions(test, metadata)
 
         try {
             // Execute test and process results
@@ -68,7 +69,10 @@ export class TestRunner implements vscode.Disposable {
     /**
      * Creates RunTestOptions based on the test type and framework
      */
-    private createTestOptions(test: vscode.TestItem, metadata: TestItemMetadataWithRepository): RunTestOptions {
+    private async createTestOptions(
+        test: vscode.TestItem,
+        metadata: TestItemMetadataWithRepository
+    ): Promise<RunTestOptions> {
         const isCucumberFramework = this.isCucumberFramework(metadata)
 
         // Get appropriate specs based on the test framework and type
@@ -85,7 +89,7 @@ export class TestRunner implements vscode.Disposable {
             specs,
             grep,
             range,
-            env: { paths: [], override: false }, // TODO: implement the logic for envFile
+            env: await getEnvOptions(this.configManager, this.workspaceFolder),
         }
     }
 
