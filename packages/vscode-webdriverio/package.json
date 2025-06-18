@@ -88,10 +88,6 @@
     "configuration": {
       "title": "WebdriverIO",
       "properties": {
-        "webdriverio.nodeExecutable": {
-          "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
-          "type": "string"
-        },
         "webdriverio.configFilePattern": {
           "type": "array",
           "items": {
@@ -100,12 +96,40 @@
           "default": [
             "**/*wdio*.conf*.{ts,js,mjs,cjs,cts,mts}"
           ],
-          "markdownDescription": "Glob pattern for WebdriverIO configuration file"
+          "markdownDescription": "Glob pattern for WebdriverIO configuration file",
+          "order": 10
+        },
+        "webdriverio.nodeExecutable": {
+          "markdownDescription": "The path to the Node.js executable. If not assigned, WebdriverIO just passes down `'node'` to `child_process.spawn`.",
+          "type": "string",
+          "order": 20
         },
         "webdriverio.workerIdleTimeout": {
           "markdownDescription": "If no processing is performed in the Worker for the set amount of time(defined by seconds), the Worker is terminated. If processing is requested again, it will be started automatically.",
           "type": "number",
-          "default": 600
+          "default": 600,
+          "order": 21
+        },
+        "webdriverio.envFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "A list of `.env` files, from which environment variables are loaded when WebdriverIO is run from the file set in this parameter.\n\nIf a variable is defined in more than one `.env` file, the first value set will take precedence unless the `#webdriverio.overrideEnv#` is set.",
+          "order": 25
+        },
+        "webdriverio.overrideEnv": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Override any environment variables that have already been set on your machine with values from your `.env` file(s).\n\nSee also `#webdriverio.envFiles#`",
+          "order": 26
+        },
+        "webdriverio.showOutput": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show WebdriverIO output in the test result",
+          "order": 90
         },
         "webdriverio.logLevel": {
           "type": "string",
@@ -118,12 +142,8 @@
             "silent"
           ],
           "default": "info",
-          "markdownDescription": "Set the logLevel"
-        },
-        "webdriverio.showOutput": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show WebdriverIO output in the test result"
+          "markdownDescription": "Set the logLevel",
+          "order": 99
         }
       }
     }
