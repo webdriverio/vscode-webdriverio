@@ -31,7 +31,6 @@ vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'
 
 vi.mock('../src/utils.js', () => {
     return {
-        getWorkspaceFolder: vi.fn(),
         createRunProfile: vi.fn(),
     }
 })

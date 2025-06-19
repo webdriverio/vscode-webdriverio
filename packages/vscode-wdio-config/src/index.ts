@@ -117,12 +117,12 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
         const normalizedConfigPath = normalizePath(configPath)
         const workspaceFolders = this.getWorkspaces()
 
-        const result: vscode.Uri[] = []
+        const result: vscode.WorkspaceFolder[] = []
         for (const workspaceFolder of workspaceFolders) {
             const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.has(normalizedConfigPath)) {
                 log.debug(`detected workspace "${workspaceFolder.uri.fsPath}"`)
-                result.push(workspaceFolder.uri)
+                result.push(workspaceFolder)
             }
         }
         return result
@@ -139,13 +139,13 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
 
     public removeWdioConfig(configPath: string) {
         const normalizedConfigPath = normalizePath(configPath)
-        const result: vscode.Uri[] = []
+        const result: vscode.WorkspaceFolder[] = []
         const workspaceFolders = this.getWorkspaces()
         for (const workspaceFolder of workspaceFolders) {
             const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.delete(normalizedConfigPath)) {
                 log.debug(`Remove the config file "${normalizedConfigPath}" from "${workspaceFolder.uri.fsPath}"`)
-                result.push(workspaceFolder.uri)
+                result.push(workspaceFolder)
             }
         }
         this._wdioConfigPathSet.delete(normalizedConfigPath)

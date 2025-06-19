@@ -39,8 +39,8 @@ export interface IExtensionConfigManager extends ITypedEventEmitter<WebdriverIOC
     workspaces: WorkspaceData[]
     listener(event: vscode.ConfigurationChangeEvent): void
     initialize(): Promise<never[] | undefined>
-    addWdioConfig(configPath: string): Promise<vscode.Uri[]>
-    removeWdioConfig(configPath: string): vscode.Uri[]
+    addWdioConfig(configPath: string): Promise<vscode.WorkspaceFolder[]>
+    removeWdioConfig(configPath: string): vscode.WorkspaceFolder[]
     getWorkspaces(): readonly vscode.WorkspaceFolder[]
     getWdioConfigPaths(): string[]
 }
