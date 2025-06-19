@@ -7,12 +7,22 @@ import * as vscode from 'vscode'
 
 import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils.js'
 import { TestRepository } from '../src/repository.js'
+import type { IExtensionConfigManager } from '@vscode-wdio/types'
 import type { IWorkerManager, WdioConfig, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
 
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
+
+vi.mock('@vscode-wdio/utils', async (importActual) => {
+    // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+    const actual = await importActual<typeof import('@vscode-wdio/utils')>()
+    return {
+        ...actual,
+        getEnvOptions: vi.fn(() => ({ paths: [], override: false })),
+    }
+})
 
 describe('TestRepository', () => {
     const mockWorkspaceUri = vscode.Uri.file(join(process.cwd(), 'mock', 'workspace'))
@@ -23,6 +33,7 @@ describe('TestRepository', () => {
     const mockWdioConfigUri = vscode.Uri.file(mockWdioConfigPath)
 
     // Mock objects
+    let mockConfigManager: IExtensionConfigManager
     let testController: vscode.TestController
     let wdioConfigTestItem: vscode.TestItem
     let testRepository: TestRepository
@@ -31,6 +42,7 @@ describe('TestRepository', () => {
     let readSpecsStub: ReturnType<typeof vi.fn>
     let runProfileDisposeStub: ReturnType<typeof vi.fn>
     let workerManager: IWorkerManager
+    let mockWorkspaceFolder: vscode.WorkspaceFolder
 
     beforeEach(() => {
         vi.resetAllMocks()
@@ -54,6 +66,10 @@ describe('TestRepository', () => {
             { spec: mockSpecPath2, data: 'test content 2' },
         ])
 
+        mockConfigManager = vi.fn() as unknown as IExtensionConfigManager
+        mockWorkspaceFolder = {
+            uri: mockWorkspaceUri,
+        } as unknown as vscode.WorkspaceFolder
         mockWorker = {
             on: vi.fn(),
             rpc: {
@@ -76,11 +92,13 @@ describe('TestRepository', () => {
 
         // Create repository with mocked dependencies
         testRepository = new MockTestRepository(
+            mockConfigManager,
             testController,
             mockWorker,
             mockWdioConfigPath,
             wdioConfigTestItem,
-            workerManager
+            workerManager,
+            mockWorkspaceFolder
         )
 
         testRepository.setMetadata(wdioConfigTestItem, {
@@ -137,11 +155,13 @@ describe('TestRepository', () => {
         it('should throw error if framework is accessed before loading config', () => {
             // Create new instance without loading config
             const repo = new TestRepository(
+                mockConfigManager,
                 testController,
                 mockWorker,
                 mockWdioConfigPath,
                 wdioConfigTestItem,
-                workerManager
+                workerManager,
+                mockWorkspaceFolder
             )
 
             // Verify
@@ -156,8 +176,14 @@ describe('TestRepository', () => {
             await testRepository.discoverAllTests()
 
             // Verify
-            expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({ configFilePath: mockWdioConfigPath })
-            expect(mockWorker.rpc.readSpecs).toHaveBeenCalledWith({ specs: [mockSpecPath, mockSpecPath2] })
+            expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({
+                env: { paths: [], override: false },
+                configFilePath: mockWdioConfigPath,
+            })
+            expect(mockWorker.rpc.readSpecs).toHaveBeenCalledWith({
+                env: { paths: [], override: false },
+                specs: [mockSpecPath, mockSpecPath2],
+            })
             expect(testRepository.framework).toBe('mocha')
             expect(log.debug).toHaveBeenCalledWith(`Discovered ${2} spec files`)
         })
@@ -241,8 +267,14 @@ describe('TestRepository', () => {
             await testRepository.reloadSpecFiles([mockSpecPath])
 
             // Verify
-            expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({ configFilePath: mockWdioConfigPath })
-            expect(readSpecsStub).toHaveBeenCalledWith({ specs: [mockSpecPath] })
+            expect(mockWorker.rpc.loadWdioConfig).toHaveBeenCalledWith({
+                env: { paths: [], override: false },
+                configFilePath: mockWdioConfigPath,
+            })
+            expect(readSpecsStub).toHaveBeenCalledWith({
+                env: { paths: [], override: false },
+                specs: [mockSpecPath],
+            })
             expect(removeSpecFileSpy).toHaveBeenCalledWith(mockSpecPath)
             expect(log.debug).toHaveBeenCalledWith('Reloading 1 spec files')
             expect(log.debug).toHaveBeenCalledWith('Successfully reloaded 1 spec files')
@@ -314,7 +346,10 @@ describe('TestRepository', () => {
             await testRepository.reloadSpecFiles([])
 
             // Verify
-            expect(readSpecsStub).toHaveBeenCalledWith({ specs: [mockSpecPath, mockSpecPath2] })
+            expect(readSpecsStub).toHaveBeenCalledWith({
+                env: { paths: [], override: false },
+                specs: [mockSpecPath, mockSpecPath2],
+            })
             expect(log.debug).toHaveBeenCalledWith('Reloading 2 spec files')
             expect(log.debug).toHaveBeenCalledWith('Successfully reloaded 2 spec files')
         })

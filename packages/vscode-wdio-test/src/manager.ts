@@ -88,7 +88,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
             workspaces.map(async (workspace) => {
                 const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
-                    await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigFile)
+                    await this.createWdioConfigTestItem(workspace.workspaceFolder, workspaceTestItem, wdioConfigFile)
 
                     this.isCreatedDefaultProfile = true
                 }
@@ -99,12 +99,16 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         log.debug('Finish initialize the RepositoryManager')
     }
 
-    public async addWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string) {
+    public async addWdioConfig(workspaceFolder: vscode.WorkspaceFolder, wdioConfigPath: string) {
         const affectedWorkspaceItems = this._workspaceTestItems.filter((item) => {
-            return item.uri?.fsPath === workspaceUri.fsPath
+            return item.uri?.fsPath === workspaceFolder.uri.fsPath
         })
         for (const workspaceTestItem of affectedWorkspaceItems) {
-            const configTestItem = await this.createWdioConfigTestItem(workspaceTestItem, wdioConfigPath)
+            const configTestItem = await this.createWdioConfigTestItem(
+                workspaceFolder,
+                workspaceTestItem,
+                wdioConfigPath
+            )
 
             const repo = this.getRepository(configTestItem)
             await repo.discoverAllTests()
@@ -114,9 +118,9 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         }
     }
 
-    public removeWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string) {
+    public removeWdioConfig(workspaceFolder: vscode.WorkspaceFolder, wdioConfigPath: string) {
         const affectedWorkspaceItems = this._workspaceTestItems.filter((item) => {
-            return item.uri?.fsPath === workspaceUri.fsPath
+            return item.uri?.fsPath === workspaceFolder.uri.fsPath
         })
         log.debug(`Remove the config file from ${affectedWorkspaceItems.length} workspace(s)`)
         const configUri = convertPathToUri(wdioConfigPath)
@@ -174,7 +178,11 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         return workspaceItem
     }
 
-    private async createWdioConfigTestItem(workspaceTestItem: vscode.TestItem, wdioConfigPath: string) {
+    private async createWdioConfigTestItem(
+        workspaceFolder: vscode.WorkspaceFolder,
+        workspaceTestItem: vscode.TestItem,
+        wdioConfigPath: string
+    ) {
         const uri = convertPathToUri(wdioConfigPath)
         const configItem = this.controller.createTestItem(
             this.generateConfigTestItemId(workspaceTestItem, uri),
@@ -186,7 +194,15 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         this._wdioConfigTestItems.push(configItem)
 
         const worker = await this.workerManager.getConnection(wdioConfigPath)
-        const repo = new TestRepository(this.controller, worker, wdioConfigPath, configItem, this.workerManager)
+        const repo = new TestRepository(
+            this.configManager,
+            this.controller,
+            worker,
+            wdioConfigPath,
+            configItem,
+            this.workerManager,
+            workspaceFolder
+        )
         this._repos.add(repo)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))

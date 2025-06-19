@@ -8,8 +8,8 @@ export interface IRepositoryManager extends vscode.Disposable {
     readonly repos: ITestRepository[]
 
     initialize(): Promise<void>
-    addWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string): Promise<void>
-    removeWdioConfig(workspaceUri: vscode.Uri, wdioConfigPath: string): void
+    addWdioConfig(workspaceUri: vscode.WorkspaceFolder, wdioConfigPath: string): Promise<void>
+    removeWdioConfig(workspaceFolder: vscode.WorkspaceFolder, wdioConfigPath: string): void
     registerToTestController(): void
     refreshTests(): Promise<void>
 }

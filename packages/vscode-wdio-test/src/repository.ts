@@ -3,11 +3,12 @@ import * as path from 'node:path'
 
 import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
-import { normalizePath } from '@vscode-wdio/utils'
+import { getEnvOptions, normalizePath } from '@vscode-wdio/utils'
 
 import { convertPathToUri, convertTestData } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
+import type { IExtensionConfigManager } from '@vscode-wdio/types'
 
 import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 import type { VscodeTestData, ITestRepository } from '@vscode-wdio/types/test'
@@ -22,16 +23,23 @@ class WorkerProxy extends MetadataRepository {
     ) {
         super()
         this._worker = worker
-        this._worker.on('shutdown', () => {
-            this._worker = undefined
-        })
+        this.setListener()
     }
 
     async getWorker() {
         if (!this._worker) {
             this._worker = await this.workerManager.getConnection(this._wdioConfigPath)
+            this.setListener()
         }
         return this._worker
+    }
+
+    private setListener() {
+        if (this._worker) {
+            this._worker.on('shutdown', () => {
+                this._worker = undefined
+            })
+        }
     }
 }
 
@@ -45,11 +53,13 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     private _framework: string | undefined = undefined
 
     constructor(
+        public readonly configManager: IExtensionConfigManager,
         public readonly controller: vscode.TestController,
         _worker: IWdioExtensionWorker,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: vscode.TestItem,
-        workerManager: IWorkerManager
+        workerManager: IWorkerManager,
+        private _workspaceFolder: vscode.WorkspaceFolder
     ) {
         super(wdioConfigPath, _worker, workerManager)
     }
@@ -65,13 +75,20 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         return this._framework
     }
 
+    private async getEnvOptions() {
+        return await getEnvOptions(this.configManager, this._workspaceFolder)
+    }
+
     /**
      * Discover and register all tests from WebdriverIO configuration
      */
     public async discoverAllTests(): Promise<void> {
         try {
             const worker = await this.getWorker()
-            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const config = await worker.rpc.loadWdioConfig({
+                env: await this.getEnvOptions(),
+                configFilePath: this.wdioConfigPath,
+            })
 
             if (!config) {
                 return
@@ -105,7 +122,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     public async reloadSpecFiles(filePaths: string[] = []): Promise<void> {
         try {
             const worker = await this.getWorker()
-            const config = await worker.rpc.loadWdioConfig({ configFilePath: this.wdioConfigPath })
+            const config = await worker.rpc.loadWdioConfig({
+                env: await this.getEnvOptions(),
+                configFilePath: this.wdioConfigPath,
+            })
             if (!config) {
                 return
             }
@@ -192,7 +212,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
         const worker = await this.getWorker()
-        const testData = await worker.rpc.readSpecs({ specs })
+        const testData = await worker.rpc.readSpecs({
+            env: await this.getEnvOptions(),
+            specs,
+        })
 
         const fileTestItems = (
             await Promise.all(

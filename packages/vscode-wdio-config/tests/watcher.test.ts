@@ -151,7 +151,7 @@ describe('ConfigFileWatcher', () => {
         it('should return config file patterns from global config', () => {
             // Setup
             const expectedPatterns = ['**/wdio.conf.{js,ts}']
-            mockConfigManager.globalConfig.configFilePattern = expectedPatterns
+            ;(mockConfigManager.globalConfig.configFilePattern as any) = expectedPatterns
 
             // Execute
             const result = watcher['getFilePatterns']()
@@ -162,7 +162,7 @@ describe('ConfigFileWatcher', () => {
 
         it('should return empty array if no patterns are defined', () => {
             // Setup
-            mockConfigManager.globalConfig.configFilePattern = []
+            ;(mockConfigManager.globalConfig.configFilePattern as any) = []
 
             // Execute
             const result = watcher['getFilePatterns']()

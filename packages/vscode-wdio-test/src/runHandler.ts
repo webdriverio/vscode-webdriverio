@@ -5,7 +5,7 @@ import { DebugRunner, TestRunner } from '@vscode-wdio/server'
 import * as vscode from 'vscode'
 
 import { TestReporter } from './reporter.js'
-import { getRootTestItem } from './utils.js'
+import { getWorkspaceFolder } from './utils.js'
 
 import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { RepositoryManager } from './manager.js'
@@ -77,11 +77,12 @@ export function createHandler(
             markTestsAsRunning(run, testData.testItem)
 
             try {
+                const workspaceFolder = getWorkspaceFolder.call(repositoryManager, configManager, testData.testItem)
                 const runner = !isDebug
-                    ? new TestRunner(await testData.repository.getWorker())
+                    ? new TestRunner(configManager, workspaceFolder, await testData.repository.getWorker())
                     : new DebugRunner(
                         configManager,
-                        getWorkspaceFolder.call(repositoryManager, configManager, testData.testItem),
+                        workspaceFolder,
                         token,
                         dirname(testData.repository.wdioConfigPath)
                     )
@@ -128,16 +129,4 @@ function conversionCucumberStep(this: RepositoryManager, testItem: vscode.TestIt
         return { testItem: testItem.parent, metadata, repository }
     }
     return { testItem, metadata, repository }
-}
-
-function getWorkspaceFolder(
-    this: RepositoryManager,
-    configManager: IExtensionConfigManager,
-    testItem: vscode.TestItem
-) {
-    if (!configManager.isMultiWorkspace) {
-        return vscode.workspace.getWorkspaceFolder(configManager.getWorkspaces()[0].uri)
-    }
-    const metadata = this.getMetadata(getRootTestItem(testItem))
-    return vscode.workspace.getWorkspaceFolder(metadata.uri)
 }

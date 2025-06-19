@@ -19,6 +19,7 @@
     "test:smoke": "run-s test:smoke:*",
     "test:smoke:config": "cross-env VSCODE_WDIO_E2E_SCENARIO=config xvfb-maybe wdio run ./wdioSmoke.conf.ts",
     "test:smoke:timeout": "cross-env VSCODE_WDIO_E2E_SCENARIO=timeout xvfb-maybe wdio run ./wdioSmoke.conf.ts",
+    "test:smoke:env": "cross-env VSCODE_WDIO_E2E_SCENARIO=env xvfb-maybe wdio run ./wdioSmoke.conf.ts",
     "wdio": "wdio run ./wdio.conf.ts"
   },
   "devDependencies": {

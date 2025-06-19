@@ -1,24 +1,41 @@
 import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
+import { getEnvOptions } from '@vscode-wdio/utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { createTestItem } from '../../../tests/utils.js'
 import { TestRunner } from '../src/run.js'
-import type { IWdioExtensionWorker } from '@vscode-wdio/types'
+import type { IExtensionConfigManager, IWdioExtensionWorker } from '@vscode-wdio/types'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
+import type * as vscode from 'vscode'
 
 // Mock dependencies
 vi.mock('vscode', () => import('../../../tests/__mocks__/vscode.cjs'))
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
 
 vi.mock('../src/debug.js', () => ({}))
+vi.mock('@vscode-wdio/utils', () => ({
+    getEnvOptions: vi.fn(),
+}))
 
 describe('TestRunner', () => {
+    let workspaceFolder: vscode.WorkspaceFolder
     let testRunner: TestRunner
     let mockWorker: IWdioExtensionWorker
     let mockRpc: any
+    let mockConfigManager: IExtensionConfigManager
 
     beforeEach(() => {
         vi.resetAllMocks()
+        workspaceFolder = {
+            uri: { fsPath: '/workspace' } as vscode.Uri,
+            name: 'Test Workspace',
+            index: 0,
+        }
+        mockConfigManager = {
+            globalConfig: {
+                workerIdleTimeout: 600,
+            },
+        } as unknown as IExtensionConfigManager
 
         // Create mock worker
         mockRpc = {
@@ -41,8 +58,13 @@ describe('TestRunner', () => {
             },
         } as unknown as IWdioExtensionWorker
 
+        vi.mocked(getEnvOptions).mockResolvedValue({
+            override: false,
+            paths: [],
+        })
+
         // Create test runner instance
-        testRunner = new TestRunner(mockWorker)
+        testRunner = new TestRunner(mockConfigManager, workspaceFolder, mockWorker)
     })
 
     afterEach(() => {
@@ -63,6 +85,8 @@ describe('TestRunner', () => {
             // Verify ensureConnected was called
             expect(mockWorker.ensureConnected).toHaveBeenCalled()
 
+            expect(getEnvOptions).toHaveBeenCalled()
+
             // Verify event listeners were set up
             expect(mockWorker.on).toHaveBeenCalledTimes(2)
             expect(mockWorker.on).toHaveBeenCalledWith('stdout', expect.any(Function))
@@ -74,6 +98,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js'],
                 grep: 'MyTest',
                 range: testData.testItem.range,
+                env: { paths: [], override: false },
             })
 
             // Verify listeners were removed
@@ -105,6 +130,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false },
             })
 
             // Verify result
@@ -127,6 +153,7 @@ describe('TestRunner', () => {
                 specs: [],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false },
             })
 
             // Verify result
@@ -149,6 +176,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js:11:21'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false },
             })
 
             // Verify result
@@ -189,6 +217,7 @@ describe('TestRunner', () => {
                 specs: ['/path/to/test.js:11:21'],
                 grep: undefined,
                 range: undefined,
+                env: { paths: [], override: false },
             })
 
             // Verify result

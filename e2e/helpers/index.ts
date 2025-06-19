@@ -103,13 +103,15 @@ export async function clearAllTestResults(workbench: Workbench) {
     }
 }
 
-export async function clickTitleActionButton(titlePart: ViewTitlePart, label: string) {
+export async function clickTitleActionButton(titlePart: ViewTitlePart, label: string | RegExp) {
     const elements = (await titlePart.elem.$$(
         (titlePart.locatorMap.ViewSection.actionConstructor as Function)()
     )) as WebdriverIO.Element[]
 
+    const regExp = typeof label === 'string' ? new RegExp(label) : label
     for (const element of elements) {
-        if ((await element.getAttribute('aria-label')) === label) {
+        const actualLabel = await element.getAttribute('aria-label')
+        if (regExp.test(actualLabel)) {
             await element.click()
             break
         }

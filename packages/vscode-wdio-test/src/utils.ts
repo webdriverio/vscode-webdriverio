@@ -3,6 +3,7 @@ import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import { createHandler } from './runHandler.js'
+import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { RepositoryManager } from './manager.js'
 
 /**
@@ -64,4 +65,24 @@ export function getRootTestItem(testItem: vscode.TestItem) {
         }
     }
     return _testItem
+}
+
+export function getWorkspaceFolder(
+    this: RepositoryManager,
+    configManager: IExtensionConfigManager,
+    testItem: vscode.TestItem
+) {
+    if (!configManager.isMultiWorkspace) {
+        return getWorkspace(configManager.getWorkspaces()[0].uri)
+    }
+    const metadata = this.getMetadata(getRootTestItem(testItem))
+    return getWorkspace(metadata.uri)
+}
+
+function getWorkspace(uri: vscode.Uri) {
+    const workspace = vscode.workspace.getWorkspaceFolder(uri)
+    if (!workspace) {
+        throw new Error(`Workspace is not found: ${uri.fsPath}`)
+    }
+    return workspace
 }

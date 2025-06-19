@@ -21,6 +21,7 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
         const config = vscode.workspace.getConfiguration(EXTENSION_ID)
 
         const configFilePattern = config.get<string[]>('configFilePattern')
+        const envFiles = config.get<string[]>('envFiles')
 
         this._globalConfig = {
             nodeExecutable: config.get<string | undefined>('nodeExecutable', DEFAULT_CONFIG_VALUES.nodeExecutable),
@@ -29,6 +30,8 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
                     ? configFilePattern
                     : [...DEFAULT_CONFIG_VALUES.configFilePattern],
             workerIdleTimeout: config.get<number>('workerIdleTimeout', DEFAULT_CONFIG_VALUES.workerIdleTimeout),
+            envFiles: envFiles && envFiles.length > 0 ? envFiles : [...DEFAULT_CONFIG_VALUES.envFiles],
+            overrideEnv: this.resolveBooleanConfig(config, 'overrideEnv', DEFAULT_CONFIG_VALUES.overrideEnv),
             showOutput: this.resolveBooleanConfig(config, 'showOutput', DEFAULT_CONFIG_VALUES.showOutput),
             logLevel: config.get<string>('logLevel', DEFAULT_CONFIG_VALUES.logLevel),
         }
@@ -114,12 +117,12 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
         const normalizedConfigPath = normalizePath(configPath)
         const workspaceFolders = this.getWorkspaces()
 
-        const result: vscode.Uri[] = []
+        const result: vscode.WorkspaceFolder[] = []
         for (const workspaceFolder of workspaceFolders) {
             const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.has(normalizedConfigPath)) {
                 log.debug(`detected workspace "${workspaceFolder.uri.fsPath}"`)
-                result.push(workspaceFolder.uri)
+                result.push(workspaceFolder)
             }
         }
         return result
@@ -136,13 +139,13 @@ export class ExtensionConfigManager extends EventEmitter implements IExtensionCo
 
     public removeWdioConfig(configPath: string) {
         const normalizedConfigPath = normalizePath(configPath)
-        const result: vscode.Uri[] = []
+        const result: vscode.WorkspaceFolder[] = []
         const workspaceFolders = this.getWorkspaces()
         for (const workspaceFolder of workspaceFolders) {
             const workspaceInfo = this._workspaceConfigMap.get(workspaceFolder)
             if (workspaceInfo && workspaceInfo.delete(normalizedConfigPath)) {
                 log.debug(`Remove the config file "${normalizedConfigPath}" from "${workspaceFolder.uri.fsPath}"`)
-                result.push(workspaceFolder.uri)
+                result.push(workspaceFolder)
             }
         }
         this._wdioConfigPathSet.delete(normalizedConfigPath)

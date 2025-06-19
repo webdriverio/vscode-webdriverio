@@ -310,6 +310,9 @@ importers:
       birpc:
         specifier: ^2.3.0
         version: 2.4.0
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       recast:
         specifier: ^0.23.11
         version: 0.23.11
@@ -421,6 +424,36 @@ importers:
         version: 5.8.0
 
   samples/e2e/mocha:
+    devDependencies:
+      '@types/mocha':
+        specifier: ^10.0.10
+        version: 10.0.10
+      '@types/node':
+        specifier: ^20.17.50
+        version: 20.19.1
+      '@wdio/cli':
+        specifier: ^9.12.6
+        version: 9.15.0
+      '@wdio/globals':
+        specifier: ^9.12.6
+        version: 9.15.0(@wdio/logger@9.15.0)
+      '@wdio/local-runner':
+        specifier: ^9.12.6
+        version: 9.15.0
+      '@wdio/mocha-framework':
+        specifier: ^9.12.6
+        version: 9.15.0
+      '@wdio/spec-reporter':
+        specifier: ^9.12.6
+        version: 9.15.0
+      '@wdio/types':
+        specifier: ^9.12.6
+        version: 9.15.0
+      mocha:
+        specifier: ^11.1.0
+        version: 11.6.0
+
+  samples/smoke/env:
     devDependencies:
       '@types/mocha':
         specifier: ^10.0.10
@@ -10120,7 +10153,7 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.4.7
+      dotenv: 16.5.0
 
   dotenv@16.4.7: {}
 

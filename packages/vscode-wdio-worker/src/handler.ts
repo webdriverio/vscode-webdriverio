@@ -1,10 +1,23 @@
 import { normalizePath } from '@vscode-wdio/utils/node'
 
 import { getLauncherInstance } from './cli.js'
+import { EnvHook } from './hook.js'
 import { parse } from './parsers/index.js'
 import { runTest } from './test.js'
-import type { LoadConfigOptions, WdioConfig, WorkerApi } from '@vscode-wdio/types/server'
+import type { CommonRequestOptions, LoadConfigOptions, WdioConfig, WorkerApi } from '@vscode-wdio/types/server'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
+
+async function handlerProxy(this: { context: WorkerMetaContext; fn: Function }, options: unknown) {
+    const hooks = [new EnvHook(this.context, (options as CommonRequestOptions).env)]
+
+    await Promise.all(hooks.map((hook) => hook.before()))
+
+    const fnResult = await this.fn.call(this.context, options)
+
+    await Promise.all(hooks.map((hook) => hook.after()))
+
+    return fnResult
+}
 
 export function createWorker(context: WorkerMetaContext): WorkerApi {
     let _shutdownRequest: Promise<void> | null
@@ -12,15 +25,15 @@ export function createWorker(context: WorkerMetaContext): WorkerApi {
         /**
          * Run WebdriverIO tests
          */
-        runTest: runTest.bind(context),
+        runTest: handlerProxy.bind({ context, fn: runTest }),
         /**
          * Read configuration for the WebdriverIO
          */
-        loadWdioConfig: loadWdioConfig.bind(context),
+        loadWdioConfig: handlerProxy.bind({ context, fn: loadWdioConfig }),
         /**
          * Read spec files for the WebdriverIO
          */
-        readSpecs: parse.bind(context),
+        readSpecs: handlerProxy.bind({ context, fn: parse }),
         /**
          * Ping worker to check if it's alive
          */

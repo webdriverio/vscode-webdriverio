@@ -24,7 +24,7 @@ export class DebugRunner extends TestRunner {
 
     constructor(
         configManager: IExtensionConfigManager,
-        workspaceFolder: vscode.WorkspaceFolder | undefined,
+        workspaceFolder: vscode.WorkspaceFolder,
         token: vscode.CancellationToken,
         workerCwd: string,
         _worker?: WdioExtensionDebugWorker
@@ -32,7 +32,7 @@ export class DebugRunner extends TestRunner {
         const worker = _worker
             ? _worker
             : new WdioExtensionDebugWorker(configManager, `#DEBUGGER${debuggerId++}`, workerCwd, workspaceFolder, token)
-        super(worker)
+        super(configManager, workspaceFolder, worker)
 
         worker.setDebugTerminationCallback(() => {
             if (this._runController) {

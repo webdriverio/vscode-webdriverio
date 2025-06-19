@@ -26,10 +26,10 @@ export class ConfigFileWatcher extends FileWatcherManager {
 
     protected async handleFileCreate(uri: vscode.Uri): Promise<void> {
         const wdioConfigPath = normalizePath(convertUriToPath(uri))
-        const workspaceUris = await this.configManager.addWdioConfig(wdioConfigPath)
+        const workspaceFolders = await this.configManager.addWdioConfig(wdioConfigPath)
         await Promise.all(
-            workspaceUris.map(
-                async (workspaceUri) => await this.repositoryManager.addWdioConfig(workspaceUri, wdioConfigPath)
+            workspaceFolders.map(
+                async (workspaceFolder) => await this.repositoryManager.addWdioConfig(workspaceFolder, wdioConfigPath)
             )
         )
 
@@ -50,9 +50,9 @@ export class ConfigFileWatcher extends FileWatcherManager {
 
     protected async handleFileDelete(uri: vscode.Uri): Promise<void> {
         const wdioConfigPath = normalizePath(convertUriToPath(uri))
-        const workspaceUris = this.configManager.removeWdioConfig(wdioConfigPath)
-        for (const workspaceUri of workspaceUris) {
-            this.repositoryManager.removeWdioConfig(workspaceUri, wdioConfigPath)
+        const workspaceFolders = this.configManager.removeWdioConfig(wdioConfigPath)
+        for (const workspaceFolder of workspaceFolders) {
+            this.repositoryManager.removeWdioConfig(workspaceFolder, wdioConfigPath)
             await this.workerManager.reorganize(this.configManager.getWdioConfigPaths())
         }
         this.testfileWatcher.refreshWatchers()
