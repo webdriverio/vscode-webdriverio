@@ -1,6 +1,6 @@
 {
   "name": "@vscode-wdio/test",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -15,10 +15,10 @@
     "clean": "shx rm -rf out dist coverage"
   },
   "dependencies": {
-    "@vscode-wdio/server": "workspace:*",
     "@vscode-wdio/config": "workspace:*",
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/logger": "workspace:*",
+    "@vscode-wdio/server": "workspace:*",
     "@vscode-wdio/utils": "workspace:*"
   },
   "devDependencies": {

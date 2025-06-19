@@ -11,6 +11,19 @@
 
 ---
 
+## v0.4.0 (2025-06-19)
+
+#### :rocket: New Feature
+
+- `vscode-wdio-config`, `vscode-wdio-constants`, `vscode-wdio-server`, `vscode-wdio-test`, `vscode-wdio-types`, `vscode-wdio-utils`, `vscode-wdio-worker`, `vscode-webdriverio`
+    - [#67](https://github.com/webdriverio/vscode-webdriverio/pull/67) feat: load and unload env variables at worker ([@mato533](https://github.com/mato533))
+- `vscode-wdio-config`, `vscode-wdio-constants`, `vscode-wdio-logger`, `vscode-wdio-server`, `vscode-wdio-test`, `vscode-wdio-types`, `vscode-wdio-utils`, `vscode-wdio-worker`, `vscode-webdriverio`
+    - [#62](https://github.com/webdriverio/vscode-webdriverio/pull/62) feat: automatically terminate worker processes when idle timeout has expired ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
 ## v0.3.2 (2025-06-14)
 
 #### :bug: Bug Fix
