@@ -29,7 +29,7 @@ describe('VS Code Extension Testing (EnableEnv)', function () {
     })
 
     afterEach(async function () {
-        await new Promise((resolve)=>setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
         await clearAllTestResults(workbench)
     })
 
