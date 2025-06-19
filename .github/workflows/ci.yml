@@ -59,3 +59,10 @@ jobs:
     uses: ./.github/workflows/ci-smoke.yml
     with:
       scenario: 'timeout'
+
+  smoke-env:
+    name: Smoke - Load .env files
+    needs: [lint, build, e2e]
+    uses: ./.github/workflows/ci-smoke.yml
+    with:
+      scenario: 'env'
