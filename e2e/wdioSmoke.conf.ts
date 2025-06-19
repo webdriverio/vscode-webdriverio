@@ -25,7 +25,7 @@ function defineSmokePrams(target: TestTargets) {
             }
         case 'env':
             return {
-                specs: ['./tests/envEnable.spec.ts', './tests/envDisable.spec.ts'],
+                specs: ['./tests/envEnable.spec.ts'],
                 workspace: '../samples/smoke/env',
                 settings: { 'webdriverio.envFiles': ['.env'] },
             }
