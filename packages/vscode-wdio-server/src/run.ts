@@ -23,7 +23,7 @@ export class TestRunner implements vscode.Disposable {
         protected workspaceFolder: vscode.WorkspaceFolder,
         protected worker: IWdioExtensionWorker
     ) {
-        worker.idleMonitor.pauseTimer()
+        worker.pauseIdleTimer()
     }
 
     public get stdout() {
@@ -165,6 +165,6 @@ export class TestRunner implements vscode.Disposable {
     }
 
     async dispose() {
-        this.worker.idleMonitor.resumeTimer()
+        this.worker.resumeIdleTimer()
     }
 }

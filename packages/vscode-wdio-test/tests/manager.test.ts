@@ -114,8 +114,6 @@ describe('RepositoryManager', () => {
 
             expect((repositoryManager as any)._workspaceTestItems.length).toBe(1)
             expect((repositoryManager as any)._wdioConfigTestItems.length).toBe(1)
-
-            expect(workerManager.getConnection).toHaveBeenCalledWith(fakeWorkspaces[0].wdioConfigFiles[0])
         })
     })
 

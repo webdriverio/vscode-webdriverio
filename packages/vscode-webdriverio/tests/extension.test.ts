@@ -1,9 +1,7 @@
 import { ExtensionConfigManager } from '@vscode-wdio/config'
 import { log } from '@vscode-wdio/logger'
-import { WdioWorkerManager } from '@vscode-wdio/server'
 import { RepositoryManager } from '@vscode-wdio/test'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import * as vscode from 'vscode'
 
 import { activate, deactivate } from '../src/extension.js'
 
@@ -25,19 +23,13 @@ vi.mock('vscode', async () => {
 })
 
 vi.mock('@vscode-wdio/logger', () => import('../../../tests/__mocks__/logger.js'))
-vi.mock('@vscode-wdio/server', () => {
-    const WdioWorkerManager = vi.fn()
-    WdioWorkerManager.prototype.start = vi.fn(() => Promise.resolve())
-    WdioWorkerManager.prototype.dispose = vi.fn(() => Promise.resolve())
-
-    return { WdioWorkerManager }
-})
 vi.mock('@vscode-wdio/config', () => {
     const ExtensionConfigManager = vi.fn()
     ExtensionConfigManager.prototype.initialize = vi.fn(() => Promise.resolve())
     ExtensionConfigManager.prototype.dispose = vi.fn(() => Promise.resolve())
     ExtensionConfigManager.prototype.getWdioConfigPaths = vi.fn(() => ['/test/wdio.conf.ts'])
     ExtensionConfigManager.prototype.listener = vi.fn()
+    ExtensionConfigManager.prototype.on = vi.fn()
 
     const ConfigFileWatcher = vi.fn()
     ConfigFileWatcher.prototype.enable = vi.fn()
@@ -95,40 +87,11 @@ describe('extension', () => {
             // vi.mocked(TestRunner).mock.instances[0].run
             //
             expect(vi.mocked(ExtensionConfigManager).mock.instances[0].initialize).toHaveBeenCalled()
-            expect(vi.mocked(WdioWorkerManager).mock.instances[0].start).toHaveBeenCalled()
             expect(vi.mocked(RepositoryManager).mock.instances[0].initialize).toHaveBeenCalled()
             expect(vi.mocked(RepositoryManager).mock.instances[0].registerToTestController).toHaveBeenCalled()
 
             // Verify context subscriptions
             expect(fakeContext.subscriptions.length).toBeGreaterThan(0)
-        })
-
-        it('should handle server start error gracefully', async () => {
-            // Arrange
-            const errorMessage = 'Failed to start server'
-            vi.mocked(WdioWorkerManager.prototype.start).mockRejectedValueOnce(new Error(errorMessage))
-
-            // Act
-            await activate(fakeContext)
-
-            // Assert
-            expect(log.error).toHaveBeenCalledWith(`Failed to start WebdriverIO worker process: ${errorMessage}`)
-            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-                `Failed to start WebdriverIO worker process: ${errorMessage}`
-            )
-        })
-
-        it('should continue activation even when workerManager.start rejects', async () => {
-            // Arrange
-            vi.mocked(WdioWorkerManager.prototype.start).mockRejectedValueOnce(new Error('Server failed'))
-
-            // Act
-            await activate(fakeContext)
-
-            // Assert
-            expect(vi.mocked(RepositoryManager).mock.instances[0].initialize).toHaveBeenCalled()
-            expect(vi.mocked(RepositoryManager).mock.instances[0].registerToTestController).toHaveBeenCalled()
-            expect(log.error).toHaveBeenCalledWith(expect.stringContaining('Server failed'))
         })
     })
 

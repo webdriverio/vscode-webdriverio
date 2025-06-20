@@ -1,11 +1,10 @@
 import { dirname, normalize } from 'node:path'
 
 import { log } from '@vscode-wdio/logger'
-import * as vscode from 'vscode'
 
-import { WdioExtensionWorker } from './worker.js'
+import { WdioExtensionWorkerFactory } from './worker.js'
 import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
-import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
+import type { IWorkerManager, IWdioExtensionWorker, IWdioExtensionWorkerFactory } from '@vscode-wdio/types/server'
 
 export class WdioWorkerManager implements IWorkerManager {
     private _workerPool = new Map<string, IWdioExtensionWorker>()
@@ -15,9 +14,12 @@ export class WdioWorkerManager implements IWorkerManager {
     private _operationLock = false
     private _operationQueue: (() => Promise<void>)[] = []
 
-    constructor(private readonly configManager: IExtensionConfigManager) {
+    constructor(
+        configManager: IExtensionConfigManager,
+        private workerFactory: IWdioExtensionWorkerFactory = new WdioExtensionWorkerFactory(configManager)
+    ) {
         configManager.on('update:nodeExecutable', async (nodeExecutable: string | undefined) => {
-            log.debug(`Restart worker using webdriverio.nodeExecutable: ${nodeExecutable}`)
+            log.debug(`Stop all worker using webdriverio.nodeExecutable: ${nodeExecutable}`)
             const cwds = Array.from(this._workerPool.keys())
             await Promise.all(
                 cwds.map(async (cwd) => {
@@ -27,45 +29,12 @@ export class WdioWorkerManager implements IWorkerManager {
                     }
                 })
             )
-            try {
-                await this.start(this.configManager.getWdioConfigPaths())
-            } catch (error) {
-                const errorMessage = `Failed to restart WebdriverIO worker process: ${error instanceof Error ? error.message : String(error)}`
-                log.error(errorMessage)
-                vscode.window.showErrorMessage(errorMessage)
-            }
         })
 
         // Listen for worker idle timeout configuration changes
         configManager.on('update:workerIdleTimeout', async (workerIdleTimeout: number) => {
             log.debug(`Update worker idle timeout: ${workerIdleTimeout}s`)
             await this.updateWorkersIdleTimeout(workerIdleTimeout)
-        })
-    }
-
-    /**
-     * Start worker process directory by directory which is located the wdio config file.
-     * @param configPaths path to the configuration file for wdio (e.g. /path/to/wdio.config.js)
-     */
-    public async start(configPaths: string[]) {
-        // Add to queue and then execute the process
-        return this.queueOperation(async () => {
-            const duplicatedWorkerCwds = new Set<string>()
-            configPaths.forEach((configPath) => {
-                const normalizedConfigPath = normalize(configPath)
-                const wdioDirName = dirname(normalizedConfigPath)
-                duplicatedWorkerCwds.add(wdioDirName)
-            })
-
-            const workerCwds = Array.from(duplicatedWorkerCwds)
-            const ids = Array.from({ length: workerCwds.length }, (_, i) => this.latestId + i)
-            this.latestId = ids[ids.length - 1]
-
-            await Promise.all(
-                workerCwds.map(async (workerCwd, index) => {
-                    await this.startWorker(ids[index], workerCwd)
-                })
-            )
         })
     }
 
@@ -160,12 +129,11 @@ export class WdioWorkerManager implements IWorkerManager {
      */
     private async updateWorkerIdleTimeout(worker: IWdioExtensionWorker, idleTimeout: number): Promise<void> {
         try {
-            worker.idleMonitor.updateTimeout(idleTimeout)
+            worker.updateIdleTimeout(idleTimeout)
             log.debug(`[server manager] successfully updated idle timeout for worker ${worker.cid}`)
         } catch (error) {
             const errorMessage = `Failed to update idle timeout for worker ${worker.cid}: ${error instanceof Error ? error.message : String(error)}`
             log.error(errorMessage)
-            // Don't throw error to prevent stopping other workers from being updated
         }
     }
 
@@ -175,14 +143,15 @@ export class WdioWorkerManager implements IWorkerManager {
      * @param workerCwd Worker's current working directory
      */
     public async handleWorkerIdleTimeout(workerCwd: string): Promise<void> {
-        log.debug(`[server manager] received idle timeout notification for worker: ${workerCwd}`)
+        const normalizedConfigPath = normalize(workerCwd)
+        log.debug(`[server manager] received idle timeout notification for worker: ${normalizedConfigPath}`)
 
-        const worker = this._workerPool.get(workerCwd)
+        const worker = this._workerPool.get(normalizedConfigPath)
         if (worker) {
-            await this.stopWorker(workerCwd, worker)
-            log.debug(`[server manager] worker stopped due to idle timeout: ${workerCwd}`)
+            await this.stopWorker(normalizedConfigPath, worker)
+            log.debug(`[server manager] worker stopped due to idle timeout: ${normalizedConfigPath}`)
         } else {
-            log.warn(`[server manager] received idle timeout for unknown worker: ${workerCwd}`)
+            log.warn(`[server manager] received idle timeout for unknown worker: ${normalizedConfigPath}`)
         }
     }
 
@@ -255,9 +224,9 @@ export class WdioWorkerManager implements IWorkerManager {
         }
     }
 
-    private async createWorker(id: number, configPaths: string): Promise<WdioExtensionWorker> {
+    private async createWorker(id: number, configPaths: string): Promise<IWdioExtensionWorker> {
         const strId = `#${String(id)}`
-        const worker = new WdioExtensionWorker(this.configManager, strId, configPaths)
+        const worker = this.workerFactory.generate(strId, configPaths)
 
         // Set up idle timeout notification handler
         worker.on('idleTimeout', () => {
@@ -266,16 +235,6 @@ export class WdioWorkerManager implements IWorkerManager {
 
         await worker.start()
         await worker.waitForStart()
-
-        // Send initial idle timeout configuration
-        const idleTimeout = this.configManager.globalConfig.workerIdleTimeout
-        if (
-            idleTimeout !== undefined &&
-            'updateIdleTimeout' in worker &&
-            typeof worker.updateIdleTimeout === 'function'
-        ) {
-            worker.updateIdleTimeout(idleTimeout)
-        }
 
         log.debug(`[server manager] server was registered: ${configPaths}`)
         this._workerPool.set(configPaths, worker)

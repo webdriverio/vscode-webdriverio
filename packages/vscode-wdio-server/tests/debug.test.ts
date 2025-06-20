@@ -68,6 +68,7 @@ describe('DebugRunner', () => {
                 pauseTimer: vi.fn(),
                 resumeTimer: vi.fn(),
             },
+            pauseIdleTimer: vi.fn(),
         } as unknown as WdioExtensionDebugWorker
 
         mockWorkerResult = {
