@@ -1,4 +1,5 @@
 import { browser, expect } from '@wdio/globals'
+import { sleep } from 'wdio-vscode-service'
 
 import {
     STATUS,
@@ -34,7 +35,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         await clearAllTestResults(workbench)
     })
 
-    it('should be resolved the defined tests after configuration changed', async function () {
+    it('should be resolved the defined tests after settings changed', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -75,8 +76,10 @@ describe('VS Code Extension Testing (Update config)', function () {
         await workbench.openSettings()
 
         await testingVew.closeView()
-        const setting2 = new ExtendSettingsEditor(workbench)
-        const listSetting = await setting2.findListSetting('Config File Pattern', 'Webdriverio')
+        await sleep(1500)
+
+        const settingEditor = new ExtendSettingsEditor(workbench)
+        const listSetting = await settingEditor.findListSetting('Config File Pattern', 'Webdriverio')
         await listSetting.editValue(0, '**/webdriverio.conf.ts')
 
         await workbench.getEditorView().closeAllEditors()
