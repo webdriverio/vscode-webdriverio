@@ -38,7 +38,6 @@
     "prepackage:update-version": "pnpm --filter @vscode-wdio/release run update-version",
     "package": "vsce package",
     "publish": "tsx ./scripts/publish.ts",
-    "postpublish": "pnpm --filter @vscode-wdio/release run push",
     "package:next": "pnpm run package --pre-release",
     "publish:next": "pnpm run publish --pre-release",
     "typecheck": "tsc --noEmit --project tsconfig.json",

@@ -112,6 +112,12 @@ jobs:
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
 
+      - name: ✅ Push to remote repository
+        env:
+          DRY_RUN_ARGS: ${{ github.event.inputs.dryRun == 'yes' && '--dry-run' || '' }}
+        run: |
+          git push origin --no-verify --follow-tags "${DRY_RUN_ARGS}"
+
       - name: 📝 Create the Github Release
         run: |
           pnpm --filter @vscode-wdio/release run release-note

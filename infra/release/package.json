@@ -5,7 +5,6 @@
   "scripts": {
     "cache-key": "tsx ./src/cacheKey.ts",
     "copy": "tsx ./src/copy.ts",
-    "push": "tsx ./src/push.ts",
     "update-version": "tsx ./src/updatePrereleaseVersion.ts",
     "release-note": "tsx ./src/createRelease.ts",
     "changelog": "tsx ./src/changelog.ts"
