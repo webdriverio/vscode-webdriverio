@@ -19,12 +19,12 @@ jobs:
     runs-on: ${{ inputs.os }}
     steps:
       - name: 👷 Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: 🛠️ Setup workspace
-        uses: ./.github/workflows/actions/setup-workspace
+        uses: ./.github/actions/setup-workspace
         with:
           node-version: '20'
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: ⬆️ Upload Build Artifacts
         if: ${{ runner.os == 'Linux' }}
-        uses: ./.github/workflows/actions/upload-archive
+        uses: ./.github/actions/upload-archive
         with:
           name: vscode-webdriverio
           output: vscode-webdriverio-build.zip

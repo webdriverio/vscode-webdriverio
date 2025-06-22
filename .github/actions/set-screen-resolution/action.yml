@@ -37,5 +37,7 @@ runs:
       if: runner.os == 'macOS'
       shell: bash
       run: |
+        echo "::group::brew install displayplacer"
         brew install displayplacer
+        echo "::endgroup::"
         displayplacer list
