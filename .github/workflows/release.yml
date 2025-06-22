@@ -60,7 +60,7 @@ jobs:
           fetch-depth: 0
 
       - name: 🛠️ Setup workspace
-        uses: ./.github/workflows/actions/setup-workspace
+        uses: ./.github/actions/setup-workspace
         with:
           node-version: '20'
 

@@ -31,24 +31,24 @@ jobs:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: 🛠️ Setup workspace
-        uses: ./.github/workflows/actions/setup-workspace
+        uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: ⬇️ Download Build Archive
-        uses: ./.github/workflows/actions/download-archive
+        uses: ./.github/actions/download-archive
         with:
           name: vscode-webdriverio
           path: .
           filename: vscode-webdriverio-build.zip
 
       - name: 🗃️ Use cached vscode
-        uses: ./.github/workflows/actions/cache-vscode
+        uses: ./.github/actions/cache-vscode
         with:
           path: e2e/.wdio-vscode-service
 
       - name: 🖥️ Set screen resolution
-        uses: ./.github/workflows/actions/set-screen-resolution
+        uses: ./.github/actions/set-screen-resolution
 
       - name: 🧪 Run the e2e test
         env:
@@ -57,7 +57,7 @@ jobs:
         shell: bash
 
       - name: 📦 Upload Test Logs on Failure
-        uses: ./.github/workflows/actions/upload-archive
+        uses: ./.github/actions/upload-archive
         if: failure()
         with:
           name: ${{ inputs.compatibility-mode == 'yes' && 'compatibility' || 'e2e' }}-${{ matrix.scenario }}-logs-${{ matrix.os }}
