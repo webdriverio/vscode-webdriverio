@@ -90,7 +90,7 @@ describe('ServerManager', () => {
         it('should create a new worker if it does not exist', async () => {
             // Setup
             const configPath = '/path/to/wdio.config.js'
-            const wdioDirName = dirname(configPath)
+            const wdioDirName = dirname(normalize(configPath))
             const spyFactory = vi.spyOn(workerFactory, 'generate')
 
             // Execute
@@ -113,8 +113,8 @@ describe('ServerManager', () => {
 
             // Assert
             expect(spyFactory).toHaveBeenCalledTimes(2)
-            expect(spyFactory).toHaveBeenCalledWith('#1', '/path/to')
-            expect(spyFactory).toHaveBeenCalledWith('#2', '/another/path')
+            expect(spyFactory).toHaveBeenCalledWith('#1', normalize('/path/to'))
+            expect(spyFactory).toHaveBeenCalledWith('#2', normalize('/another/path'))
         })
     })
 
@@ -187,9 +187,9 @@ describe('ServerManager', () => {
 
             // Assert operations were queued and processed in order
             expect(operations.length).toBe(3)
-            expect(operations[0]).toBe('start:/path/1')
-            expect(operations[1]).toBe('start:/path/2')
-            expect(operations[2]).toBe('start:/path/3')
+            expect(operations[0]).toBe(`start:${normalize('/path/1')}`)
+            expect(operations[1]).toBe(`start:${normalize('/path/2')}`)
+            expect(operations[2]).toBe(`start:${normalize('/path/3')}`)
         })
 
         it('should avoid duplicate operations for the same path', async () => {
@@ -278,7 +278,7 @@ describe('ServerManager', () => {
             const stopWorker = (workerManager as any).stopWorker.bind(workerManager)
 
             // Get the worker from the server pool
-            const worker = (workerManager as any)._workerPool.get('/path/to')
+            const worker = (workerManager as any)._workerPool.get(normalize('/path/to'))
 
             // Execute
             await stopWorker('/path/to', worker)

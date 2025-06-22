@@ -53,7 +53,7 @@ export class WdioWorkerManager implements IWorkerManager {
                 return server
             }
             this.latestId++
-            return this.startWorker(this.latestId, dirname(configPaths))
+            return this.startWorker(this.latestId, dirname(normalizedConfigPath))
         })
     }
 
