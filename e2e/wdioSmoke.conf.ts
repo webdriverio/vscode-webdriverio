@@ -13,6 +13,7 @@ function defineSmokePrams(target: TestTargets) {
                     './tests/updateSpec.spec.ts',
                     './tests/updateErrorSpec.spec.ts',
                     './tests/updateErrorConfig.spec.ts',
+                    './tests/updateSettings.spec.ts',
                 ],
                 workspace: '../samples/smoke/update-config',
                 settings: {},
