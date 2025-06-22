@@ -1,6 +1,6 @@
 import { browser, expect } from '@wdio/globals'
 
-import { createCucumberExpected } from '../helpers/cucumber.ts'
+import { createCucumberExpected } from '../helpers/cucumber.js'
 import {
     STATUS,
     clearAllTestResults,
@@ -11,7 +11,7 @@ import {
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers/index.ts'
+} from '../helpers/index.js'
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 

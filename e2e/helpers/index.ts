@@ -2,12 +2,7 @@ import { DefaultTreeSection } from 'wdio-vscode-service'
 import type { StatusStrings } from 'assertions/index.ts'
 import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction, ViewTitlePart } from 'wdio-vscode-service'
 
-export const STATUS = {
-    NOT_YET_RUN: 'Not yet run',
-    PASSED: 'Passed',
-    FAILED: 'Failed',
-    SKIPPED: 'Skipped',
-} as const
+export { STATUS } from './constants.js'
 
 export async function openTestingView(workbench: Workbench) {
     const activityBar = workbench.getActivityBar()

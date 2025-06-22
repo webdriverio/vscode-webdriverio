@@ -1,4 +1,4 @@
-import { createBaseConfig } from './wdio.conf.ts'
+import { createBaseConfig } from './wdio.conf.js'
 
 type TestTargets = 'config' | 'timeout' | 'env'
 

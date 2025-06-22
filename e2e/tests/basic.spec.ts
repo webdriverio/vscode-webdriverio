@@ -1,5 +1,5 @@
 import { browser, expect } from '@wdio/globals'
-import { createExpected } from 'helpers/constants.ts'
+import { createExpected } from 'helpers/constants.js'
 
 import {
     STATUS,
@@ -11,7 +11,7 @@ import {
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers/index.ts'
+} from '../helpers/index.js'
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 

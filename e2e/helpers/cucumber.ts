@@ -1,4 +1,4 @@
-import { STATUS } from './index.ts'
+import { STATUS } from './constants.js'
 
 export function createExpectedNotRun() {
     return {

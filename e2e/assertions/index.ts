@@ -1,6 +1,6 @@
 import type { MatcherContext } from 'expect'
 import type { BottomBarPanel, TreeItem, Workbench } from 'wdio-vscode-service'
-import type { STATUS } from '../helpers/index.ts'
+import type { STATUS } from '../helpers/index.js'
 
 export interface ExpectedTreeItem {
     text: string
