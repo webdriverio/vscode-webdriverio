@@ -50,7 +50,7 @@ jobs:
       - name: 🚂 Run the smoke test
         env:
           E2E_SCENARIO: ${{ inputs.scenario }}
-        run: pnpm --filter @vscode-wdio/e2e run test:smoke:${E2E_SCENARIO}
+        run: pnpm --filter @vscode-wdio/e2e run "test:smoke:${E2E_SCENARIO}"
         shell: bash
 
       - name: 📦 Upload Test Logs on Failure

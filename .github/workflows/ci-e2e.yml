@@ -53,7 +53,7 @@ jobs:
       - name: 🧪 Run the e2e test
         env:
           E2E_SCENARIO: ${{ matrix.scenario }}
-        run: pnpm --filter @vscode-wdio/e2e run test:e2e:${E2E_SCENARIO}
+        run: pnpm --filter @vscode-wdio/e2e run "test:e2e:${E2E_SCENARIO}"
         shell: bash
 
       - name: 📦 Upload Test Logs on Failure
