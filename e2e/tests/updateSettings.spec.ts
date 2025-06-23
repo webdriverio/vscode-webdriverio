@@ -11,18 +11,24 @@ import {
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
-import { SettingsEditor as ExtendSettingsEditor } from '../pageobjects/SettingsEditor.js'
 
-import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
+import type { SideBarView, TextEditor, Workbench } from 'wdio-vscode-service'
 
 describe('VS Code Extension Testing (Update config)', function () {
     let workbench: Workbench
     let sideBarView: SideBarView<any>
-    let testingVew: ViewControl
+    let orgSettings: string
+
+    before(async function () {
+        workbench = await browser.getWorkbench()
+        const tab = await getSettingTextEditor(workbench)
+        orgSettings = await tab.getText()
+        await workbench.getEditorView().closeAllEditors()
+    })
 
     beforeEach(async function () {
         workbench = await browser.getWorkbench()
-        testingVew = await openTestingView(workbench)
+        await openTestingView(workbench)
         sideBarView = workbench.getSideBar()
 
         const testingSection = await getTestingSection(sideBarView.getContent())
@@ -33,6 +39,15 @@ describe('VS Code Extension Testing (Update config)', function () {
 
     afterEach(async function () {
         await clearAllTestResults(workbench)
+    })
+
+    after(async function () {
+        const tab = await getSettingTextEditor(workbench)
+        await tab.clearText()
+        await tab.setText(JSON.stringify(JSON.parse(orgSettings), null, 2))
+        await tab.save()
+
+        await workbench.getEditorView().closeAllEditors()
     })
 
     it('should be resolved the defined tests after settings changed', async function () {
@@ -73,17 +88,16 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
 
         // Emulate the changing configuration
-        await workbench.openSettings()
+        const settings = JSON.parse(orgSettings)
+        settings['webdriverio.configFilePattern'] = ['**/webdriverio.conf.ts']
 
-        await testingVew.closeView()
-        await sleep(1500)
-
-        const settingEditor = new ExtendSettingsEditor(workbench)
-        const listSetting = await settingEditor.findListSetting('Config File Pattern', 'Webdriverio')
-        await listSetting.editValue(0, '**/webdriverio.conf.ts')
+        const tab = await getSettingTextEditor(workbench)
+        await tab.clearText()
+        await tab.setText(JSON.stringify(settings, null, 2))
+        await tab.save()
 
         await workbench.getEditorView().closeAllEditors()
-        await testingVew.openView()
+        await sleep(1500)
 
         await waitForResolved(browser, items[0])
 
@@ -139,3 +153,10 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
     })
 })
+
+async function getSettingTextEditor(workbench: Workbench) {
+    await workbench.executeCommand('Preferences: Open User Settings (JSON)')
+    await sleep(1500)
+    const editorView = workbench.getEditorView()
+    return (await editorView.openEditor('settings.json')) as TextEditor
+}
