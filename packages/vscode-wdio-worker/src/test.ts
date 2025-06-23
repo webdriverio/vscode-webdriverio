@@ -3,7 +3,7 @@ import * as os from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 import { getLauncherInstance } from './cli.js'
-import { getTempConfigCreator, isWindows } from './utils.js'
+import { getTempConfigCreator, isFixedWdio, isWindows } from './utils.js'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
 import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/server'
 import type { ILogger } from '@vscode-wdio/types/utils'
@@ -42,7 +42,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             await fs.mkdir(logDir, { recursive: true })
         }
 
-        if (isWindows()) {
+        if (isWindows() && !(await isFixedWdio(options.configPath))) {
             const creator = await getTempConfigCreator(this)
             configFile = await creator(options.configPath, outputDir.json!)
             options.configPath = configFile

@@ -1,5 +1,8 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+import { resolve } from 'import-meta-resolve'
 
 import type { WorkerMetaContext } from '@vscode-wdio/types'
 import type { createTempConfigFile } from './config.js'
@@ -21,6 +24,43 @@ export async function getTempConfigCreator(context: WorkerMetaContext): Promise<
 
 export function isWindows() {
     return process.platform === 'win32'
+}
+
+export async function isFixedWdio(configPath: string) {
+    try {
+        const pkgName = '@wdio/utils'
+        const utilEntryPoint = resolve(`${pkgName}`, resolve('@wdio/cli', pathToFileURL(configPath).href))
+        const utilPkg = await findPackageJson(fileURLToPath(utilEntryPoint))
+        if (!utilPkg) {
+            return false
+        }
+        const pkg = JSON.parse(await fs.readFile(utilPkg, { encoding: 'utf-8' })) as { version: string }
+        const versions = pkg.version.split('.')
+
+        if (Number(versions[0]) >= 10 || (Number(versions[0]) >= 9 && Number(versions[1]) >= 16)) {
+            return true
+        }
+        return false
+    } catch {
+        return false
+    }
+}
+
+async function findPackageJson(startPath: string) {
+    let dir = path.dirname(startPath)
+    const root = path.parse(dir).root
+
+    while (dir !== root) {
+        const pkgPath = path.join(dir, 'package.json')
+        try {
+            await fs.access(pkgPath)
+            return pkgPath
+        } catch {
+            dir = path.dirname(dir)
+        }
+    }
+
+    return undefined
 }
 
 export async function dynamicLoader(
