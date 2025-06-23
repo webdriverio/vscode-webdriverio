@@ -54,14 +54,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
             await configManager
                 .initialize()
                 .then(async () => await this.initialize())
-                .then(
-                    async () =>
-                        await Promise.all(
-                            this.repos.map(async (repo) => {
-                                return await repo.discoverAllTests()
-                            })
-                        )
-                )
+                .then(async () => await Promise.all(this.repos.map(async (repo) => await repo.discoverAllTests())))
                 .then(() => this.registerToTestController())
                 .then(() => this.workerManager.reorganize(configManager.getWdioConfigPaths()))
         })
@@ -193,11 +186,9 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         workspaceTestItem.children.add(configItem)
         this._wdioConfigTestItems.push(configItem)
 
-        const worker = await this.workerManager.getConnection(wdioConfigPath)
         const repo = new TestRepository(
             this.configManager,
             this.controller,
-            worker,
             wdioConfigPath,
             configItem,
             this.workerManager,

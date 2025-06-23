@@ -95,11 +95,13 @@ export interface TestResultData {
 export interface IWdioExtensionWorker extends ITypedEventEmitter<WdioExtensionWorkerEvents> {
     cid: string
     rpc: WorkerApi
-    idleMonitor: IWorkerIdleMonitor
     start(): Promise<void>
     waitForStart(): Promise<void>
     stop(): Promise<void>
     isConnected(): boolean
+    updateIdleTimeout(timeout: number): void
+    pauseIdleTimer(): void
+    resumeIdleTimer(): void
     ensureConnected(): Promise<void>
 }
 
@@ -110,8 +112,11 @@ export interface WdioExtensionWorkerEvents {
     shutdown: undefined
 }
 
+export interface IWdioExtensionWorkerFactory {
+    generate(id: string, cwd: string): IWdioExtensionWorker
+}
+
 export interface IWorkerManager extends vscode.Disposable {
-    start(configPaths: string[]): Promise<void>
     getConnection(configPaths: string): Promise<IWdioExtensionWorker>
     reorganize(configPaths: string[]): Promise<void>
 }
@@ -147,11 +152,6 @@ export interface IWorkerIdleMonitor {
      * Resume the idle timer (called when RPC operation completes)
      */
     resumeTimer(): void
-
-    /**
-     * Check if monitoring is currently active
-     */
-    isActive(): boolean
 
     /**
      * Add event listener for idle timeout events

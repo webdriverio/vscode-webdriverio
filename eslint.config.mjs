@@ -91,4 +91,13 @@ export default wdioEslint.config([
         files: ['e2e/**/*.spec.ts'],
         ...mochaPlugin.configs.recommended,
     },
+    {
+        /**
+         * for extension of wdio-vscode-service
+         */
+        files: ['e2e/pageobjects/**/*.ts'],
+        rules: {
+            '@typescript-eslint/no-unsafe-declaration-merging': 'off',
+        },
+    },
 ])

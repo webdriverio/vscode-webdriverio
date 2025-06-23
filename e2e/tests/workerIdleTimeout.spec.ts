@@ -1,6 +1,6 @@
 import { browser, expect } from '@wdio/globals'
 
-import { createCucumberExpected } from '../helpers/cucumber.ts'
+import { createCucumberExpected } from '../helpers/cucumber.js'
 import {
     STATUS,
     clearAllTestResults,
@@ -10,7 +10,7 @@ import {
     openTestingView,
     waitForResolved,
     waitForTestStatus,
-} from '../helpers/index.ts'
+} from '../helpers/index.js'
 
 import type { SideBarView, ViewControl, Workbench } from 'wdio-vscode-service'
 
@@ -56,7 +56,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     it('should shutdown the work process after idle timeout was reached', async function () {
         await new Promise((resolve) => setTimeout(resolve, 2000))
 
-        await expect(workbench).hasExpectedLog(/Worker#0 process shutdown gracefully/)
+        await expect(workbench).hasExpectedLog(/Worker#1 process shutdown gracefully/)
 
         const bottomBar = workbench.getBottomBar()
         const outputView = await bottomBar.openOutputView()
@@ -75,7 +75,7 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
 
         // assert that start work process
-        await expect(workbench).hasExpectedLog(/\[#1\] Worker process started successfully/)
+        await expect(workbench).hasExpectedLog(/\[#2\] Worker process started successfully/)
 
         // assert that run test successfully
         await expect(items).toMatchTreeStructure(expected.runAll)

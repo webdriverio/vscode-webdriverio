@@ -56,6 +56,7 @@ describe('TestRunner', () => {
                 pauseTimer: vi.fn(),
                 resumeTimer: vi.fn(),
             },
+            pauseIdleTimer: vi.fn(),
         } as unknown as IWdioExtensionWorker
 
         vi.mocked(getEnvOptions).mockResolvedValue({

@@ -1,5 +1,11 @@
-import * as cucumber from './cucumber.ts'
-import { STATUS } from './index.ts'
+import * as cucumber from './cucumber.js'
+
+export const STATUS = {
+    NOT_YET_RUN: 'Not yet run',
+    PASSED: 'Passed',
+    FAILED: 'Failed',
+    SKIPPED: 'Skipped',
+} as const
 
 function createExpectedNotRun(targetFramework: 'mocha' | 'jasmine') {
     return {

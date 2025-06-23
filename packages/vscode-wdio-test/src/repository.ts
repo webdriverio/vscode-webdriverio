@@ -17,13 +17,10 @@ import type * as vscode from 'vscode'
 class WorkerProxy extends MetadataRepository {
     private _worker: IWdioExtensionWorker | undefined
     constructor(
-        private readonly _wdioConfigPath: string,
-        worker: IWdioExtensionWorker,
-        private workerManager: IWorkerManager
+        private workerManager: IWorkerManager,
+        private readonly _wdioConfigPath: string
     ) {
         super()
-        this._worker = worker
-        this.setListener()
     }
 
     async getWorker() {
@@ -55,13 +52,12 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     constructor(
         public readonly configManager: IExtensionConfigManager,
         public readonly controller: vscode.TestController,
-        _worker: IWdioExtensionWorker,
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: vscode.TestItem,
         workerManager: IWorkerManager,
         private _workspaceFolder: vscode.WorkspaceFolder
     ) {
-        super(wdioConfigPath, _worker, workerManager)
+        super(workerManager, wdioConfigPath)
     }
 
     public get specPatterns() {

@@ -88,13 +88,14 @@ describe('TestRepository', () => {
             }
         }
 
-        workerManager = vi.fn() as unknown as IWorkerManager
+        workerManager = {
+            getConnection: vi.fn(() => mockWorker),
+        } as unknown as IWorkerManager
 
         // Create repository with mocked dependencies
         testRepository = new MockTestRepository(
             mockConfigManager,
             testController,
-            mockWorker,
             mockWdioConfigPath,
             wdioConfigTestItem,
             workerManager,
@@ -157,7 +158,6 @@ describe('TestRepository', () => {
             const repo = new TestRepository(
                 mockConfigManager,
                 testController,
-                mockWorker,
                 mockWdioConfigPath,
                 wdioConfigTestItem,
                 workerManager,

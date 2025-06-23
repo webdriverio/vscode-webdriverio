@@ -18,17 +18,26 @@ import type {
     IWdioExtensionWorker,
     WorkerApi,
     IWorkerIdleMonitor,
+    IWdioExtensionWorkerFactory,
 } from '@vscode-wdio/types/server'
 import type * as vscode from 'vscode'
 import type { WebSocketServer } from 'ws'
 
 const WORKER_PATH = resolve(__dirname, 'worker.cjs')
 
+export class WdioExtensionWorkerFactory implements IWdioExtensionWorkerFactory {
+    constructor(private configManager: IExtensionConfigManager) {}
+
+    generate(id: string, cwd: string): IWdioExtensionWorker {
+        return new WdioExtensionWorker(this.configManager, id, cwd)
+    }
+}
+
 export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEvents> implements IWdioExtensionWorker {
     protected configManager: IExtensionConfigManager
     public cid: string
     protected cwd: string
-    public idleMonitor: IWorkerIdleMonitor
+    protected idleMonitor: IWorkerIdleMonitor
     protected disposables: vscode.Disposable[] = []
     private _workerProcess: ChildProcess | null = null
     private _workerRpc: WorkerApi | null = null
@@ -344,6 +353,12 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
      */
     public updateIdleTimeout(timeout: number): void {
         this.idleMonitor.updateTimeout(timeout)
+    }
+    public pauseIdleTimer(): void {
+        this.idleMonitor.pauseTimer()
+    }
+    public resumeIdleTimer(): void {
+        this.idleMonitor.resumeTimer()
     }
 
     private startHealthCheck() {

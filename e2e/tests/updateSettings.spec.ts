@@ -1,8 +1,5 @@
-import path from 'node:path'
-import url from 'node:url'
-
 import { browser, expect } from '@wdio/globals'
-import shell from 'shelljs'
+import { sleep } from 'wdio-vscode-service'
 
 import {
     STATUS,
@@ -15,21 +12,19 @@ import {
     waitForTestStatus,
 } from '../helpers/index.js'
 
-import type { SideBarView, Workbench } from 'wdio-vscode-service'
-
-const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
-const rootDir = path.resolve(__dirname, '..', '..')
-const workspacePath = path.resolve(rootDir, 'samples/smoke/update-config/')
-
-const testsPath = path.join(workspacePath, 'tests')
-const spec = {
-    before: path.resolve(testsPath, 'before.spec.ts'),
-    after: path.resolve(testsPath, 'after.test.ts.template'),
-}
+import type { SideBarView, TextEditor, Workbench } from 'wdio-vscode-service'
 
 describe('VS Code Extension Testing (Update config)', function () {
     let workbench: Workbench
     let sideBarView: SideBarView<any>
+    let orgSettings: string
+
+    before(async function () {
+        workbench = await browser.getWorkbench()
+        const tab = await getSettingTextEditor(workbench)
+        orgSettings = await tab.getText()
+        await workbench.getEditorView().closeAllEditors()
+    })
 
     beforeEach(async function () {
         workbench = await browser.getWorkbench()
@@ -46,11 +41,16 @@ describe('VS Code Extension Testing (Update config)', function () {
         await clearAllTestResults(workbench)
     })
 
-    after(function () {
-        shell.exec(`git checkout ${spec.before}`)
+    after(async function () {
+        const tab = await getSettingTextEditor(workbench)
+        await tab.clearText()
+        await tab.setText(JSON.stringify(JSON.parse(orgSettings), null, 2))
+        await tab.save()
+
+        await workbench.getEditorView().closeAllEditors()
     })
 
-    it('should be resolved the defined tests after spec file is changed', async function () {
+    it('should be resolved the defined tests after settings changed', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -88,51 +88,32 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
 
         // Emulate the changing configuration
-        shell.cp('-f', spec.after, spec.before)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        await browser.waitUntil(
-            async () => {
-                if (!(await items[0].isExpanded())) {
-                    await items[0].expand()
-                }
+        const settings = JSON.parse(orgSettings)
+        settings['webdriverio.configFilePattern'] = ['**/webdriverio.conf.ts']
 
-                const children = await items[0].getChildren()
-                const target = children[0]
-                if (!target) {
-                    return false
-                }
-                const regex = new RegExp('before.spec.ts')
-                return regex.test(await target.getLabel())
-            },
-            {
-                timeoutMsg: 'The label "before.spec.ts" is not found.',
-            }
-        )
+        const tab = await getSettingTextEditor(workbench)
+        await tab.clearText()
+        await tab.setText(JSON.stringify(settings, null, 2))
+        await tab.save()
+
+        await workbench.getEditorView().closeAllEditors()
+        await sleep(1500)
+
+        await waitForResolved(browser, items[0])
 
         await expect(items).toMatchTreeStructure([
             {
-                text: 'wdio.conf.ts',
+                text: 'webdriverio.conf.ts',
                 status: STATUS.NOT_YET_RUN,
                 children: [
                     {
-                        text: 'before.spec.ts',
+                        text: 'after.test.ts',
                         status: STATUS.NOT_YET_RUN,
                         children: [
                             {
-                                text: 'Updated Tests',
+                                text: 'After Tests',
                                 status: STATUS.NOT_YET_RUN,
-                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.NOT_YET_RUN }],
-                            },
-                        ],
-                    },
-                    {
-                        text: 'sample.spec.ts',
-                        status: STATUS.NOT_YET_RUN,
-                        children: [
-                            {
-                                text: 'Sample 1',
-                                status: STATUS.NOT_YET_RUN,
-                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.NOT_YET_RUN }],
+                                children: [{ text: 'TEST AFTER 1', status: STATUS.NOT_YET_RUN }],
                             },
                         ],
                     },
@@ -141,7 +122,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
     })
 
-    it('should run tests successfully after changing the spec file', async function () {
+    it('should run tests successfully after changing the settings', async function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
@@ -153,28 +134,17 @@ describe('VS Code Extension Testing (Update config)', function () {
 
         await expect(items).toMatchTreeStructure([
             {
-                text: 'wdio.conf.ts',
+                text: 'webdriverio.conf.ts',
                 status: STATUS.PASSED,
                 children: [
                     {
-                        text: 'before.spec.ts',
+                        text: 'after.test.ts',
                         status: STATUS.PASSED,
                         children: [
                             {
-                                text: 'Updated Tests',
+                                text: 'After Tests',
                                 status: STATUS.PASSED,
-                                children: [{ text: 'TEST UPDATE AFTER 1', status: STATUS.PASSED }],
-                            },
-                        ],
-                    },
-                    {
-                        text: 'sample.spec.ts',
-                        status: STATUS.PASSED,
-                        children: [
-                            {
-                                text: 'Sample 1',
-                                status: STATUS.PASSED,
-                                children: [{ text: 'TEST SAMPLE 1', status: STATUS.PASSED }],
+                                children: [{ text: 'TEST AFTER 1', status: STATUS.PASSED }],
                             },
                         ],
                     },
@@ -183,3 +153,10 @@ describe('VS Code Extension Testing (Update config)', function () {
         ])
     })
 })
+
+async function getSettingTextEditor(workbench: Workbench) {
+    await workbench.executeCommand('Preferences: Open User Settings (JSON)')
+    await sleep(1500)
+    const editorView = workbench.getEditorView()
+    return (await editorView.openEditor('settings.json')) as TextEditor
+}
