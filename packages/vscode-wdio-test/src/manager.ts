@@ -218,32 +218,26 @@ export class RepositoryManager extends MetadataRepository implements IRepository
      * Refresh WebdriverIO tests
      */
     public async refreshTests(): Promise<void> {
-        return vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: 'Reloading WebdriverIO tests...',
-                cancellable: false,
-            },
-            async () => {
-                try {
-                    if (!this._isInitialized) {
-                        await this.initialize()
-                    }
-                    for (const repo of this._repos) {
-                        // Clear existing tests
-                        repo.clearTests()
-                        // Discover tests again
-                        await repo.discoverAllTests()
-                    }
-
-                    vscode.window.showInformationMessage('WebdriverIO tests reloaded successfully')
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error)
-                    log.error(`Failed to reload tests: ${errorMessage}`)
-                    vscode.window.showErrorMessage(`Failed to reload WebdriverIO tests: ${errorMessage}`)
-                }
+        this.controller.items.replace([this._loadingTestItem])
+        try {
+            if (!this._isInitialized) {
+                await this.initialize()
             }
-        )
+            await Promise.all(
+                this.repos.map(async (repo) => {
+                    repo.clearTests()
+                    return await repo.discoverAllTests()
+                })
+            )
+
+            this.registerToTestController()
+            await this.workerManager.reorganize(this.configManager.getWdioConfigPaths())
+        } catch (error) {
+            this.controller.items.replace([])
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            log.error(`Failed to reload tests: ${errorMessage}`)
+            vscode.window.showErrorMessage(`Failed to reload WebdriverIO tests: ${errorMessage}`)
+        }
     }
 
     public async dispose() {
