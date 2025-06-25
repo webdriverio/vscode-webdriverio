@@ -80,7 +80,7 @@ class LicenseChecker {
                         throw new Error(`License text is not found: ${entryPoint}`)
                     }
 
-                    const noticeText = readFile(dir, ['notice'])
+                    const noticeText = readFile(dir, ['notice', 'CopyrightNotice'])
                     pkg = pkgJson as LicenseData
                     pkg.licenseText = licenseText
                     pkg.noticeText = noticeText

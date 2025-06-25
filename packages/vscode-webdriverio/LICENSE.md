@@ -710,6 +710,37 @@ Repository: https://github.com/rbuckton/reflect-metadata.git
 > 9. Accepting Warranty or Additional Liability. While redistributing the Work or Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of support, warranty, indemnity, or other liability obligations and/or rights consistent with this License. However, in accepting such obligations, You may act only on Your own behalf and on Your sole responsibility, not on behalf of any other Contributor, and only if You agree to indemnify, defend, and hold each Contributor harmless for any liability incurred by, or claims asserted against, such Contributor by reason of your accepting any such warranty or additional liability.
 > 
 > END OF TERMS AND CONDITIONS
+### Notice Text
+> /*! *****************************************************************************
+> 
+> Copyright (c) Microsoft Corporation. All rights reserved. 
+> 
+> Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+> 
+> this file except in compliance with the License. You may obtain a copy of the
+> 
+> License at http://www.apache.org/licenses/LICENSE-2.0  
+> 
+>  
+> 
+> THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+> 
+> KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+> 
+> WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE, 
+> 
+> MERCHANTABLITY OR NON-INFRINGEMENT. 
+> 
+>  
+> 
+> See the Apache Version 2.0 License for specific language governing permissions
+> 
+> and limitations under the License.
+> 
+> ***************************************************************************** */
+> 
+> 
+> 
 
 ---------------------------------------
 
@@ -805,6 +836,35 @@ Repository: https://github.com/Microsoft/tslib.git
 > OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 > 
 > PERFORMANCE OF THIS SOFTWARE.
+### Notice Text
+> /******************************************************************************
+> 
+> Copyright (c) Microsoft Corporation.
+> 
+> 
+> Permission to use, copy, modify, and/or distribute this software for any
+> 
+> purpose with or without fee is hereby granted.
+> 
+> 
+> THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+> 
+> REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+> 
+> AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+> 
+> INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+> 
+> LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+> 
+> OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+> 
+> PERFORMANCE OF THIS SOFTWARE.
+> 
+> ***************************************************************************** */
+> 
+> 
+> 
 
 ---------------------------------------
 
