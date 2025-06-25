@@ -1,7 +1,9 @@
 import fss from 'node:fs'
 import path from 'node:path'
 
+import chalk from 'chalk'
 import { fdir } from 'fdir'
+import type { Metafile } from 'esbuild'
 
 type LicenseData = {
     name: string
@@ -11,6 +13,22 @@ type LicenseData = {
     license: string
     licenseText: string
     noticeText: string | null
+}
+
+export function generateLicense(rootDir: string, pkgPath: string, metadata: Metafile) {
+    const baseLicense = path.join(rootDir, 'LICENSE')
+    const checker = checkLicense(pkgPath, metadata)
+    const license = checker.render(baseLicense)
+
+    const existingLicenseText = fss.existsSync(license.file)
+        ? fss.readFileSync(license.file, { encoding: 'utf-8' })
+        : ''
+    if (existingLicenseText !== license.contents) {
+        fss.writeFileSync(license.file, license.contents, { encoding: 'utf-8' })
+        console.info(
+            chalk.yellow(`\n${path.relative(rootDir, license.file)} was updated. You should commit the updated file.\n`)
+        )
+    }
 }
 
 export function checkLicense(pkgPath: string, meta: any) {
