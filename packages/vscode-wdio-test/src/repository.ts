@@ -1,42 +1,33 @@
-import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 
 import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
 import { log } from '@vscode-wdio/logger'
 import { getEnvOptions, normalizePath } from '@vscode-wdio/utils'
+import * as vscode from 'vscode'
 
-import { convertPathToUri, convertTestData } from './converter.js'
+import { convertSourceRangeToVSCodeRange } from './converter.js'
 import { MetadataRepository } from './metadata.js'
 import { filterSpecsByPaths } from './utils.js'
 import type { IExtensionConfigManager } from '@vscode-wdio/types'
 
 import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
-import type { VscodeTestData, ITestRepository } from '@vscode-wdio/types/test'
-import type * as vscode from 'vscode'
+import type { ITestRepository, TestData } from '@vscode-wdio/types/test'
 
-class WorkerProxy extends MetadataRepository {
+class WorkerMiddleware {
     private _worker: IWdioExtensionWorker | undefined
     constructor(
-        private workerManager: IWorkerManager,
+        private _workerManager: IWorkerManager,
         private readonly _wdioConfigPath: string
-    ) {
-        super()
-    }
+    ) {}
 
     async getWorker() {
         if (!this._worker) {
-            this._worker = await this.workerManager.getConnection(this._wdioConfigPath)
-            this.setListener()
-        }
-        return this._worker
-    }
-
-    private setListener() {
-        if (this._worker) {
+            this._worker = await this._workerManager.getConnection(this._wdioConfigPath)
             this._worker.on('shutdown', () => {
                 this._worker = undefined
             })
         }
+        return this._worker
     }
 }
 
@@ -44,7 +35,7 @@ class WorkerProxy extends MetadataRepository {
  * TestRepository class that manages all WebdriverIO tests at
  * the single WebdriverIO configuration file
  */
-export class TestRepository extends WorkerProxy implements ITestRepository {
+export class TestRepository extends WorkerMiddleware implements ITestRepository {
     private _specPatterns: string[] = []
     private _fileMap = new Map<string, vscode.TestItem>()
     private _framework: string | undefined = undefined
@@ -55,9 +46,18 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         public readonly wdioConfigPath: string,
         private _wdioConfigTestItem: vscode.TestItem,
         workerManager: IWorkerManager,
-        private _workspaceFolder: vscode.WorkspaceFolder
+        private _workspaceFolder: vscode.WorkspaceFolder,
+        private readonly _metadata = new MetadataRepository()
     ) {
         super(workerManager, wdioConfigPath)
+    }
+
+    public getMetadata(testItem: vscode.TestItem) {
+        return this._metadata.getMetadata(testItem)
+    }
+
+    public getRepository(testItem: vscode.TestItem): ITestRepository {
+        return this._metadata.getRepository(testItem)
     }
 
     public get specPatterns() {
@@ -88,6 +88,10 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
 
             if (!config) {
                 return
+            }
+            if (this._fileMap.size > 0) {
+                log.debug('Clearing all tests from repository before discover all tests')
+                this._fileMap.clear()
             }
 
             this._framework = config.framework
@@ -149,32 +153,15 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
             }
 
             log.debug(`Reloading ${specsToReload.length} spec files`)
-
-            // Set busy state for affected test items
-            const affectedTestItems: vscode.TestItem[] = []
-
             for (const spec of specsToReload) {
                 const testItem = this.getSpecByFilePath(spec)
                 if (testItem) {
-                    // Set busy state before removal
                     testItem.busy = true
-                    affectedTestItems.push(testItem)
-
-                    // Remove existing test items for this file
-                    this.removeSpecFile(spec)
+                    testItem.children.replace([])
                 }
             }
             // Register the updated spec files
             await this.resisterSpecs(specsToReload, false)
-
-            // Reset busy state for all affected items
-            affectedTestItems.forEach((item) => {
-                // Find the newly registered item with the same ID
-                const newItem = this._fileMap.get(item.id)
-                if (newItem) {
-                    newItem.busy = false
-                }
-            })
 
             log.debug(`Successfully reloaded ${specsToReload.length} spec files`)
         } catch (error) {
@@ -197,13 +184,14 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     private getTestFileId(wdioConfigTestItem: vscode.TestItem, testFilePath: string) {
         return [wdioConfigTestItem.id, testFilePath].join(TEST_ID_SEPARATOR)
     }
+
     /**
      * Register spec files with the test controller
      * @param specs Paths to spec files
-     * @param clearExisting Whether to clear existing tests (default: true)
+     * @param replaceAllSpecFiles if all spec files to resister, this parameter must be true
      */
-    private async resisterSpecs(specs: string[], clearExisting: boolean = true) {
-        if (clearExisting) {
+    private async resisterSpecs(specs: string[], replaceAllSpecFiles: boolean = true) {
+        if (replaceAllSpecFiles) {
             this._fileMap.clear()
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
@@ -213,24 +201,24 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
             specs,
         })
 
-        const fileTestItems = (
+        const specFileTestItems = (
             await Promise.all(
                 testData.map(async (test) => {
                     try {
                         // Create TestItem testFile by testFile
                         const fileId = this.getTestFileId(this._wdioConfigTestItem, test.spec)
 
-                        const testCases = await convertTestData(test)
+                        const uri = vscode.Uri.file(test.spec)
 
-                        const fileTestItem = this.resisterSpecFile(fileId, convertPathToUri(test.spec))
+                        const fileTestItem = this.resisterSpecFile(fileId, uri)
 
-                        const testTreeCreator = (parentId: string, testCase: VscodeTestData) => {
+                        const testTreeCreator = (parentId: string, testCase: TestData) => {
                             const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
 
-                            const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, testCase.uri)
+                            const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, uri)
 
-                            this.setMetadata(testCaseItem, {
-                                uri: testCase.uri,
+                            this._metadata.setMetadata(testCaseItem, {
+                                uri,
                                 isWorkspace: false,
                                 isConfigFile: false,
                                 isSpecFile: false,
@@ -239,16 +227,14 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
                                 type: testCase.type,
                             })
 
-                            testCaseItem.range = testCase.range
+                            testCaseItem.range = convertSourceRangeToVSCodeRange(testCase.range)
 
                             for (const childTestCase of testCase.children) {
                                 testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
                             }
                             return testCaseItem
                         }
-
-                        // Create TestItem testCase by testCase
-                        for (const testCase of testCases) {
+                        for (const testCase of test.tests) {
                             fileTestItem.children.add(testTreeCreator(fileId, testCase))
                         }
                         return fileTestItem
@@ -260,21 +246,15 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
             )
         ).filter((item) => typeof item !== 'undefined')
 
-        if (clearExisting) {
-            // Replace all items
-            this._wdioConfigTestItem.children.replace(fileTestItems)
+        if (replaceAllSpecFiles) {
+            this._wdioConfigTestItem.children.replace(specFileTestItems)
         } else {
-            // Add new items while preserving existing ones
-            const currentItems = Array.from(this._wdioConfigTestItem.children).map(([_id, item]) => item)
-
-            // Remove items with the same ID
-            const newItemIds = new Set<string>()
-            fileTestItems.forEach((item) => newItemIds.add(item.id))
-
-            const filteredCurrentItems = currentItems.filter((item) => !newItemIds.has(item.id))
-
-            // Combine existing and new items
-            this._wdioConfigTestItem.children.replace([...filteredCurrentItems, ...fileTestItems])
+            for (const specFileTestItem of specFileTestItems) {
+                if (this._wdioConfigTestItem.children.get(specFileTestItem.id)) {
+                    this._wdioConfigTestItem.children.delete(specFileTestItem.id)
+                }
+                this._wdioConfigTestItem.children.add(specFileTestItem)
+            }
         }
         log.debug(`spec files registration is finished for: ${specs.length} files.`)
     }
@@ -315,25 +295,6 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
     }
 
     /**
-     * Clear all tests from the repository
-     */
-    public clearTests(): void {
-        log.debug('Clearing all tests from repository')
-
-        // Clear internal maps
-        this._fileMap.clear()
-    }
-
-    /**
-     * Read a spec file
-     * @param filePath Path to the spec file
-     * @returns File content
-     */
-    protected async readSpecFile(filePath: string): Promise<string> {
-        return await fs.readFile(filePath, { encoding: 'utf8' })
-    }
-
-    /**
      * Register a spec file with the test controller
      * @param id Spec file ID
      * @param uri Spec file URI
@@ -344,7 +305,7 @@ export class TestRepository extends WorkerProxy implements ITestRepository {
         const fileTestItem = this.controller.createTestItem(id, path.basename(uri.fsPath), uri)
         fileTestItem.sortText = uri.fsPath
 
-        this.setMetadata(fileTestItem, {
+        this._metadata.setMetadata(fileTestItem, {
             uri,
             isWorkspace: false,
             isConfigFile: false,

@@ -22,7 +22,7 @@ import type { IRepositoryManager, ITestRepository } from '@vscode-wdio/types/tes
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
-export class RepositoryManager extends MetadataRepository implements IRepositoryManager {
+export class RepositoryManager implements IRepositoryManager {
     private readonly _repos = new Set<ITestRepository>()
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: vscode.TestItem[] = []
@@ -33,9 +33,9 @@ export class RepositoryManager extends MetadataRepository implements IRepository
     constructor(
         public readonly controller: vscode.TestController,
         public readonly configManager: ExtensionConfigManager,
-        private readonly workerManager: IWorkerManager
+        private readonly workerManager: IWorkerManager,
+        private readonly _metadata = new MetadataRepository()
     ) {
-        super()
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true
@@ -64,9 +64,16 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         return Array.from(this._repos)
     }
 
+    public getMetadata(testItem: vscode.TestItem) {
+        return this._metadata.getMetadata(testItem)
+    }
+
+    public getRepository(testItem: vscode.TestItem): ITestRepository {
+        return this._metadata.getRepository(testItem)
+    }
+
     public async initialize() {
         const workspaces = this.configManager.workspaces
-
         if (workspaces.length < 1) {
             log.info('No workspaces is detected.')
             return
@@ -103,7 +110,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
                 wdioConfigPath
             )
 
-            const repo = this.getRepository(configTestItem)
+            const repo = this._metadata.getRepository(configTestItem)
             await repo.discoverAllTests()
             if (!this.configManager.isMultiWorkspace) {
                 this.controller.items.add(configTestItem)
@@ -123,7 +130,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
                 continue
             }
             log.debug(`Remove the TestItem: ${config.id}`)
-            const targetRepo = this.getRepository(config)
+            const targetRepo = this._metadata.getRepository(config)
             targetRepo.dispose()
             this._repos.delete(targetRepo)
 
@@ -161,7 +168,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
             workspaceFolder.name,
             workspaceFolder.uri
         )
-        this.setMetadata(workspaceItem, {
+        this._metadata.setMetadata(workspaceItem, {
             uri: workspaceFolder.uri,
             isWorkspace: true,
             isConfigFile: false,
@@ -198,7 +205,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
 
-        this.setMetadata(configItem, {
+        this._metadata.setMetadata(configItem, {
             uri,
             isWorkspace: false,
             isConfigFile: true,
@@ -225,7 +232,6 @@ export class RepositoryManager extends MetadataRepository implements IRepository
             }
             await Promise.all(
                 this.repos.map(async (repo) => {
-                    repo.clearTests()
                     return await repo.discoverAllTests()
                 })
             )
@@ -241,11 +247,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
     }
 
     public async dispose() {
-        await Promise.all(
-            Array.from(this._repos).map(async (repo) => {
-                await repo.dispose()
-            })
-        )
+        await Promise.all(this.repos.map(async (repo) => repo.dispose()))
         this._repos.clear()
         this._workspaceTestItems = []
         this._wdioConfigTestItems = []

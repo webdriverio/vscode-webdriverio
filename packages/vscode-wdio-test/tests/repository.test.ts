@@ -7,7 +7,12 @@ import * as vscode from 'vscode'
 
 import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils.js'
 import { TestRepository } from '../src/repository.js'
-import type { IExtensionConfigManager } from '@vscode-wdio/types'
+import type {
+    IExtensionConfigManager,
+    IMetadataRepository,
+    ITestRepository,
+    TestItemMetadata,
+} from '@vscode-wdio/types'
 import type { IWorkerManager, WdioConfig, IWdioExtensionWorker } from '@vscode-wdio/types/server'
 
 // Mock dependencies
@@ -24,6 +29,20 @@ vi.mock('@vscode-wdio/utils', async (importActual) => {
     }
 })
 
+class MockMetadataRepository implements IMetadataRepository {
+    _repo = new WeakMap<vscode.TestItem, TestItemMetadata>()
+    setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata): void {
+        this._repo.set(testItem, metadata)
+    }
+    getMetadata(testItem: vscode.TestItem): TestItemMetadata {
+        return this._repo.get(testItem)!
+    }
+    getRepository(testItem: vscode.TestItem): ITestRepository {
+        this._repo.get(testItem)!
+        return this._repo.get(testItem)!.repository!
+    }
+}
+
 describe('TestRepository', () => {
     const mockWorkspaceUri = vscode.Uri.file(join(process.cwd(), 'mock', 'workspace'))
     const mockSpecPath = join(process.cwd(), 'mock', 'workspace', 'e2e', 'test1.spec.js')
@@ -38,9 +57,8 @@ describe('TestRepository', () => {
     let wdioConfigTestItem: vscode.TestItem
     let testRepository: TestRepository
     let mockWorker: IWdioExtensionWorker
-    let readFile: ReturnType<typeof vi.fn>
-    let readSpecsStub: ReturnType<typeof vi.fn>
-    let runProfileDisposeStub: ReturnType<typeof vi.fn>
+    let mockReadSpecs: ReturnType<typeof vi.fn>
+    let mockRunProfileDispose: ReturnType<typeof vi.fn>
     let workerManager: IWorkerManager
     let mockWorkspaceFolder: vscode.WorkspaceFolder
 
@@ -52,16 +70,16 @@ describe('TestRepository', () => {
             items: new MockTestItemCollection(),
             createTestItem: mockCreateTestItem,
         } as unknown as vscode.TestController
-        // Setup WdioConfigTestItem mock
+
         wdioConfigTestItem = testController.createTestItem(
             `workspace:${mockWorkspaceUri.fsPath}${TEST_ID_SEPARATOR}config:${mockWdioConfigUri.fsPath}`,
             mockWdioConfigUri.fsPath,
             mockWdioConfigUri
         )
-        runProfileDisposeStub = vi.fn()
+        mockRunProfileDispose = vi.fn()
 
         // Setup worker mock
-        readSpecsStub = vi.fn().mockResolvedValue([
+        mockReadSpecs = vi.fn().mockResolvedValue([
             { spec: mockSpecPath, data: 'test content 1' },
             { spec: mockSpecPath2, data: 'test content 2' },
         ])
@@ -77,32 +95,16 @@ describe('TestRepository', () => {
                     framework: 'mocha',
                     specs: [mockSpecPath, mockSpecPath2],
                 }),
-                readSpecs: readSpecsStub,
+                readSpecs: mockReadSpecs,
             },
         } as unknown as IWdioExtensionWorker
-
-        readFile = vi.fn()
-        class MockTestRepository extends TestRepository {
-            protected override readSpecFile() {
-                return readFile()
-            }
-        }
 
         workerManager = {
             getConnection: vi.fn(() => mockWorker),
         } as unknown as IWorkerManager
 
-        // Create repository with mocked dependencies
-        testRepository = new MockTestRepository(
-            mockConfigManager,
-            testController,
-            mockWdioConfigPath,
-            wdioConfigTestItem,
-            workerManager,
-            mockWorkspaceFolder
-        )
-
-        testRepository.setMetadata(wdioConfigTestItem, {
+        const mockMetaRepo = new MockMetadataRepository()
+        mockMetaRepo.setMetadata(wdioConfigTestItem, {
             uri: mockWdioConfigUri,
             isWorkspace: false,
             isConfigFile: true,
@@ -111,10 +113,21 @@ describe('TestRepository', () => {
             repository: {} as any,
             runProfiles: [
                 {
-                    dispose: runProfileDisposeStub,
+                    dispose: mockRunProfileDispose,
                 } as unknown as vscode.TestRunProfile,
             ],
         })
+
+        // Create repository with mocked dependencies
+        testRepository = new TestRepository(
+            mockConfigManager,
+            testController,
+            mockWdioConfigPath,
+            wdioConfigTestItem,
+            workerManager,
+            mockWorkspaceFolder,
+            mockMetaRepo
+        )
     })
 
     afterEach(() => {
@@ -138,18 +151,7 @@ describe('TestRepository', () => {
             testRepository.dispose()
 
             // Verify
-            expect(runProfileDisposeStub).toHaveBeenCalled()
-            expect(spyOnFileMapClear).toHaveBeenCalled()
-        })
-
-        it('should clear all tests from repository', () => {
-            // Setup spies
-            const spyOnFileMapClear = vi.spyOn((testRepository as any)._fileMap, 'clear')
-
-            // Execute
-            testRepository.clearTests()
-
-            // Verify
+            expect(mockRunProfileDispose).toHaveBeenCalled()
             expect(spyOnFileMapClear).toHaveBeenCalled()
         })
 
@@ -169,8 +171,7 @@ describe('TestRepository', () => {
         })
     })
 
-    // Group 2: Test Discovery
-    describe('Test Discovery', () => {
+    describe('discoverAllTests', () => {
         it('should discover and register test specs from configuration', async () => {
             // Execute
             await testRepository.discoverAllTests()
@@ -232,8 +233,7 @@ describe('TestRepository', () => {
         })
     })
 
-    // Group 3: File Reloading
-    describe('File Reloading', () => {
+    describe('reloadSpecFiles', () => {
         beforeEach(() => {
             // Setup file map with mock spec files
             const fileId1 = [wdioConfigTestItem.id, mockSpecPath].join(TEST_ID_SEPARATOR)
@@ -243,26 +243,20 @@ describe('TestRepository', () => {
                 id: fileId1,
                 busy: false,
                 children: {
-                    forEach: vi.fn().mockImplementation((callback) => {
-                        callback({ id: `${fileId1}${TEST_ID_SEPARATOR}suite1` })
-                    }),
+                    replace: vi.fn(),
                 },
             })
             ;(testRepository as any)._fileMap.set(fileId2, {
                 id: fileId2,
                 busy: false,
                 children: {
-                    forEach: vi.fn().mockImplementation((callback) => {
-                        callback({ id: `${fileId2}${TEST_ID_SEPARATOR}suite1` })
-                    }),
+                    replace: vi.fn(),
                 },
             })
         })
 
         it('should reload specific spec files', async () => {
-            // Setup
-            const removeSpecFileSpy = vi.spyOn(testRepository, 'removeSpecFile')
-
+            const orgItem = testRepository.getSpecByFilePath(mockSpecPath)
             // Execute
             await testRepository.reloadSpecFiles([mockSpecPath])
 
@@ -271,11 +265,11 @@ describe('TestRepository', () => {
                 env: { paths: [], override: false },
                 configFilePath: mockWdioConfigPath,
             })
-            expect(readSpecsStub).toHaveBeenCalledWith({
+            expect(mockReadSpecs).toHaveBeenCalledWith({
                 env: { paths: [], override: false },
                 specs: [mockSpecPath],
             })
-            expect(removeSpecFileSpy).toHaveBeenCalledWith(mockSpecPath)
+            expect(testRepository.getSpecByFilePath(mockSpecPath)).not.toBe(orgItem)
             expect(log.debug).toHaveBeenCalledWith('Reloading 1 spec files')
             expect(log.debug).toHaveBeenCalledWith('Successfully reloaded 1 spec files')
         })
@@ -287,9 +281,7 @@ describe('TestRepository', () => {
                 id: fileId,
                 busy: false,
                 children: {
-                    forEach: vi.fn().mockImplementation((callback) => {
-                        callback({ id: `${fileId}${TEST_ID_SEPARATOR}suite1` })
-                    }),
+                    replace: vi.fn(),
                 },
             } as unknown as vscode.TestItem
 
@@ -297,7 +289,6 @@ describe('TestRepository', () => {
 
             // Execute
             await testRepository.reloadSpecFiles([mockSpecPath])
-
             // Verify - busy state should have been set initially and then reset
             expect((testRepository as any)._fileMap.get(fileId).busy).toBe(false)
         })
@@ -346,7 +337,7 @@ describe('TestRepository', () => {
             await testRepository.reloadSpecFiles([])
 
             // Verify
-            expect(readSpecsStub).toHaveBeenCalledWith({
+            expect(mockReadSpecs).toHaveBeenCalledWith({
                 env: { paths: [], override: false },
                 specs: [mockSpecPath, mockSpecPath2],
             })
