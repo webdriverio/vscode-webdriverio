@@ -3,8 +3,10 @@ import path from 'node:path'
 import url from 'node:url'
 import { parseArgs } from 'node:util'
 
+import chalk from 'chalk'
 import { context } from 'esbuild'
 
+import { checkLicense } from './license.js'
 import { esbuildProblemMatcherPlugin } from './plugins.js'
 
 import type { PackageJson } from 'type-fest'
@@ -89,5 +91,21 @@ if (options.watch) {
 
     if (!options.production) {
         fss.writeFileSync(path.join(outdir, 'meta.json'), JSON.stringify(result.metafile))
+
+        const baseLicense = path.join(rootDir, 'LICENSE')
+        const checker = checkLicense(pkgPath, result.metafile)
+        const license = checker.render(baseLicense)
+
+        const existingLicenseText = fss.existsSync(license.file)
+            ? fss.readFileSync(license.file, { encoding: 'utf-8' })
+            : ''
+        if (existingLicenseText !== license.contents) {
+            fss.writeFileSync(license.file, license.contents, { encoding: 'utf-8' })
+            console.info(
+                chalk.yellow(
+                    `\n${path.relative(rootDir, license.file)} was updated. You should commit the updated file.\n`
+                )
+            )
+        }
     }
 }
