@@ -65,6 +65,10 @@ jobs:
             If you have any questions please reach out to us on our [Discord](https://discord.webdriver.io/)
             channel. We are happy to help you out there.
 
+      - name: 💥 Exit with error
+        if: ${{ steps.check.outputs.result > 0 }}
+        run: exit 1
+
       - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
         if: ${{ steps.check.outputs.result == 0 }}
         with:
