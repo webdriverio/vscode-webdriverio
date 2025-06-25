@@ -114,9 +114,13 @@ jobs:
 
       - name: ✅ Push to remote repository
         env:
-          DRY_RUN_ARGS: ${{ github.event.inputs.dryRun == 'yes' && '--dry-run' || '' }}
+          IS_DRY_RUN: ${{ github.event.inputs.dryRun }}
         run: |
-          git push origin --no-verify --follow-tags "${DRY_RUN_ARGS}"
+          if [ "${IS_DRY_RUN}" = "yes" ]; then
+            git push origin --no-verify --follow-tags --dry-run
+          else
+            git push origin --no-verify --follow-tags
+          fi
 
       - name: 📝 Create the Github Release
         run: |
