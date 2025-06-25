@@ -29,6 +29,11 @@ jobs:
     needs: [lint, build]
     uses: ./.github/workflows/ci-typecheck.yml
 
+  license-check:
+    name: License Check
+    needs: [lint, build]
+    uses: ./.github/workflows/ci-license.yml
+
   unit:
     name: Unit
     needs: [lint, build]
@@ -48,21 +53,21 @@ jobs:
 
   smoke-config:
     name: Smoke - Update Config
-    needs: [lint, build, e2e]
+    needs: [lint, build, unit, license-check, typecheck, e2e]
     uses: ./.github/workflows/ci-smoke.yml
     with:
       scenario: 'config'
 
   smoke-timeout:
     name: Smoke - Worker idle timeout
-    needs: [lint, build, e2e]
+    needs: [lint, build, unit, license-check, typecheck, e2e]
     uses: ./.github/workflows/ci-smoke.yml
     with:
       scenario: 'timeout'
 
   smoke-env:
     name: Smoke - Load .env files
-    needs: [lint, build, e2e]
+    needs: [lint, build, unit, license-check, typecheck, e2e]
     uses: ./.github/workflows/ci-smoke.yml
     with:
       scenario: 'env'
