@@ -5,11 +5,15 @@ import chalk from 'chalk'
 import { fdir } from 'fdir'
 import type { Metafile } from 'esbuild'
 
-type LicenseData = {
+type PackageJson = {
     name: string
     version: string
     author?: string | { name: string }
+    license?: string
     repository?: { url: string }
+}
+
+type LicenseData = PackageJson & {
     license: string
     licenseText: string
     noticeText: string | null
@@ -43,7 +47,7 @@ export function checkLicense(pkgPath: string, meta: any) {
             const absEntryPoint = path.resolve(path.dirname(pkgPath), input)
             const absPackageRoot = path.resolve(path.dirname(pkgPath), relativePath)
             const maxDepth = absEntryPoint.split(path.posix.sep).length - absPackageRoot.split(path.posix.sep).length
-            checker.findPackageJson(absEntryPoint, maxDepth)
+            checker.findLicense(absEntryPoint, maxDepth)
         }
     }
     return checker
@@ -56,7 +60,7 @@ class LicenseChecker {
 
     constructor(private _rootDir: string) {}
 
-    findPackageJson(entryPoint: string, maxDepth: number) {
+    findLicense(entryPoint: string, maxDepth: number) {
         let dir = path.dirname(entryPoint)
         let pkg = null
         let cntUpDir = 0
@@ -67,13 +71,12 @@ class LicenseChecker {
                 break
             }
             const pkgPath = path.join(dir, 'package.json')
-            const exists = fss.existsSync(pkgPath)
-            if (exists) {
-                const pkgJson = JSON.parse(fss.readFileSync(pkgPath, { encoding: 'utf-8' }))
-                const license = pkgJson.license || pkgJson.licenses
+            if (fss.existsSync(pkgPath)) {
+                const pkgJson = this._getPkgJson(dir)
+                const license = pkgJson.license
                 const { name, version } = pkgJson
                 const hasLicense = license && license.length > 0
-                if ((name && version) || hasLicense) {
+                if (name && version && hasLicense) {
                     // found
                     const licenseText = readFile(dir, ['license', 'licence'])
                     if (!licenseText) {
@@ -104,18 +107,21 @@ class LicenseChecker {
         return `${name}@${version}`
     }
 
-    private _getPkgName() {
-        const pkgJson = path.join(this._rootDir, 'package.json')
-        const pkg = JSON.parse(fss.readFileSync(pkgJson, { encoding: 'utf-8' })) as { name: string }
-        return pkg.name
+    private _getPkgJson(dir: string) {
+        if (this._cache.has(dir)) {
+            return this._cache.get(dir)!
+        }
+        const pkgJson = path.join(dir, 'package.json')
+        return JSON.parse(fss.readFileSync(pkgJson, { encoding: 'utf-8' })) as PackageJson
     }
 
     render(baseLicense: string) {
         const baseLicenseText = fss.readFileSync(baseLicense, { encoding: 'utf-8' })
 
         const contents: string[] = []
-        contents.push(`# License of ${this._getPkgName()}`)
-        contents.push(`${this._getPkgName()} is released under the MIT license:  `)
+        const rootPkg = this._getPkgJson(this._rootDir)
+        contents.push(`# License of ${rootPkg.name}`)
+        contents.push(`${rootPkg.name} is released under the MIT license:  `)
         contents.push('')
         contents.push(
             baseLicenseText
@@ -129,44 +135,44 @@ class LicenseChecker {
         contents.push(Array.from(this.licenseTypeDependencies).sort().join(', '))
         contents.push('')
         contents.push('# Bundled dependencies:')
-        const dependencies: string[] = []
+        const dependentLicenseTexts: string[] = []
         const sortedDependencies = new Map([...this.dependencies].sort())
-        sortedDependencies.forEach((value) => {
+        sortedDependencies.forEach((pkg) => {
             const lines: string[] = []
-            lines.push(`## ${value.name}  `)
-            lines.push(`License: ${value.license}  `)
-            if (value.author) {
-                if (typeof value.author === 'object') {
-                    lines.push(`Author: ${value.author.name}  `)
+            lines.push(`## ${pkg.name}  `)
+            lines.push(`License: ${pkg.license}  `)
+            if (pkg.author) {
+                if (typeof pkg.author === 'object') {
+                    lines.push(`Author: ${pkg.author.name}  `)
                 } else {
-                    lines.push(`Author: ${value.author.split('<')[0].split('(')[0].trim()}  `)
+                    lines.push(`Author: ${pkg.author.split('<')[0].split('(')[0].trim()}  `)
                 }
             }
-            if (value.repository && value.repository.url) {
-                lines.push(`Repository: ${value.repository.url}  `)
+            if (pkg.repository && pkg.repository.url) {
+                lines.push(`Repository: ${pkg.repository.url}  `)
             }
             lines.push('### License Text')
             lines.push(
-                value.licenseText
+                pkg.licenseText
                     .replace(/\n\r|\r/g, '\n')
                     .split('\n')
                     .map((line) => `> ${line}`)
                     .join('\n')
             )
 
-            if (value.noticeText) {
+            if (pkg.noticeText) {
                 lines.push('### Notice Text')
                 lines.push(
-                    value.noticeText
+                    pkg.noticeText
                         .replace(/\n\r|\r/g, '\n')
                         .split('\n')
                         .map((line) => `> ${line}`)
                         .join('\n')
                 )
             }
-            dependencies.push(lines.join('\n'))
+            dependentLicenseTexts.push(lines.join('\n'))
         })
-        contents.push(dependencies.join('\n\n---------------------------------------\n\n'))
+        contents.push(dependentLicenseTexts.join('\n\n---------------------------------------\n\n'))
 
         const licenseFile = path.join(this._rootDir, 'LICENSE.md')
         return {
