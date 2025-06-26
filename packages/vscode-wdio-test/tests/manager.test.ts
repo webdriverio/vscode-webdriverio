@@ -42,8 +42,9 @@ describe('RepositoryManager', () => {
     let mockDiscoverAllTests: ReturnType<typeof vi.fn>
     let controller: vscode.TestController
 
-    const configManager = new ExtensionConfigManager()
+    let configManager: ExtensionConfigManager
     let repositoryManager: RepositoryManager
+    let configMangerOn: any
 
     const workspacePath = join(process.cwd(), 'fake', 'workspace')
     const configPath = join(workspacePath, 'wdio.conf.ts')
@@ -53,6 +54,7 @@ describe('RepositoryManager', () => {
 
     beforeEach(() => {
         vi.resetAllMocks()
+        configManager = new ExtensionConfigManager()
 
         controller = {
             items: new MockTestItemCollection(),
@@ -81,6 +83,8 @@ describe('RepositoryManager', () => {
             on: vi.fn(),
         } as unknown as IWdioExtensionWorker)
 
+        configMangerOn = vi.fn()
+        vi.spyOn(configManager, 'on').mockImplementation(configMangerOn)
         vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(mockWorkspaces)
 
         mockDiscoverAllTests = vi.fn().mockResolvedValue(undefined)
@@ -108,6 +112,24 @@ describe('RepositoryManager', () => {
 
             expect((repositoryManager as any)._workspaceTestItems.length).toBe(1)
             expect((repositoryManager as any)._wdioConfigTestItems.length).toBe(1)
+        })
+    })
+
+    describe('update:configFilePattern', () => {
+        it('should add new test item to the test controller', async () => {
+            await repositoryManager.initialize()
+            vi.spyOn(configManager, 'getWdioConfigPaths').mockReturnValue([])
+
+            const handler = vi.mocked(configMangerOn).mock.calls[0][1]
+            const configManagerInitializeSpy = vi.spyOn(configManager, 'initialize')
+            const repositoryManagerInitializeSpy = vi.spyOn(repositoryManager, 'initialize')
+            const repositoryManagerRegisterSpy = vi.spyOn(repositoryManager, 'registerToTestController')
+
+            await handler()
+
+            expect(configManagerInitializeSpy).toHaveBeenCalled()
+            expect(repositoryManagerInitializeSpy).toHaveBeenCalled()
+            expect(repositoryManagerRegisterSpy).toHaveBeenCalled()
         })
     })
 
@@ -179,6 +201,53 @@ describe('RepositoryManager', () => {
                 `workspace:${vscode.Uri.file(anotherWorkspacePath).fsPath}${TEST_ID_SEPARATOR}config:${vscode.Uri.file(anotherConfigPath).fsPath}`
             )
             expect(repositoryManager.getMetadata(configItem2!).isConfigFile).toBe(true)
+        })
+    })
+
+    describe('addWdioConfig', () => {
+        it('should add new test item to the test controller', async () => {
+            vi.spyOn(configManager, 'isMultiWorkspace', 'get').mockReturnValue(false)
+            await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+            expect(controller.items.size).toBe(1)
+
+            await repositoryManager.addWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
+
+            expect(repositoryManager.controller.items.size).toBe(2)
+        })
+    })
+
+    describe('removeWdioConfig', () => {
+        beforeEach(async () => {
+            vi.spyOn(configManager, 'isMultiWorkspace', 'get').mockReturnValue(false)
+            await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+
+            await repositoryManager.addWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
+        })
+
+        it('should remove test item to the test controller', async () => {
+            repositoryManager.removeWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
+
+            expect(repositoryManager.controller.items.size).toBe(1)
+        })
+    })
+
+    describe('refreshTests', () => {
+        it('should remove test item to the test controller', async () => {
+            await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+            const discoverSpy = vi.spyOn(repositoryManager.repos[0], 'discoverAllTests')
+            const registerSpy = vi.spyOn(repositoryManager, 'registerToTestController')
+            const reorganizeSpy = vi.spyOn(workerManager, 'reorganize')
+            vi.spyOn(configManager, 'getWdioConfigPaths').mockImplementation(vi.fn())
+
+            await repositoryManager.refreshTests()
+
+            expect(repositoryManager.controller.items.size).toBe(0)
+            expect(discoverSpy).toHaveBeenCalled()
+            expect(registerSpy).toHaveBeenCalled()
+            expect(reorganizeSpy).toHaveBeenCalled()
         })
     })
 

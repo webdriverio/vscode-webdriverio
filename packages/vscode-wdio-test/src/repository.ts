@@ -5,13 +5,10 @@ import { log } from '@vscode-wdio/logger'
 import { getEnvOptions, normalizePath } from '@vscode-wdio/utils'
 import * as vscode from 'vscode'
 
-import { convertSourceRangeToVSCodeRange } from './converter.js'
 import { MetadataRepository } from './metadata.js'
-import { filterSpecsByPaths } from './utils.js'
-import type { IExtensionConfigManager } from '@vscode-wdio/types'
+import { filterSpecsByPaths, testTreeCreator } from './utils.js'
 
-import type { IWorkerManager, IWdioExtensionWorker } from '@vscode-wdio/types/server'
-import type { ITestRepository, TestData } from '@vscode-wdio/types/test'
+import type { IExtensionConfigManager, IWorkerManager, IWdioExtensionWorker, ITestRepository } from '@vscode-wdio/types'
 
 class WorkerMiddleware {
     private _worker: IWdioExtensionWorker | undefined
@@ -208,34 +205,13 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
                         // Create TestItem testFile by testFile
                         const fileId = this.getTestFileId(this._wdioConfigTestItem, test.spec)
 
-                        const uri = vscode.Uri.file(test.spec)
+                        const specFileUri = vscode.Uri.file(test.spec)
 
-                        const fileTestItem = this.resisterSpecFile(fileId, uri)
-
-                        const testTreeCreator = (parentId: string, testCase: TestData) => {
-                            const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
-
-                            const testCaseItem = this.controller.createTestItem(testCaseId, testCase.name, uri)
-
-                            this._metadata.setMetadata(testCaseItem, {
-                                uri,
-                                isWorkspace: false,
-                                isConfigFile: false,
-                                isSpecFile: false,
-                                isTestcase: true,
-                                repository: this,
-                                type: testCase.type,
-                            })
-
-                            testCaseItem.range = convertSourceRangeToVSCodeRange(testCase.range)
-
-                            for (const childTestCase of testCase.children) {
-                                testCaseItem.children.add(testTreeCreator(testCaseId, childTestCase))
-                            }
-                            return testCaseItem
-                        }
+                        const fileTestItem = this.resisterSpecFile(fileId, specFileUri)
                         for (const testCase of test.tests) {
-                            fileTestItem.children.add(testTreeCreator(fileId, testCase))
+                            fileTestItem.children.add(
+                                testTreeCreator(this, this._metadata, fileId, testCase, specFileUri)
+                            )
                         }
                         return fileTestItem
                     } catch (error) {
@@ -305,14 +281,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
         const fileTestItem = this.controller.createTestItem(id, path.basename(uri.fsPath), uri)
         fileTestItem.sortText = uri.fsPath
 
-        this._metadata.setMetadata(fileTestItem, {
-            uri,
-            isWorkspace: false,
-            isConfigFile: false,
-            isSpecFile: true,
-            isTestcase: false,
-            repository: this,
-        })
+        this._metadata.createSpecFileMetadata(fileTestItem, { uri, repository: this })
         this._fileMap.set(id, fileTestItem)
         return fileTestItem
     }

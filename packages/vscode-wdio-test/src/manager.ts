@@ -168,13 +168,7 @@ export class RepositoryManager implements IRepositoryManager {
             workspaceFolder.name,
             workspaceFolder.uri
         )
-        this._metadata.setMetadata(workspaceItem, {
-            uri: workspaceFolder.uri,
-            isWorkspace: true,
-            isConfigFile: false,
-            isSpecFile: false,
-            isTestcase: false,
-        })
+        this._metadata.createWorkspaceMetadata(workspaceItem, { uri: workspaceFolder.uri })
         return workspaceItem
     }
 
@@ -193,7 +187,7 @@ export class RepositoryManager implements IRepositoryManager {
         workspaceTestItem.children.add(configItem)
         this._wdioConfigTestItems.push(configItem)
 
-        const repo = new TestRepository(
+        const repository = new TestRepository(
             this.configManager,
             this.controller,
             wdioConfigPath,
@@ -201,19 +195,13 @@ export class RepositoryManager implements IRepositoryManager {
             this.workerManager,
             workspaceFolder
         )
-        this._repos.add(repo)
+        this._repos.add(repository)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
 
-        this._metadata.setMetadata(configItem, {
-            uri,
-            isWorkspace: false,
-            isConfigFile: true,
-            isSpecFile: false,
-            isTestcase: false,
-            repository: repo,
-            runProfiles: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
-        })
+        const runProfiles = createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile)
+
+        this._metadata.createWdioConfigFileMetadata(configItem, { uri, repository, runProfiles })
         return configItem
     }
 

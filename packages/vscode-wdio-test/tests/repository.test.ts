@@ -7,13 +7,9 @@ import * as vscode from 'vscode'
 
 import { mockCreateTestItem, MockTestItemCollection } from '../../../tests/utils.js'
 import { TestRepository } from '../src/repository.js'
-import type {
-    IExtensionConfigManager,
-    IMetadataRepository,
-    ITestRepository,
-    TestItemMetadata,
-} from '@vscode-wdio/types'
+import type { IExtensionConfigManager, TestItemMetadata } from '@vscode-wdio/types'
 import type { IWorkerManager, WdioConfig, IWdioExtensionWorker } from '@vscode-wdio/types/server'
+import type { MetadataRepository } from '../src/metadata.js'
 
 // Mock dependencies
 vi.mock('vscode', async () => import('../../../tests/__mocks__/vscode.cjs'))
@@ -29,18 +25,14 @@ vi.mock('@vscode-wdio/utils', async (importActual) => {
     }
 })
 
-class MockMetadataRepository implements IMetadataRepository {
+class MockMetadataRepository {
+    createTestMetadata = vi.fn()
+    createSpecFileMetadata = vi.fn()
+    createWdioConfigFileMetadata = vi.fn()
+    createWorkspaceMetadata = vi.fn()
     _repo = new WeakMap<vscode.TestItem, TestItemMetadata>()
-    setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata): void {
-        this._repo.set(testItem, metadata)
-    }
-    getMetadata(testItem: vscode.TestItem): TestItemMetadata {
-        return this._repo.get(testItem)!
-    }
-    getRepository(testItem: vscode.TestItem): ITestRepository {
-        this._repo.get(testItem)!
-        return this._repo.get(testItem)!.repository!
-    }
+    getMetadata = vi.fn()
+    getRepository = vi.fn()
 }
 
 describe('TestRepository', () => {
@@ -104,13 +96,13 @@ describe('TestRepository', () => {
         } as unknown as IWorkerManager
 
         const mockMetaRepo = new MockMetadataRepository()
-        mockMetaRepo.setMetadata(wdioConfigTestItem, {
+        mockMetaRepo.createWdioConfigFileMetadata(wdioConfigTestItem, {
             uri: mockWdioConfigUri,
-            isWorkspace: false,
-            isConfigFile: true,
-            isSpecFile: false,
-            isTestcase: false,
             repository: {} as any,
+            runProfiles: [],
+        })
+
+        mockMetaRepo.getMetadata.mockReturnValue({
             runProfiles: [
                 {
                     dispose: mockRunProfileDispose,
@@ -126,7 +118,7 @@ describe('TestRepository', () => {
             wdioConfigTestItem,
             workerManager,
             mockWorkspaceFolder,
-            mockMetaRepo
+            mockMetaRepo as unknown as MetadataRepository
         )
     })
 
