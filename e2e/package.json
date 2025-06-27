@@ -19,6 +19,10 @@
     "test:smoke": "run-s test:smoke:*",
     "test:smoke:config": "cross-env VSCODE_WDIO_E2E_SCENARIO=config xvfb-maybe wdio run ./wdioSmoke.conf.ts",
     "test:smoke:timeout": "cross-env VSCODE_WDIO_E2E_SCENARIO=timeout xvfb-maybe wdio run ./wdioSmoke.conf.ts",
+    "test:smoke:retro-wdio-win": "run-s test:smoke:retro-wdio-win:*",
+    "test:smoke:retro-wdio-win:prepare": "tsx ./scripts/retro-wdio-win.ts",
+    "test:smoke:retro-wdio-win:run": "cross-env VSCODE_WDIO_E2E_SCENARIO=mocha xvfb-maybe pnpm run wdio",
+    "test:smoke:retro-wdio-win:cleanup": "git checkout ../samples/e2e/mocha/package.json ../pnpm-lock.yaml && pnpm --filter @vscode-wdio/e2e-mocha install",
     "test:smoke:env": "cross-env VSCODE_WDIO_E2E_SCENARIO=env xvfb-maybe wdio run ./wdioSmoke.conf.ts",
     "wdio": "wdio run ./wdio.conf.ts"
   },
