@@ -26,18 +26,28 @@ export function isWindows() {
     return process.platform === 'win32'
 }
 
-export async function isFixedWdio(configPath: string) {
+type PackageJson = { name: string; version: string }
+
+export async function isFixedWdio(this: WorkerMetaContext, configPath: string) {
     try {
         const pkgName = '@wdio/utils'
+        this.log.debug(`Try to detect the version of ${pkgName}`)
         const utilEntryPoint = resolve(`${pkgName}`, resolve('@wdio/cli', pathToFileURL(configPath).href))
         const utilPkg = await findPackageJson(fileURLToPath(utilEntryPoint))
         if (!utilPkg) {
-            return false
+            this.log.debug(`Could not detect the entry point of ${pkgName}`)
+            throw new Error('Not found')
         }
-        const pkg = JSON.parse(await fs.readFile(utilPkg, { encoding: 'utf-8' })) as { version: string }
+        const pkg = JSON.parse(await fs.readFile(utilPkg, { encoding: 'utf-8' })) as PackageJson
+        if (pkg.name !== pkgName) {
+            this.log.debug(`Could not detect the version of ${pkgName}`)
+            throw new Error('Not found')
+        }
+        this.log.debug(`Detected version of ${pkgName}@${pkg.version}`)
         const versions = pkg.version.split('.')
 
         if (Number(versions[0]) >= 10 || (Number(versions[0]) >= 9 && Number(versions[1]) >= 16)) {
+            this.log.debug(`Use temporary configuration files ${pkgName}@${pkg.version} < 9.16.0`)
             return true
         }
         return false

@@ -15,6 +15,13 @@ const VSCODE_REPORTER_PATH = resolve(__dirname, 'reporter.cjs')
 export async function runTest(this: WorkerMetaContext, options: RunTestOptions): Promise<TestResultData> {
     const outputDir = await getOutputDir.call(this)
     let configFile: string | undefined = undefined
+
+    // To avoid this issue, We use temporary configuration files
+    // only on Windows platforms and for versions of @wdio/utils prior to 9.15.0.
+    // https://github.com/webdriverio/webdriverio/issues/14532
+    // This issue was fixed by this PR.
+    // https://github.com/webdriverio/webdriverio/pull/14565
+    const useTempConfigFile = isWindows() && !(await isFixedWdio.call(this, options.configPath))
     try {
         // Prepare launcher options
         const wdioArgs: RunCommandArguments = {
@@ -42,7 +49,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             await fs.mkdir(logDir, { recursive: true })
         }
 
-        if (isWindows() && !(await isFixedWdio(options.configPath))) {
+        if (useTempConfigFile) {
             const creator = await getTempConfigCreator(this)
             configFile = await creator(options.configPath, outputDir.json!)
             options.configPath = configFile
@@ -122,7 +129,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
         if (outputDir.json) {
             await removeResultDir(this.log, outputDir.json)
         }
-        if (isWindows() && configFile) {
+        if (useTempConfigFile && configFile) {
             try {
                 this.log.debug(`Remove temp config file...: ${configFile}`)
                 await fs.rm(configFile, { recursive: true, force: true })
