@@ -17,8 +17,7 @@
   "dependencies": {
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/logger": "workspace:*",
-    "@vscode-wdio/utils": "workspace:*",
-    "glob": "^11.0.1"
+    "@vscode-wdio/utils": "workspace:*"
   },
   "devDependencies": {
     "@vscode-wdio/types": "workspace:*"
