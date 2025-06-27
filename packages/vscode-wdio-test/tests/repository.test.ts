@@ -377,7 +377,7 @@ describe('TestRepository', () => {
             ]
 
             // Execute
-            const result = (testRepository as any).convertPathString(specs)
+            const result = (testRepository as any)._convertPathString(specs)
 
             // Verify
             expect(result).toHaveLength(3)

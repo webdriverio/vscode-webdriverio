@@ -68,7 +68,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
         return this._framework
     }
 
-    private async getEnvOptions() {
+    private async _getEnvOptions() {
         return await getEnvOptions(this.configManager, this._workspaceFolder)
     }
 
@@ -79,7 +79,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
         try {
             const worker = await this.getWorker()
             const config = await worker.rpc.loadWdioConfig({
-                env: await this.getEnvOptions(),
+                env: await this._getEnvOptions(),
                 configFilePath: this.wdioConfigPath,
             })
 
@@ -95,7 +95,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
             this._specPatterns = config.specPatterns
 
             // Get specs from configuration
-            const allSpecs = this.convertPathString(config.specs)
+            const allSpecs = this._convertPathString(config.specs)
 
             if (allSpecs.length < 1) {
                 log.debug('No spec files found in configuration')
@@ -105,7 +105,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
             log.debug(`Discovered ${allSpecs.length} spec files`)
 
             // Register all specs
-            return await this.resisterSpecs(allSpecs)
+            return await this._resisterSpecs(allSpecs)
         } catch (error) {
             log.error(`Failed to discover tests: ${(error as Error).message}`)
             log.trace(`Failed to discover tests: ${(error as Error).stack}`)
@@ -120,7 +120,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
         try {
             const worker = await this.getWorker()
             const config = await worker.rpc.loadWdioConfig({
-                env: await this.getEnvOptions(),
+                env: await this._getEnvOptions(),
                 configFilePath: this.wdioConfigPath,
             })
             if (!config) {
@@ -131,10 +131,10 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
             this._specPatterns = config.specPatterns
 
             // Get specs from configuration
-            const allConfigSpecs = this.convertPathString(config.specs)
+            const allConfigSpecs = this._convertPathString(config.specs)
             if (!filePaths || filePaths.length === 0) {
                 for (const [fileId] of this._fileMap.entries()) {
-                    this.removeSpecFileById(fileId)
+                    this._removeSpecFileById(fileId)
                 }
             }
             // Filter specs to only include those that match the provided file paths
@@ -158,7 +158,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
                 }
             }
             // Register the updated spec files
-            await this.resisterSpecs(specsToReload, false)
+            await this._resisterSpecs(specsToReload, false)
 
             log.debug(`Successfully reloaded ${specsToReload.length} spec files`)
         } catch (error) {
@@ -178,7 +178,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
         }
     }
 
-    private getTestFileId(wdioConfigTestItem: vscode.TestItem, testFilePath: string) {
+    private _getTestFileId(wdioConfigTestItem: vscode.TestItem, testFilePath: string) {
         return [wdioConfigTestItem.id, testFilePath].join(TEST_ID_SEPARATOR)
     }
 
@@ -187,14 +187,14 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
      * @param specs Paths to spec files
      * @param replaceAllSpecFiles if all spec files to resister, this parameter must be true
      */
-    private async resisterSpecs(specs: string[], replaceAllSpecFiles: boolean = true) {
+    private async _resisterSpecs(specs: string[], replaceAllSpecFiles: boolean = true) {
         if (replaceAllSpecFiles) {
             this._fileMap.clear()
         }
         log.debug(`Spec files registration is started for: ${specs.length} files.`)
         const worker = await this.getWorker()
         const testData = await worker.rpc.readSpecs({
-            env: await this.getEnvOptions(),
+            env: await this._getEnvOptions(),
             specs,
         })
 
@@ -203,11 +203,11 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
                 testData.map(async (test) => {
                     try {
                         // Create TestItem testFile by testFile
-                        const fileId = this.getTestFileId(this._wdioConfigTestItem, test.spec)
+                        const fileId = this._getTestFileId(this._wdioConfigTestItem, test.spec)
 
                         const specFileUri = vscode.Uri.file(test.spec)
 
-                        const fileTestItem = this.resisterSpecFile(fileId, specFileUri)
+                        const fileTestItem = this._resisterSpecFile(fileId, specFileUri)
                         for (const testCase of test.tests) {
                             fileTestItem.children.add(
                                 testTreeCreator(this, this._metadata, fileId, testCase, specFileUri)
@@ -241,11 +241,11 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
      */
     public removeSpecFile(specPath: string): void {
         const normalizedPath = normalizePath(specPath)
-        const fileId = this.getTestFileId(this._wdioConfigTestItem, normalizedPath)
-        this.removeSpecFileById(fileId, specPath)
+        const fileId = this._getTestFileId(this._wdioConfigTestItem, normalizedPath)
+        this._removeSpecFileById(fileId, specPath)
     }
 
-    private removeSpecFileById(fileId: string, _specPath?: string): void {
+    private _removeSpecFileById(fileId: string, _specPath?: string): void {
         const specPath = _specPath ? _specPath : fileId.split(TEST_ID_SEPARATOR)[2]
         // Get the TestItem for this spec file
         const fileItem = this._fileMap.get(fileId)
@@ -266,7 +266,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
     /**
      * Convert spec paths from WebdriverIO config to file system paths
      */
-    private convertPathString(specs: (string | string[])[]) {
+    private _convertPathString(specs: (string | string[])[]) {
         return specs.flatMap((spec) => (Array.isArray(spec) ? spec.map((path) => path) : [spec]))
     }
 
@@ -276,7 +276,7 @@ export class TestRepository extends WorkerMiddleware implements ITestRepository 
      * @param uri Spec file URI
      * @returns TestItem for the spec file
      */
-    private resisterSpecFile(id: string, uri: vscode.Uri) {
+    private _resisterSpecFile(id: string, uri: vscode.Uri) {
         log.trace(`[repository] spec file was registered: ${id}`)
         const fileTestItem = this.controller.createTestItem(id, path.basename(uri.fsPath), uri)
         fileTestItem.sortText = uri.fsPath

@@ -2,9 +2,10 @@ import type { ITestRepository, TestItemMetadata, TestType } from '@vscode-wdio/t
 import type * as vscode from 'vscode'
 
 export class MetadataRepository {
-    private static testMetadataRepository = new WeakMap<vscode.TestItem, TestItemMetadata>()
+    private static _testMetadataRepository = new WeakMap<vscode.TestItem, TestItemMetadata>()
+
     public getMetadata(testItem: vscode.TestItem) {
-        const metadata = MetadataRepository.testMetadataRepository.get(testItem)
+        const metadata = MetadataRepository._testMetadataRepository.get(testItem)
         if (!metadata) {
             throw new Error("The metadata for TestItem is not set. This is extension's bug.")
         }
@@ -20,7 +21,7 @@ export class MetadataRepository {
     }
 
     protected setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata) {
-        MetadataRepository.testMetadataRepository.set(testItem, metadata)
+        MetadataRepository._testMetadataRepository.set(testItem, metadata)
     }
 
     public createTestMetadata(

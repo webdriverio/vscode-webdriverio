@@ -191,9 +191,9 @@ describe('TestReporter', () => {
     describe('processHierarchicalSuite', () => {
         it('should process tests and nested suites correctly', () => {
             // Setup - create a private method spy
-            const processHierarchicalSuiteSpy = vi.spyOn(testReporter as any, 'processHierarchicalSuite')
-            const processTestSpy = vi.spyOn(testReporter as any, 'processTest')
-            const updateSuiteStatusSpy = vi.spyOn(testReporter as any, 'updateSuiteStatus')
+            const processHierarchicalSuiteSpy = vi.spyOn(testReporter as any, '_processHierarchicalSuite')
+            const processTestSpy = vi.spyOn(testReporter as any, '_processTest')
+            const _updateSuiteStatusSpy = vi.spyOn(testReporter as any, '_updateSuiteStatus')
 
             // Create test structure
             const nestedSuiteItem = createMockTestItem('nested', 'nested')
@@ -206,12 +206,12 @@ describe('TestReporter', () => {
             const mockSuite = createMockTestSuite('suite', [mockTest], [mockNestedSuite])
 
             // Execute - call the private method
-            ;(testReporter as any).processHierarchicalSuite(mockSuite, parentItem)
+            ;(testReporter as any)._processHierarchicalSuite(mockSuite, parentItem)
 
             // Verify
             expect(processTestSpy).toHaveBeenCalledWith(mockTest, suiteItem)
             expect(processHierarchicalSuiteSpy).toHaveBeenCalledWith(mockNestedSuite, suiteItem)
-            expect(updateSuiteStatusSpy).toHaveBeenCalledWith(suiteItem, mockSuite)
+            expect(_updateSuiteStatusSpy).toHaveBeenCalledWith(suiteItem, mockSuite)
         })
 
         it('should skip suite when not found in repository', () => {
@@ -220,7 +220,7 @@ describe('TestReporter', () => {
             const mockSuite = createMockTestSuite('Suite', [])
 
             // Execute
-            ;(testReporter as any).processHierarchicalSuite(mockSuite, parentItem)
+            ;(testReporter as any)._processHierarchicalSuite(mockSuite, parentItem)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith(expect.stringContaining('Suite'))
@@ -240,7 +240,7 @@ describe('TestReporter', () => {
             }
 
             // Execute
-            ;(testReporter as any).processTest(mockTest, suiteItem)
+            ;(testReporter as any)._processTest(mockTest, suiteItem)
 
             // Verify
             expect(mockTestRun.passed).toHaveBeenCalledWith(testItem, 100)
@@ -258,7 +258,7 @@ describe('TestReporter', () => {
             }
 
             // Execute
-            ;(testReporter as any).processTest(mockTest, suiteItem)
+            ;(testReporter as any)._processTest(mockTest, suiteItem)
 
             // Verify
             expect(mockTestRun.failed).toHaveBeenCalledWith(testItem, expect.any(vscode.TestMessage), 100)
@@ -276,7 +276,7 @@ describe('TestReporter', () => {
             }
 
             // Execute
-            ;(testReporter as any).processTest(mockTest, suiteItem)
+            ;(testReporter as any)._processTest(mockTest, suiteItem)
 
             // Verify
             expect(mockTestRun.skipped).toHaveBeenCalledWith(testItem)
@@ -294,7 +294,7 @@ describe('TestReporter', () => {
             }
 
             // Execute
-            ;(testReporter as any).processTest(mockTest, suiteItem)
+            ;(testReporter as any)._processTest(mockTest, suiteItem)
 
             // Verify
             expect(mockTestRun.skipped).toHaveBeenCalledWith(testItem)
@@ -311,7 +311,7 @@ describe('TestReporter', () => {
             }
 
             // Execute
-            ;(testReporter as any).processTest(mockTest, suiteItem)
+            ;(testReporter as any)._processTest(mockTest, suiteItem)
 
             // Verify
             expect(log.debug).toHaveBeenCalledWith(expect.stringContaining('Test 1'))
@@ -319,7 +319,7 @@ describe('TestReporter', () => {
         })
     })
 
-    describe('updateSuiteStatus', () => {
+    describe('_updateSuiteStatus', () => {
         it('should mark suite as passed when there are tests in the suite', () => {
             // Setup
             const suiteItem = createMockTestItem('suite', 'Suite')
@@ -327,7 +327,7 @@ describe('TestReporter', () => {
             const mockSuite = createMockTestSuite('Suite', [mockTest], [], 500)
 
             // Execute
-            ;(testReporter as any).updateSuiteStatus(suiteItem, mockSuite)
+            ;(testReporter as any)._updateSuiteStatus(suiteItem, mockSuite)
 
             // Verify
             expect(mockTestRun.passed).toHaveBeenCalledWith(suiteItem, 500)
@@ -341,7 +341,7 @@ describe('TestReporter', () => {
             const mockResult = createMockResultSet(['/path/to/spec.js'], [], { passed: 2, failed: 0, skipped: 0 })
 
             // Execute
-            ;(testReporter as any).updateSpecFileStatus(specItem, mockResult)
+            ;(testReporter as any)._updateSpecFileStatus(specItem, mockResult)
 
             // Verify
             expect(mockTestRun.passed).toHaveBeenCalledWith(specItem)
@@ -353,7 +353,7 @@ describe('TestReporter', () => {
             const mockResult = createMockResultSet(['/path/to/spec.js'], [], { passed: 1, failed: 1, skipped: 0 })
 
             // Execute
-            ;(testReporter as any).updateSpecFileStatus(specItem, mockResult)
+            ;(testReporter as any)._updateSpecFileStatus(specItem, mockResult)
 
             // Verify
             expect(mockTestRun.failed).toHaveBeenCalledWith(specItem, expect.any(vscode.TestMessage))
@@ -365,7 +365,7 @@ describe('TestReporter', () => {
             const mockResult = createMockResultSet(['/path/to/spec.js'], [], { passed: 0, failed: 0, skipped: 2 })
 
             // Execute
-            ;(testReporter as any).updateSpecFileStatus(specItem, mockResult)
+            ;(testReporter as any)._updateSpecFileStatus(specItem, mockResult)
 
             // Verify
             expect(mockTestRun.skipped).toHaveBeenCalledWith(specItem)

@@ -28,12 +28,12 @@ export class RepositoryManager implements IRepositoryManager {
     private _workspaceTestItems: vscode.TestItem[] = []
     private _wdioConfigTestItems: vscode.TestItem[] = []
     private _isInitialized = false
-    private isCreatedDefaultProfile = false
+    private _isCreatedDefaultProfile = false
 
     constructor(
         public readonly controller: vscode.TestController,
         public readonly configManager: ExtensionConfigManager,
-        private readonly workerManager: IWorkerManager,
+        private readonly _workerManager: IWorkerManager,
         private readonly _metadata = new MetadataRepository()
     ) {
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
@@ -56,7 +56,7 @@ export class RepositoryManager implements IRepositoryManager {
                 .then(async () => await this.initialize())
                 .then(async () => await Promise.all(this.repos.map(async (repo) => await repo.discoverAllTests())))
                 .then(() => this.registerToTestController())
-                .then(() => this.workerManager.reorganize(configManager.getWdioConfigPaths()))
+                .then(() => this._workerManager.reorganize(configManager.getWdioConfigPaths()))
         })
     }
 
@@ -86,11 +86,11 @@ export class RepositoryManager implements IRepositoryManager {
 
         this._workspaceTestItems = await Promise.all(
             workspaces.map(async (workspace) => {
-                const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
+                const workspaceTestItem = this._createWorkspaceTestItem(workspace.workspaceFolder)
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
-                    await this.createWdioConfigTestItem(workspace.workspaceFolder, workspaceTestItem, wdioConfigFile)
+                    await this._createWdioConfigTestItem(workspace.workspaceFolder, workspaceTestItem, wdioConfigFile)
 
-                    this.isCreatedDefaultProfile = true
+                    this._isCreatedDefaultProfile = true
                 }
                 return workspaceTestItem
             })
@@ -104,7 +104,7 @@ export class RepositoryManager implements IRepositoryManager {
             return item.uri?.fsPath === workspaceFolder.uri.fsPath
         })
         for (const workspaceTestItem of affectedWorkspaceItems) {
-            const configTestItem = await this.createWdioConfigTestItem(
+            const configTestItem = await this._createWdioConfigTestItem(
                 workspaceFolder,
                 workspaceTestItem,
                 wdioConfigPath
@@ -125,7 +125,7 @@ export class RepositoryManager implements IRepositoryManager {
         log.debug(`Remove the config file from ${affectedWorkspaceItems.length} workspace(s)`)
         const configUri = convertPathToUri(wdioConfigPath)
         for (const workspaceItem of affectedWorkspaceItems) {
-            const config = workspaceItem.children.get(this.generateConfigTestItemId(workspaceItem, configUri))
+            const config = workspaceItem.children.get(this._generateConfigTestItemId(workspaceItem, configUri))
             if (!config) {
                 continue
             }
@@ -141,7 +141,7 @@ export class RepositoryManager implements IRepositoryManager {
                     this.controller.items.delete(workspaceItem.id)
                 }
             } else {
-                const targetId = this.generateConfigTestItemId(workspaceItem, configUri)
+                const targetId = this._generateConfigTestItemId(workspaceItem, configUri)
                 log.debug(`Remove Configuration from the controller: ${targetId}`)
                 this.controller.items.delete(targetId)
             }
@@ -162,7 +162,7 @@ export class RepositoryManager implements IRepositoryManager {
         log.debug('Successfully registered.')
     }
 
-    private createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
+    private _createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
         const workspaceItem = this.controller.createTestItem(
             `workspace:${workspaceFolder.uri.fsPath}`,
             workspaceFolder.name,
@@ -172,14 +172,14 @@ export class RepositoryManager implements IRepositoryManager {
         return workspaceItem
     }
 
-    private async createWdioConfigTestItem(
+    private async _createWdioConfigTestItem(
         workspaceFolder: vscode.WorkspaceFolder,
         workspaceTestItem: vscode.TestItem,
         wdioConfigPath: string
     ) {
         const uri = convertPathToUri(wdioConfigPath)
         const configItem = this.controller.createTestItem(
-            this.generateConfigTestItemId(workspaceTestItem, uri),
+            this._generateConfigTestItemId(workspaceTestItem, uri),
             basename(wdioConfigPath),
             uri
         )
@@ -192,20 +192,20 @@ export class RepositoryManager implements IRepositoryManager {
             this.controller,
             wdioConfigPath,
             configItem,
-            this.workerManager,
+            this._workerManager,
             workspaceFolder
         )
         this._repos.add(repository)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
 
-        const runProfiles = createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile)
+        const runProfiles = createRunProfile.call(this, configItem, !this._isCreatedDefaultProfile)
 
         this._metadata.createWdioConfigFileMetadata(configItem, { uri, repository, runProfiles })
         return configItem
     }
 
-    private generateConfigTestItemId(workspaceTestItem: vscode.TestItem, configUri: vscode.Uri) {
+    private _generateConfigTestItemId(workspaceTestItem: vscode.TestItem, configUri: vscode.Uri) {
         return [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR)
     }
 
@@ -225,7 +225,7 @@ export class RepositoryManager implements IRepositoryManager {
             )
 
             this.registerToTestController()
-            await this.workerManager.reorganize(this.configManager.getWdioConfigPaths())
+            await this._workerManager.reorganize(this.configManager.getWdioConfigPaths())
         } catch (error) {
             this.controller.items.replace([])
             const errorMessage = error instanceof Error ? error.message : String(error)
