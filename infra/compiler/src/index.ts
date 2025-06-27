@@ -5,6 +5,7 @@ import { parseArgs } from 'node:util'
 
 import { context } from 'esbuild'
 
+import { generateLicense } from './license.js'
 import { esbuildProblemMatcherPlugin } from './plugins.js'
 
 import type { PackageJson } from 'type-fest'
@@ -24,6 +25,11 @@ const optionsDef = {
     production: {
         type: 'boolean',
     },
+    onlyLicense: {
+        type: 'boolean',
+        short: 'l',
+        default: false,
+    },
 } as const
 
 const { values: options } = parseArgs({ args, options: optionsDef })
@@ -41,6 +47,18 @@ if (!fss.existsSync(pkgPath)) {
 const pkg = (await import(url.pathToFileURL(pkgPath).href, { with: { type: 'json' } })).default
 
 const absWorkingDir = path.dirname(pkgPath)
+const outdir = path.resolve(absWorkingDir, 'dist')
+
+if (options.onlyLicense) {
+    const metafile = path.join(outdir, 'meta.json')
+    if (!fss.existsSync(metafile)) {
+        throw new Error(`Meta file was not found: ${metafile}\nPlease execute \`pnpm run build\` at root directory.`)
+    }
+    const meta = JSON.parse(fss.readFileSync(metafile, { encoding: 'utf-8' }))
+    generateLicense(rootDir, pkgPath, meta)
+    console.log('The license file was generated successfully.')
+    process.exit(0)
+}
 
 const exports = (pkg.exports || {}) as PackageJson.ExportConditions
 
@@ -59,8 +77,6 @@ for (const [_, exp] of exportedModules) {
 if (entryPoints.length < 1) {
     throw new Error(`No export module found to build at: ${absWorkingDir}`)
 }
-
-const outdir = path.resolve(absWorkingDir, 'dist')
 
 const ctx = await context({
     sourceRoot: absWorkingDir,
@@ -89,5 +105,7 @@ if (options.watch) {
 
     if (!options.production) {
         fss.writeFileSync(path.join(outdir, 'meta.json'), JSON.stringify(result.metafile))
+
+        generateLicense(rootDir, pkgPath, result.metafile)
     }
 }
