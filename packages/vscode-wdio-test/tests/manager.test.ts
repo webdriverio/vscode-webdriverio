@@ -36,15 +36,15 @@ vi.mock('../src/utils.js', () => {
 })
 
 describe('RepositoryManager', () => {
-    let fakeWorkspaceFolder: vscode.WorkspaceFolder
-    let fakeWorkspaces: WorkspaceData[]
+    let mockWorkspaceFolder: vscode.WorkspaceFolder
+    let mockWorkspaces: WorkspaceData[]
     let workerManager: WdioWorkerManager
-    let clearTestsStub: ReturnType<typeof vi.fn>
-    let discoverAllTestsStub: ReturnType<typeof vi.fn>
+    let mockDiscoverAllTests: ReturnType<typeof vi.fn>
     let controller: vscode.TestController
 
-    const configManager = new ExtensionConfigManager()
+    let configManager: ExtensionConfigManager
     let repositoryManager: RepositoryManager
+    let configMangerOn: any
 
     const workspacePath = join(process.cwd(), 'fake', 'workspace')
     const configPath = join(workspacePath, 'wdio.conf.ts')
@@ -54,6 +54,7 @@ describe('RepositoryManager', () => {
 
     beforeEach(() => {
         vi.resetAllMocks()
+        configManager = new ExtensionConfigManager()
 
         controller = {
             items: new MockTestItemCollection(),
@@ -62,16 +63,16 @@ describe('RepositoryManager', () => {
         } as unknown as vscode.TestController
 
         // Setup fake workspace
-        fakeWorkspaceFolder = {
+        mockWorkspaceFolder = {
             uri: vscode.Uri.file(workspacePath),
             name: 'fake-workspace',
             index: 0,
         }
 
         // Setup fake config
-        fakeWorkspaces = [
+        mockWorkspaces = [
             {
-                workspaceFolder: fakeWorkspaceFolder,
+                workspaceFolder: mockWorkspaceFolder,
                 wdioConfigFiles: [configPath],
             },
         ]
@@ -82,15 +83,13 @@ describe('RepositoryManager', () => {
             on: vi.fn(),
         } as unknown as IWdioExtensionWorker)
 
-        // Stub configManager
-        vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
+        configMangerOn = vi.fn()
+        vi.spyOn(configManager, 'on').mockImplementation(configMangerOn)
+        vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(mockWorkspaces)
 
-        // Stub TestRepository
-        discoverAllTestsStub = vi.fn().mockResolvedValue(undefined)
-        clearTestsStub = vi.fn()
+        mockDiscoverAllTests = vi.fn().mockResolvedValue(undefined)
 
-        vi.spyOn(TestRepository.prototype, 'discoverAllTests').mockImplementation(discoverAllTestsStub)
-        vi.spyOn(TestRepository.prototype, 'clearTests').mockImplementation(clearTestsStub)
+        vi.spyOn(TestRepository.prototype, 'discoverAllTests').mockImplementation(mockDiscoverAllTests)
 
         repositoryManager = new RepositoryManager(controller, configManager, workerManager)
     })
@@ -101,7 +100,6 @@ describe('RepositoryManager', () => {
 
     describe('initialize', () => {
         it('should success to initialize when no workspace', async () => {
-            // Override the configManager stub to return an empty array
             vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue([])
 
             await repositoryManager.initialize()
@@ -117,14 +115,32 @@ describe('RepositoryManager', () => {
         })
     })
 
+    describe('update:configFilePattern', () => {
+        it('should add new test item to the test controller', async () => {
+            await repositoryManager.initialize()
+            vi.spyOn(configManager, 'getWdioConfigPaths').mockReturnValue([])
+
+            const handler = vi.mocked(configMangerOn).mock.calls[0][1]
+            const configManagerInitializeSpy = vi.spyOn(configManager, 'initialize')
+            const repositoryManagerInitializeSpy = vi.spyOn(repositoryManager, 'initialize')
+            const repositoryManagerRegisterSpy = vi.spyOn(repositoryManager, 'registerToTestController')
+
+            await handler()
+
+            expect(configManagerInitializeSpy).toHaveBeenCalled()
+            expect(repositoryManagerInitializeSpy).toHaveBeenCalled()
+            expect(repositoryManagerRegisterSpy).toHaveBeenCalled()
+        })
+    })
+
     describe('registerToTestController', () => {
         it('should delete the loading test item', () => {
-            const deleteStub = vi.fn()
-            vi.spyOn(controller.items, 'delete').mockImplementation(deleteStub)
+            const mockDelete = vi.fn()
+            vi.spyOn(controller.items, 'delete').mockImplementation(mockDelete)
 
             repositoryManager.registerToTestController()
 
-            expect(deleteStub).toHaveBeenCalledWith('_resolving')
+            expect(mockDelete).toHaveBeenCalledWith('_resolving')
         })
 
         it('should register wdio config test items directly for single workspace', async () => {
@@ -148,9 +164,9 @@ describe('RepositoryManager', () => {
                 index: 1,
             }
 
-            fakeWorkspaces = [
+            mockWorkspaces = [
                 {
-                    workspaceFolder: fakeWorkspaceFolder,
+                    workspaceFolder: mockWorkspaceFolder,
                     wdioConfigFiles: [configPath],
                 },
                 {
@@ -158,7 +174,7 @@ describe('RepositoryManager', () => {
                     wdioConfigFiles: [anotherConfigPath],
                 },
             ]
-            vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(fakeWorkspaces)
+            vi.spyOn(configManager, 'workspaces', 'get').mockReturnValue(mockWorkspaces)
             vi.spyOn(workerManager, 'getConnection').mockResolvedValue({
                 on: vi.fn(),
             } as unknown as IWdioExtensionWorker)
@@ -188,29 +204,61 @@ describe('RepositoryManager', () => {
         })
     })
 
-    describe('refreshTests', () => {
-        beforeEach(async () => {
+    describe('addWdioConfig', () => {
+        it('should add new test item to the test controller', async () => {
+            vi.spyOn(configManager, 'isMultiWorkspace', 'get').mockReturnValue(false)
             await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+            expect(controller.items.size).toBe(1)
+
+            await repositoryManager.addWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
+
+            expect(repositoryManager.controller.items.size).toBe(2)
+        })
+    })
+
+    describe('removeWdioConfig', () => {
+        beforeEach(async () => {
+            vi.spyOn(configManager, 'isMultiWorkspace', 'get').mockReturnValue(false)
+            await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+
+            await repositoryManager.addWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
         })
 
-        it('should handle errors during refresh', async () => {
-            repositoryManager.refreshTests()
-            // @ts-ignore the target function of this test is callback of vscode api
-            await vi.mocked(vscode.window.withProgress).mock.calls[0][1]()
+        it('should remove test item to the test controller', async () => {
+            repositoryManager.removeWdioConfig(mockWorkspaceFolder, '/path/to/newConfig.spec.ts')
 
-            expect(clearTestsStub).toHaveBeenCalledTimes(1)
-            expect(discoverAllTestsStub).toHaveBeenCalledTimes(1)
+            expect(repositoryManager.controller.items.size).toBe(1)
+        })
+    })
+
+    describe('refreshTests', () => {
+        it('should remove test item to the test controller', async () => {
+            await repositoryManager.initialize()
+            repositoryManager.registerToTestController()
+            const discoverSpy = vi.spyOn(repositoryManager.repos[0], 'discoverAllTests')
+            const registerSpy = vi.spyOn(repositoryManager, 'registerToTestController')
+            const reorganizeSpy = vi.spyOn(workerManager, 'reorganize')
+            vi.spyOn(configManager, 'getWdioConfigPaths').mockImplementation(vi.fn())
+
+            await repositoryManager.refreshTests()
+
+            expect(repositoryManager.controller.items.size).toBe(0)
+            expect(discoverSpy).toHaveBeenCalled()
+            expect(registerSpy).toHaveBeenCalled()
+            expect(reorganizeSpy).toHaveBeenCalled()
         })
     })
 
     describe('dispose', () => {
         it('should dispose the test controller', () => {
-            const disposeStub = vi.fn()
-            vi.spyOn(repositoryManager, 'dispose').mockImplementation(disposeStub)
+            const mockDispose = vi.fn()
+            vi.spyOn(repositoryManager, 'dispose').mockImplementation(mockDispose)
 
             repositoryManager.dispose()
 
-            expect(disposeStub).toHaveBeenCalled()
+            expect(mockDispose).toHaveBeenCalled()
         })
     })
 })

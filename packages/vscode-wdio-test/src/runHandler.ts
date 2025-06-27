@@ -11,18 +11,18 @@ import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
 import type { RepositoryManager } from './manager.js'
 
 class TestQueue {
-    private queue: vscode.TestItem[] = []
+    private _queue: vscode.TestItem[] = []
 
     push(item: vscode.TestItem) {
-        this.queue.push(item)
+        this._queue.push(item)
     }
 
-    forEach(cb: Parameters<typeof this.queue.forEach>[0]) {
-        this.queue.forEach(cb)
+    forEach(cb: Parameters<typeof this._queue.forEach>[0]) {
+        this._queue.forEach(cb)
     }
 
     [Symbol.iterator]() {
-        return this.queue[Symbol.iterator]()
+        return this._queue[Symbol.iterator]()
     }
 }
 

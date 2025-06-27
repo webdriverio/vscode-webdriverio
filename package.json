@@ -31,6 +31,7 @@
     "test:e2e": "pnpm --filter @vscode-wdio/e2e run test:e2e",
     "test:smoke": "pnpm --filter @vscode-wdio/e2e run test:smoke",
     "coverage": "vitest --run --coverage",
+    "coverage:ui": "pnpx sirv-cli ./coverage --single",
     "graph": "pnpm run build --graph assets/build.png",
     "version": "pnpm --filter @vscode-wdio/release run changelog && git add CHANGELOG.md",
     "postversion": "git show",

@@ -1,10 +1,14 @@
 import * as path from 'node:path'
 
+import { TEST_ID_SEPARATOR } from '@vscode-wdio/constants'
 import * as vscode from 'vscode'
 
+import { convertSourceRangeToVSCodeRange } from './converter.js'
 import { createHandler } from './runHandler.js'
-import type { IExtensionConfigManager } from '@vscode-wdio/types/config'
+
+import type { IExtensionConfigManager, ITestRepository, TestData } from '@vscode-wdio/types'
 import type { RepositoryManager } from './manager.js'
+import type { MetadataRepository } from './metadata.js'
 
 /**
  * Filter spec files by paths
@@ -85,4 +89,29 @@ function getWorkspace(uri: vscode.Uri) {
         throw new Error(`Workspace is not found: ${uri.fsPath}`)
     }
     return workspace
+}
+
+export function testTreeCreator(
+    repository: ITestRepository,
+    metadata: MetadataRepository,
+    parentId: string,
+    testCase: TestData,
+    uri: vscode.Uri
+) {
+    const testCaseId = `${parentId}${TEST_ID_SEPARATOR}${testCase.name}`
+
+    const testCaseItem = repository.controller.createTestItem(testCaseId, testCase.name, uri)
+
+    metadata.createTestMetadata(testCaseItem, {
+        uri,
+        repository,
+        testType: testCase.type,
+    })
+
+    testCaseItem.range = convertSourceRangeToVSCodeRange(testCase.range)
+
+    for (const childTestCase of testCase.children) {
+        testCaseItem.children.add(testTreeCreator(repository, metadata, testCaseId, childTestCase, uri))
+    }
+    return testCaseItem
 }
