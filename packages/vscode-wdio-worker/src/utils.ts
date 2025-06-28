@@ -35,23 +35,23 @@ export async function isFixedWdio(this: WorkerMetaContext, configPath: string) {
         const utilEntryPoint = resolve(`${pkgName}`, resolve('@wdio/cli', pathToFileURL(configPath).href))
         const utilPkg = await findPackageJson(fileURLToPath(utilEntryPoint))
         if (!utilPkg) {
-            this.log.debug(`Could not detect the entry point of ${pkgName}`)
-            throw new Error('Not found')
+            throw new Error(`Could not detect the entry point of ${pkgName}`)
         }
         const pkg = JSON.parse(await fs.readFile(utilPkg, { encoding: 'utf-8' })) as PackageJson
         if (pkg.name !== pkgName) {
-            this.log.debug(`Could not detect the version of ${pkgName}`)
-            throw new Error('Not found')
+            throw new Error(`Could not detect the version of ${pkgName}`)
         }
         this.log.debug(`Detected version of ${pkgName}@${pkg.version}`)
         const versions = pkg.version.split('.')
 
         if (Number(versions[0]) >= 10 || (Number(versions[0]) >= 9 && Number(versions[1]) >= 16)) {
-            this.log.debug(`Use temporary configuration files ${pkgName}@${pkg.version} < 9.16.0`)
             return true
         }
+        this.log.debug(`Use temporary configuration files ${pkgName}@${pkg.version} < 9.16.0`)
         return false
-    } catch {
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
+        this.log.debug(`Use temporary configuration files because ${msg}`)
         return false
     }
 }

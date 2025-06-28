@@ -13,4 +13,5 @@ const cmd = `pnpm --filter ${targetPkg} install -D ${targetWdioPkgs.join(' ')}`
 
 console.log(`\n>${cmd}\n`)
 
-shell.exec(cmd)
+const result = shell.exec(cmd)
+process.exit(result.code)
