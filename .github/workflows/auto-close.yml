@@ -1,6 +1,7 @@
 name: Auto Close Issue
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
 
@@ -12,6 +13,7 @@ jobs:
         with:
           repo-token: ${{ secrets.WDIO_BOT_GITHUB_TOKEN }}
           only-issue-labels: 'Reproducible Example Missing'
+          stale-issue-label: 'Reproducible Example Missing'
           days-before-close: 7
           days-before-stale: -1
           close-issue-message: >
