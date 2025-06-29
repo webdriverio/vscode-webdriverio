@@ -54,11 +54,9 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             configFile = await creator(options.configPath, outputDir.json!)
             options.configPath = configFile
             wdioArgs.configPath = configFile
-        }
-
-        // The `stdout` must be true because the name of the logger is
-        // the name of the file and the initialization of Write Stream will fail.
-        if (!isWindows()) {
+        } else {
+            // The `stdout` must be true because the name of the logger is
+            // the name of the file and the initialization of Write Stream will fail.
             wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: outputDir.json }]]
         }
 
