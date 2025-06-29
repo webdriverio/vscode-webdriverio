@@ -128,9 +128,15 @@ importers:
 
   infra/compiler:
     dependencies:
+      chalk:
+        specifier: ^5.4.1
+        version: 5.4.1
       esbuild:
         specifier: ^0.25.0
         version: 0.25.5
+      fdir:
+        specifier: ^6.4.6
+        version: 6.4.6(picomatch@4.0.2)
       type-fest:
         specifier: ^4.24.0
         version: 4.41.0
@@ -382,7 +388,7 @@ importers:
         version: 9.15.0
       '@wdio/globals':
         specifier: ^9.12.6
-        version: 9.15.0(@wdio/logger@9.16.2)
+        version: 9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.15.0)
       '@wdio/local-runner':
         specifier: ^9.12.6
         version: 9.15.0
@@ -469,7 +475,7 @@ importers:
         version: 9.15.0
       '@wdio/globals':
         specifier: ^9.12.6
-        version: 9.15.0(@wdio/logger@9.16.2)
+        version: 9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.16.2)
       '@wdio/local-runner':
         specifier: ^9.12.6
         version: 9.15.0
@@ -499,7 +505,7 @@ importers:
         version: 9.15.0
       '@wdio/globals':
         specifier: ^9.12.6
-        version: 9.15.0(@wdio/logger@9.16.2)
+        version: 9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.16.2)
       '@wdio/local-runner':
         specifier: ^9.12.6
         version: 9.15.0
@@ -1710,9 +1716,6 @@ packages:
 
   '@types/node@24.0.3':
     resolution: {integrity: sha512-R4I/kzCYAdRLzfiCabn9hxWfbuHS573x+r0dJMkkzThEa7pbrcDWK+9zu3e7aBOouf+rQAciqPFMnxwr0aWgKg==}
-
-  '@types/node@24.0.4':
-    resolution: {integrity: sha512-ulyqAkrhnuNq9pB76DRBTkcS6YsmDALy6Ua63V8OhrOBgbcYt6IOdzpw5P1+dyRIyMerzLkeYWBeOXPpA9GMAA==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -3622,8 +3625,8 @@ packages:
   fd-slicer@1.1.0:
     resolution: {integrity: sha512-cE1qsB/VwyQozZ+q1dGxR8LBYNZeofhEdUNGSMbQD3Gw2lAzX9Zb3uIU6Ebc/Fmyjo9AWWfnn0AUCHqtevs/8g==}
 
-  fdir@6.4.5:
-    resolution: {integrity: sha512-4BG7puHpVsIYxZUbiUE3RqGloLaSSwzYie5jvasC4LWuBWzZawynvYouhjbQKw2JuIGYdm0DzIxl8iVidKlUEw==}
+  fdir@6.4.6:
+    resolution: {integrity: sha512-hiFoqpyZcfNm1yc4u8oWCf9A2c4D3QjCrks3zmoVKVxpQRzmPNar1hUJcBG2RQHvEVGDN+Jm81ZheVLAQMK6+w==}
     peerDependencies:
       picomatch: ^3 || ^4
     peerDependenciesMeta:
@@ -7885,7 +7888,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 24.0.4
+      '@types/node': 20.19.1
       '@types/yargs': 17.0.33
       chalk: 4.1.2
 
@@ -8665,10 +8668,6 @@ snapshots:
     dependencies:
       undici-types: 7.8.0
 
-  '@types/node@24.0.4':
-    dependencies:
-      undici-types: 7.8.0
-
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/sarif@2.1.7': {}
@@ -9043,7 +9042,7 @@ snapshots:
       enhanced-resolve: 5.18.1
       glob: 10.4.5
       minimatch: 9.0.5
-      mocha: 11.7.1
+      mocha: 11.6.0
       supports-color: 9.4.0
       yargs: 17.7.2
 
@@ -9279,17 +9278,10 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@wdio/globals@9.15.0(@wdio/logger@9.16.2)':
-    optionalDependencies:
-      expect-webdriverio: 5.2.0(@wdio/globals@9.15.0(@wdio/logger@9.16.2))(@wdio/logger@9.16.2)(webdriverio@9.15.0)
+  '@wdio/globals@9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.15.0)':
+    dependencies:
+      expect-webdriverio: 5.3.4(@wdio/globals@9.16.2)(@wdio/logger@9.16.2)(webdriverio@9.15.0)
       webdriverio: 9.15.0
-    transitivePeerDependencies:
-      - '@wdio/logger'
-      - bare-buffer
-      - bufferutil
-      - puppeteer-core
-      - supports-color
-      - utf-8-validate
 
   '@wdio/globals@9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.16.2)':
     dependencies:
@@ -9303,7 +9295,7 @@ snapshots:
       '@wdio/logger': 9.15.0
       '@wdio/types': 9.15.0
       '@wdio/utils': 9.15.0
-      expect-webdriverio: 5.2.0(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.16.2)
+      expect-webdriverio: 5.3.4(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.16.2)
       jasmine: 5.8.0
     transitivePeerDependencies:
       - bare-buffer
@@ -9432,7 +9424,7 @@ snapshots:
       '@wdio/types': 9.15.0
       '@wdio/utils': 9.15.0
       deepmerge-ts: 7.1.5
-      expect-webdriverio: 5.3.4(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.15.0)
+      expect-webdriverio: 5.2.0(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.15.0)
       webdriver: 9.15.0
       webdriverio: 9.15.0
     transitivePeerDependencies:
@@ -10534,7 +10526,7 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.4.7
+      dotenv: 16.5.0
 
   dotenv@16.4.7: {}
 
@@ -10569,7 +10561,7 @@ snapshots:
 
   edgedriver@6.1.1:
     dependencies:
-      '@wdio/logger': 9.15.0
+      '@wdio/logger': 9.16.2
       '@zip.js/zip.js': 2.7.62
       decamelize: 6.0.0
       edge-paths: 3.0.5
@@ -10987,34 +10979,22 @@ snapshots:
       jest-matcher-utils: 29.7.0
       lodash.isequal: 4.5.0
       webdriverio: 9.15.0
-    optional: true
 
-  expect-webdriverio@5.2.0(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.16.2):
-    dependencies:
-      '@vitest/snapshot': 2.1.9
-      '@wdio/globals': 9.15.0(@wdio/logger@9.15.0)
-      '@wdio/logger': 9.15.0
-      expect: 29.7.0
-      jest-matcher-utils: 29.7.0
-      lodash.isequal: 4.5.0
-      webdriverio: 9.16.2
-
-  expect-webdriverio@5.2.0(@wdio/globals@9.15.0(@wdio/logger@9.16.2))(@wdio/logger@9.16.2)(webdriverio@9.15.0):
-    dependencies:
-      '@vitest/snapshot': 2.1.9
-      '@wdio/globals': 9.15.0(@wdio/logger@9.16.2)
-      '@wdio/logger': 9.16.2
-      expect: 29.7.0
-      jest-matcher-utils: 29.7.0
-      lodash.isequal: 4.5.0
-      webdriverio: 9.15.0
-    optional: true
-
-  expect-webdriverio@5.3.4(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.15.0):
+  expect-webdriverio@5.3.4(@wdio/globals@9.15.0(@wdio/logger@9.15.0))(@wdio/logger@9.15.0)(webdriverio@9.16.2):
     dependencies:
       '@vitest/snapshot': 3.2.4
       '@wdio/globals': 9.15.0(@wdio/logger@9.15.0)
       '@wdio/logger': 9.15.0
+      expect: 30.0.3
+      jest-matcher-utils: 30.0.3
+      lodash.isequal: 4.5.0
+      webdriverio: 9.16.2
+
+  expect-webdriverio@5.3.4(@wdio/globals@9.16.2)(@wdio/logger@9.16.2)(webdriverio@9.15.0):
+    dependencies:
+      '@vitest/snapshot': 3.2.4
+      '@wdio/globals': 9.16.2(expect-webdriverio@5.3.4)(webdriverio@9.15.0)
+      '@wdio/logger': 9.16.2
       expect: 30.0.3
       jest-matcher-utils: 30.0.3
       lodash.isequal: 4.5.0
@@ -11160,7 +11140,7 @@ snapshots:
     dependencies:
       pend: 1.2.0
 
-  fdir@6.4.5(picomatch@4.0.2):
+  fdir@6.4.6(picomatch@4.0.2):
     optionalDependencies:
       picomatch: 4.0.2
 
@@ -11311,7 +11291,7 @@ snapshots:
 
   geckodriver@5.0.0:
     dependencies:
-      '@wdio/logger': 9.15.0
+      '@wdio/logger': 9.16.2
       '@zip.js/zip.js': 2.7.62
       decamelize: 6.0.0
       http-proxy-agent: 7.0.2
@@ -12129,7 +12109,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 24.0.4
+      '@types/node': 20.19.1
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -14463,7 +14443,7 @@ snapshots:
 
   tinyglobby@0.2.14:
     dependencies:
-      fdir: 6.4.5(picomatch@4.0.2)
+      fdir: 6.4.6(picomatch@4.0.2)
       picomatch: 4.0.2
 
   tinypool@1.1.0: {}
@@ -14799,7 +14779,7 @@ snapshots:
   vite@6.3.5(@types/node@20.19.1)(tsx@4.20.3)(yaml@2.8.0):
     dependencies:
       esbuild: 0.25.5
-      fdir: 6.4.5(picomatch@4.0.2)
+      fdir: 6.4.6(picomatch@4.0.2)
       picomatch: 4.0.2
       postcss: 8.5.4
       rollup: 4.42.0

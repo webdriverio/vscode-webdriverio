@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 import type { RepositoryManager } from './manager.js'
 
 export class TestfileWatcher extends FileWatcherManager {
-    constructor(private readonly repositoryManager: RepositoryManager) {
+    constructor(private readonly _repositoryManager: RepositoryManager) {
         super()
     }
 
@@ -15,7 +15,7 @@ export class TestfileWatcher extends FileWatcherManager {
     }
 
     protected getFilePatterns(): WatchPattern[] {
-        return this.repositoryManager.repos.reduce((patterns, repo) => {
+        return this._repositoryManager.repos.reduce((patterns, repo) => {
             const configDirPath = dirname(repo.wdioConfigPath)
             for (const pattern of repo.specPatterns) {
                 patterns.push({
@@ -44,7 +44,7 @@ export class TestfileWatcher extends FileWatcherManager {
 
         // If a Spec file is newly created, attempt to read in all repositories,
         // as it is unclear which configuration file should be reflected.
-        const promises = this.repositoryManager.repos.reduce((repos, repo) => {
+        const promises = this._repositoryManager.repos.reduce((repos, repo) => {
             if (!isCreated && !repo.getSpecByFilePath(specFilePath)) {
                 return repos
             }
@@ -61,7 +61,7 @@ export class TestfileWatcher extends FileWatcherManager {
     protected async handleFileDelete(uri: vscode.Uri): Promise<void> {
         const specFilePath = uri.fsPath
         log.debug(`Test file deleted: ${specFilePath}`)
-        const count = this.repositoryManager.repos.reduce((counter, repo) => {
+        const count = this._repositoryManager.repos.reduce((counter, repo) => {
             if (!repo.getSpecByFilePath(specFilePath)) {
                 return counter
             }

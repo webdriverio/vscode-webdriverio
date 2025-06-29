@@ -11,6 +11,25 @@
 
 ---
 
+## v0.4.1 (2025-06-28)
+
+#### :nail_care: Polish
+
+- `vscode-wdio-test`, `vscode-wdio-types`, `vscode-wdio-worker`
+    - [#75](https://github.com/webdriverio/vscode-webdriverio/pull/75) refactor: improve performance and coverage of `@vscode-wdio/test` ([@mato533](https://github.com/mato533))
+- `vscode-wdio-server`, `vscode-wdio-test`, `vscode-wdio-types`, `vscode-webdriverio`
+    - [#70](https://github.com/webdriverio/vscode-webdriverio/pull/70) feat: simplification of the startup process ([@mato533](https://github.com/mato533))
+
+#### :house: Internal
+
+- `vscode-webdriverio`
+    - [#74](https://github.com/webdriverio/vscode-webdriverio/pull/74) feat: build license file for vscode-webdriverio ([@mato533](https://github.com/mato533))
+    - [#69](https://github.com/webdriverio/vscode-webdriverio/pull/69) ci: hardening security of Github actions ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
 ## v0.4.0 (2025-06-19)
 
 #### :rocket: New Feature

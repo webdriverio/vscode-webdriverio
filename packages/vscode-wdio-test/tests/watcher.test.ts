@@ -5,6 +5,7 @@ import { FileWatcherManager } from '@vscode-wdio/utils'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 import { TestfileWatcher } from '../src/watcher.js'
+import type { WatchPattern } from '@vscode-wdio/utils'
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../src/manager.js'
 
@@ -40,12 +41,16 @@ describe('TestfileWatcher', () => {
 
         // Create mock repositories
         mockRepo1 = {
+            wdioConfigPath: '/path/to/config1.ts',
+            specPatterns: ['tests/**.test.ts'],
             getSpecByFilePath: vi.fn(),
             reloadSpecFiles: vi.fn().mockResolvedValue(undefined),
             removeSpecFile: vi.fn(),
         }
 
         mockRepo2 = {
+            wdioConfigPath: '/path/to/config2.ts',
+            specPatterns: ['tests/**.spec.ts'],
             getSpecByFilePath: vi.fn(),
             reloadSpecFiles: vi.fn().mockResolvedValue(undefined),
             removeSpecFile: vi.fn(),
@@ -75,6 +80,19 @@ describe('TestfileWatcher', () => {
             watcher.enable()
             // Verify
             expect(mock).toHaveBeenCalled()
+        })
+    })
+
+    describe('getFilePatterns', () => {
+        it('should return correct file patterns', () => {
+            // const mock = vi.fn()
+            // FileWatcherManager.prototype['getFilePatterns']
+
+            watcher = new TestfileWatcher(mockRepositoryManager)
+            const result = (watcher as any).getFilePatterns() as WatchPattern[]
+            expect(result.length).toBe(2)
+            expect(result[0].pattern).toBe('tests/**.test.ts')
+            expect(result[1].pattern).toBe('tests/**.spec.ts')
         })
     })
 

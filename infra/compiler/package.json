@@ -6,7 +6,9 @@
     "build": "tsx ./src/index.ts"
   },
   "dependencies": {
+    "chalk": "^5.4.1",
     "esbuild": "^0.25.0",
+    "fdir": "^6.4.6",
     "type-fest": "^4.24.0"
   }
 }

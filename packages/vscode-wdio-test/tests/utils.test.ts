@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
+import { mockCreateTestItem } from '../../../tests/utils.js'
 import * as utils from '../src/utils.js'
+import { testTreeCreator } from '../src/utils.js'
 import type * as vscode from 'vscode'
 import type { RepositoryManager } from '../src/manager.js'
 
@@ -24,6 +26,12 @@ vi.mock('../src/runHandler.js', () => {
                 /* Dummy function */
             }
         }),
+    }
+})
+
+vi.mock('../src/converter.js', () => {
+    return {
+        convertSourceRangeToVSCodeRange: vi.fn(() => {}),
     }
 })
 
@@ -138,6 +146,83 @@ describe('Test Utils', () => {
         it('should return root TestItem when input the root item itself', () => {
             const result = utils.getRootTestItem(rootTestItem)
             expect(result.id).toBe(rootTestItem.id)
+        })
+    })
+
+    describe('getWorkspaceFolder', () => {
+        const rootTestItem = {
+            id: 'root',
+            parent: undefined,
+        } as unknown as vscode.TestItem
+        const l1TestItem = {
+            id: 'l1',
+            parent: rootTestItem,
+        } as unknown as vscode.TestItem
+        const l2TestItem = {
+            id: 'l2',
+            parent: l1TestItem,
+        } as unknown as vscode.TestItem
+
+        it('should return root TestItem when input the ground child item', () => {
+            const result = utils.getRootTestItem(l2TestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+
+        it('should return root TestItem when input the child item2', () => {
+            const result = utils.getRootTestItem(l1TestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+
+        it('should return root TestItem when input the root item itself', () => {
+            const result = utils.getRootTestItem(rootTestItem)
+            expect(result.id).toBe(rootTestItem.id)
+        })
+    })
+
+    describe('testTreeCreator', async () => {
+        let mockRepository: any
+        let mockMetadata: any
+
+        beforeEach(() => {
+            mockRepository = {
+                controller: {
+                    createTestItem: mockCreateTestItem,
+                },
+            }
+            mockMetadata = {
+                createTestMetadata: vi.fn(),
+            }
+        })
+
+        it('should create test tree with metadata and children', () => {
+            const uri = { path: '/dummy/path' } as vscode.Uri
+
+            const testData = {
+                name: 'ParentTest',
+                type: 'test',
+                range: {} as any,
+                children: [
+                    {
+                        name: 'ChildTest',
+                        type: 'test',
+                        range: { start: 3, end: 4 },
+                        children: [],
+                    },
+                ],
+            }
+
+            const result = testTreeCreator(mockRepository, mockMetadata, 'root', testData as any, uri)
+
+            expect(result.id).toBe('root#WDIO_SEP#ParentTest')
+            expect(result.label).toBe('ParentTest')
+            expect(result.uri).toBe(uri)
+
+            expect(result.children.size).toBe(1)
+            const child = result.children.get('root#WDIO_SEP#ParentTest#WDIO_SEP#ChildTest')
+            expect(child!.label).toBe('ChildTest')
+
+            expect(mockMetadata.createTestMetadata).toHaveBeenCalledTimes(2)
+            expect(mockCreateTestItem).toHaveBeenCalledTimes(2)
         })
     })
 })
