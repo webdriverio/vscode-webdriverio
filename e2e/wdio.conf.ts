@@ -20,7 +20,7 @@ const version = isCompatibilityMode ? minimumVersion : 'stable'
 const outputDir = path.join(__dirname, 'logs', [isCompatibilityMode ? 'compatibility' : 'e2e', target].join('-'))
 process.env.VSCODE_WDIO_TRACE_LOG_PATH = outputDir
 
-const loglevel = process.env.VSCODE_WDIO_SMOKE_RETRO_WIN === 'yes' ? 'debug' : 'trace'
+const loglevel = process.env.VSCODE_WDIO_SMOKE_RETRO_WIN ? 'debug' : 'trace'
 
 function defineSpecs(target: TestTargets) {
     switch (target) {

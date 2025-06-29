@@ -87,10 +87,17 @@ describe(`VS Code Extension Testing with ${targetFramework}`, function () {
     })
 
     // eslint-disable-next-line mocha/no-setup-in-describe
-    if (process.env.VSCODE_WDIO_SMOKE_RETRO_WIN) {
+    if (process.env.VSCODE_WDIO_SMOKE_RETRO_WIN === 'yes') {
 
         it('should use temporally configuration file', async function () {
             await expect(workbench).hasExpectedLog('Use temporary configuration files @wdio/utils@9.15.0 < 9.16.0')
+        })
+
+        // eslint-disable-next-line mocha/no-setup-in-describe
+    } else if (process.env.VSCODE_WDIO_SMOKE_RETRO_WIN === 'no') {
+
+        it('should not use temporally configuration file', async function () {
+            await expect(workbench).not.hasExpectedLog('Use temporary configuration files @wdio/utils@9.15.0 < 9.16.0')
         })
     }
 })
