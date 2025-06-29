@@ -38,6 +38,6 @@
   "devDependencies": {
     "@types/ws": "^8.18.1",
     "@vscode-wdio/types": "workspace:*",
-    "@wdio/cli": "^9.12.4"
+    "@wdio/cli": "^9.16.2"
   }
 }
