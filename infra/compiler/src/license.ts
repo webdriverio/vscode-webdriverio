@@ -1,5 +1,6 @@
 import fss from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import chalk from 'chalk'
 import { fdir } from 'fdir'
@@ -41,12 +42,13 @@ export function checkLicense(pkgPath: string, meta: any) {
 
     for (const input of inputs) {
         if (input.match(/node_modules/)) {
-            const match = Array.from(input.matchAll(/node_modules\/((@[^/]+\/)?[^/]+)/g))
+            const inputUrl = pathToFileURL(input).href
+            const match = Array.from(inputUrl.matchAll(/node_modules\/((@[^/]+\/)?[^/]+)/g))
 
-            const relativePath = input.substring(0, match[match.length - 1].index)
+            const relativePath = inputUrl.substring(0, match[match.length - 1].index)
             const absEntryPoint = path.resolve(path.dirname(pkgPath), input)
-            const absPackageRoot = path.resolve(path.dirname(pkgPath), relativePath)
-            const maxDepth = absEntryPoint.split(path.posix.sep).length - absPackageRoot.split(path.posix.sep).length
+            const absPackageRoot = path.resolve(path.dirname(pkgPath), fileURLToPath(relativePath))
+            const maxDepth = absEntryPoint.split(path.sep).length - absPackageRoot.split(path.sep).length
             checker.findLicense(absEntryPoint, maxDepth)
         }
     }
