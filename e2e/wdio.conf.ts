@@ -83,8 +83,8 @@ export function createBaseConfig(workspacePath: string, userSettings = {}): Webd
             if (process.platform === 'linux') {
                 const result = shell.exec('xdotool search --onlyvisible --name code')
                 const windowId = result.stdout.trim()
-                shell.exec(`xdotool windowmove ${windowId} 0 0`)
-                shell.exec(`xdotool windowsize ${windowId} 100% 100%`)
+                shell.exec(`xdotool windowmove ${windowId} 0 0`, { silent: true })
+                shell.exec(`xdotool windowsize ${windowId} 100% 100%`, { silent: true })
             }
         },
         afterTest: async function (_test: unknown, _context: unknown, result: Frameworks.TestResult) {

@@ -178,9 +178,6 @@ importers:
       '@vscode-wdio/utils':
         specifier: workspace:*
         version: link:../vscode-wdio-utils
-      glob:
-        specifier: ^11.0.1
-        version: 11.0.3
     devDependencies:
       '@vscode-wdio/types':
         specifier: workspace:*
