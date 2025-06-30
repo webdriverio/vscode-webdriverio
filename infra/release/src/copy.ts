@@ -7,11 +7,7 @@ import shell from 'shelljs'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..', '..', '..')
-const targetFiles = [
-    path.resolve(rootDir, 'README.md'),
-    path.resolve(rootDir, 'CHANGELOG.md'),
-    path.resolve(rootDir, 'LICENSE'),
-]
+const targetFiles = [path.resolve(rootDir, 'README.md'), path.resolve(rootDir, 'CHANGELOG.md')]
 const destDir = path.resolve(rootDir, 'packages/vscode-webdriverio')
 
 const result = shell.cp('-f', targetFiles, destDir)

@@ -1,0 +1,77 @@
+name: Check license updates
+
+on:
+  workflow_call:
+    # Make this a reusable workflow, no value needed
+    # https://docs.github.com/en/actions/using-workflows/reusing-workflows
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  license-check:
+    name: License Check
+    runs-on: 'ubuntu-latest'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: 👷 Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: 🛠️ Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '20'
+
+      - name: ⬇️ Download Build Archive
+        uses: ./.github/actions/download-archive
+        with:
+          name: vscode-webdriverio
+          path: .
+          filename: vscode-webdriverio-build.zip
+
+      - name: 📃 Generate License file
+        run: pnpm --filter @vscode-wdio/compiler build -p vscode-webdriverio -l
+        shell: bash
+
+      - name: ✅ Check status
+        id: check
+        run: |
+          if [[ $(git status --short | grep -c -v vscode-webdriverio-build.zip) -ne 0 ]]; then
+            STATUS=$(git status --verbose); printf "%s" "$STATUS"; git diff | cat
+            echo "result=1" >> $GITHUB_OUTPUT
+          else
+            echo "result=0" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        if: ${{ steps.check.outputs.result > 0 }}
+        with:
+          header: license-error
+          message: >
+            Thank you for creating PR!🙏
+
+            It is likely that the license file needs to be updated due to changes in dependencies.
+
+            Please run following commands at project root directory.
+            ```
+            $ pnpm run build
+
+            $ git add packages/vscode-webdriverio/LICENSE.md
+
+            $ git commit
+            ```
+
+            If you have any questions please reach out to us on our [Discord](https://discord.webdriver.io/)
+            channel. We are happy to help you out there.
+
+      - name: 💥 Exit with error
+        if: ${{ steps.check.outputs.result > 0 }}
+        run: exit 1
+
+      - uses: marocchino/sticky-pull-request-comment@52423e01640425a022ef5fd42c6fb5f633a02728 # v2.9.1
+        if: ${{ steps.check.outputs.result == 0 }}
+        with:
+          header: license-error
+          delete: true

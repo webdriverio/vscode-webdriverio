@@ -46,6 +46,7 @@ describe('runTest', () => {
         configPath: mockConfigFile,
         specs: ['test.spec.js'],
         grep: 'test pattern',
+        env: { paths: [], override: false },
     }
 
     // Mock temporary directories and files
@@ -141,6 +142,7 @@ describe('runTest', () => {
         // Arrange
         const optionsNoSpecs = {
             configPath: '/path/to/wdio.conf.js',
+            env: { paths: [], override: false },
         }
 
         // Act
@@ -155,6 +157,7 @@ describe('runTest', () => {
         const optionsNoGrep = {
             configPath: '/path/to/wdio.conf.js',
             specs: ['test.spec.js'],
+            env: { paths: [], override: false },
         }
 
         // Act

@@ -2,7 +2,7 @@ import type * as vscode from 'vscode'
 import type { IExtensionConfigManager } from './config.js'
 import type { IWdioExtensionWorker } from './server.js'
 
-export interface IRepositoryManager extends vscode.Disposable {
+export interface IRepositoryManager extends vscode.Disposable, IMetadataRepositoryReader {
     readonly controller: vscode.TestController
     readonly configManager: IExtensionConfigManager
     readonly repos: ITestRepository[]
@@ -14,7 +14,7 @@ export interface IRepositoryManager extends vscode.Disposable {
     refreshTests(): Promise<void>
 }
 
-export interface ITestRepository extends IMetadataRepository, vscode.Disposable {
+export interface ITestRepository extends vscode.Disposable, IMetadataRepositoryReader {
     readonly controller: vscode.TestController
     readonly wdioConfigPath: string
     specPatterns: string[]
@@ -23,7 +23,6 @@ export interface ITestRepository extends IMetadataRepository, vscode.Disposable 
     discoverAllTests(): Promise<void>
     reloadSpecFiles(filePaths?: string[]): Promise<void>
     removeSpecFile(specPath: string): void
-    clearTests(): void
     getSpecByFilePath(specPath: string): vscode.TestItem | undefined
 }
 
@@ -75,12 +74,6 @@ export interface TestData {
     metadata?: Record<string, unknown>
 }
 
-export type VscodeTestData = Omit<TestData, 'range' | 'children'> & {
-    uri: vscode.Uri
-    range: vscode.Range
-    children: VscodeTestData[]
-}
-
 export type TestItemMetadata = {
     uri: vscode.Uri
     isWorkspace: boolean
@@ -95,8 +88,11 @@ export type TestItemMetadata = {
 export type TestItemMetadataWithRepository = Omit<TestItemMetadata, 'repository'> &
     Required<Pick<TestItemMetadata, 'repository'>>
 
-export interface IMetadataRepository {
+export interface IMetadataRepositoryReader {
     getMetadata(testItem: vscode.TestItem): TestItemMetadata
     getRepository(testItem: vscode.TestItem): ITestRepository
+}
+
+export interface IMetadataRepository extends IMetadataRepositoryReader {
     setMetadata(testItem: vscode.TestItem, metadata: TestItemMetadata): void
 }

@@ -48,11 +48,11 @@ export class TestReporter {
 
                     // Process suites in this spec file
                     for (const suite of result.suites) {
-                        this.processHierarchicalSuite(suite, specTestItem)
+                        this._processHierarchicalSuite(suite, specTestItem)
                     }
 
                     // Update spec file status based on overall result status
-                    this.updateSpecFileStatus(specTestItem, result)
+                    this._updateSpecFileStatus(specTestItem, result)
                 }
 
                 // Check if any test failed
@@ -74,7 +74,7 @@ export class TestReporter {
      * @param suite The suite result from WebdriverIO with potential nested suites
      * @param parentItem The parent TestItem (spec file or parent suite)
      */
-    private processHierarchicalSuite(suite: TestSuite, parentItem: vscode.TestItem): void {
+    private _processHierarchicalSuite(suite: TestSuite, parentItem: vscode.TestItem): void {
         // Find the suite TestItem in the repository
         let suiteItem: vscode.TestItem | undefined
 
@@ -91,18 +91,18 @@ export class TestReporter {
 
         // Process tests in this suite
         for (const test of suite.tests) {
-            this.processTest(test, suiteItem)
+            this._processTest(test, suiteItem)
         }
 
         // Process nested suites if any
         if (suite.suites && suite.suites.length > 0) {
             for (const nestedSuite of suite.suites) {
-                this.processHierarchicalSuite(nestedSuite, suiteItem)
+                this._processHierarchicalSuite(nestedSuite, suiteItem)
             }
         }
 
         // Set suite status based on its tests
-        this.updateSuiteStatus(suiteItem, suite)
+        this._updateSuiteStatus(suiteItem, suite)
     }
 
     /**
@@ -110,7 +110,7 @@ export class TestReporter {
      * @param test The test result from WebdriverIO
      * @param suiteItem The parent suite TestItem
      */
-    private processTest(test: Test, suiteItem: vscode.TestItem): void {
+    private _processTest(test: Test, suiteItem: vscode.TestItem): void {
         // Find the test item in the children of the suite item
         let testItem: vscode.TestItem | undefined
 
@@ -148,7 +148,7 @@ export class TestReporter {
      * @param suiteItem The suite TestItem
      * @param suiteResult The suite result from WebdriverIO
      */
-    private updateSuiteStatus(suiteItem: vscode.TestItem, suiteResult: TestSuite): void {
+    private _updateSuiteStatus(suiteItem: vscode.TestItem, suiteResult: TestSuite): void {
         const hasFailedTests = suiteResult.tests.some((test) => test.state === 'failed')
 
         if (hasFailedTests || suiteResult.tests.length > 0) {
@@ -168,7 +168,7 @@ export class TestReporter {
      * @param specItem The spec file TestItem
      * @param result The WebdriverIO result for this spec file
      */
-    private updateSpecFileStatus(specItem: vscode.TestItem, result: ResultSet): void {
+    private _updateSpecFileStatus(specItem: vscode.TestItem, result: ResultSet): void {
         if (result.state.failed > 0) {
             const message = new vscode.TestMessage(
                 `${result.state.failed} tests failed out of ${result.state.passed + result.state.failed + result.state.skipped}`

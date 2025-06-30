@@ -22,20 +22,20 @@ import type { IRepositoryManager, ITestRepository } from '@vscode-wdio/types/tes
 
 const LOADING_TEST_ITEM_ID = '_resolving'
 
-export class RepositoryManager extends MetadataRepository implements IRepositoryManager {
+export class RepositoryManager implements IRepositoryManager {
     private readonly _repos = new Set<ITestRepository>()
     private _loadingTestItem: vscode.TestItem
     private _workspaceTestItems: vscode.TestItem[] = []
     private _wdioConfigTestItems: vscode.TestItem[] = []
     private _isInitialized = false
-    private isCreatedDefaultProfile = false
+    private _isCreatedDefaultProfile = false
 
     constructor(
         public readonly controller: vscode.TestController,
         public readonly configManager: ExtensionConfigManager,
-        private readonly workerManager: IWorkerManager
+        private readonly _workerManager: IWorkerManager,
+        private readonly _metadata = new MetadataRepository()
     ) {
-        super()
         this._loadingTestItem = this.controller.createTestItem(LOADING_TEST_ITEM_ID, 'Resolving WebdriverIO Tests...')
         this._loadingTestItem.sortText = '.0' // show at first line
         this._loadingTestItem.busy = true
@@ -56,7 +56,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
                 .then(async () => await this.initialize())
                 .then(async () => await Promise.all(this.repos.map(async (repo) => await repo.discoverAllTests())))
                 .then(() => this.registerToTestController())
-                .then(() => this.workerManager.reorganize(configManager.getWdioConfigPaths()))
+                .then(() => this._workerManager.reorganize(configManager.getWdioConfigPaths()))
         })
     }
 
@@ -64,9 +64,16 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         return Array.from(this._repos)
     }
 
+    public getMetadata(testItem: vscode.TestItem) {
+        return this._metadata.getMetadata(testItem)
+    }
+
+    public getRepository(testItem: vscode.TestItem): ITestRepository {
+        return this._metadata.getRepository(testItem)
+    }
+
     public async initialize() {
         const workspaces = this.configManager.workspaces
-
         if (workspaces.length < 1) {
             log.info('No workspaces is detected.')
             return
@@ -79,11 +86,11 @@ export class RepositoryManager extends MetadataRepository implements IRepository
 
         this._workspaceTestItems = await Promise.all(
             workspaces.map(async (workspace) => {
-                const workspaceTestItem = this.createWorkspaceTestItem(workspace.workspaceFolder)
+                const workspaceTestItem = this._createWorkspaceTestItem(workspace.workspaceFolder)
                 for (const wdioConfigFile of workspace.wdioConfigFiles) {
-                    await this.createWdioConfigTestItem(workspace.workspaceFolder, workspaceTestItem, wdioConfigFile)
+                    await this._createWdioConfigTestItem(workspace.workspaceFolder, workspaceTestItem, wdioConfigFile)
 
-                    this.isCreatedDefaultProfile = true
+                    this._isCreatedDefaultProfile = true
                 }
                 return workspaceTestItem
             })
@@ -97,13 +104,13 @@ export class RepositoryManager extends MetadataRepository implements IRepository
             return item.uri?.fsPath === workspaceFolder.uri.fsPath
         })
         for (const workspaceTestItem of affectedWorkspaceItems) {
-            const configTestItem = await this.createWdioConfigTestItem(
+            const configTestItem = await this._createWdioConfigTestItem(
                 workspaceFolder,
                 workspaceTestItem,
                 wdioConfigPath
             )
 
-            const repo = this.getRepository(configTestItem)
+            const repo = this._metadata.getRepository(configTestItem)
             await repo.discoverAllTests()
             if (!this.configManager.isMultiWorkspace) {
                 this.controller.items.add(configTestItem)
@@ -118,12 +125,12 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         log.debug(`Remove the config file from ${affectedWorkspaceItems.length} workspace(s)`)
         const configUri = convertPathToUri(wdioConfigPath)
         for (const workspaceItem of affectedWorkspaceItems) {
-            const config = workspaceItem.children.get(this.generateConfigTestItemId(workspaceItem, configUri))
+            const config = workspaceItem.children.get(this._generateConfigTestItemId(workspaceItem, configUri))
             if (!config) {
                 continue
             }
             log.debug(`Remove the TestItem: ${config.id}`)
-            const targetRepo = this.getRepository(config)
+            const targetRepo = this._metadata.getRepository(config)
             targetRepo.dispose()
             this._repos.delete(targetRepo)
 
@@ -134,7 +141,7 @@ export class RepositoryManager extends MetadataRepository implements IRepository
                     this.controller.items.delete(workspaceItem.id)
                 }
             } else {
-                const targetId = this.generateConfigTestItemId(workspaceItem, configUri)
+                const targetId = this._generateConfigTestItemId(workspaceItem, configUri)
                 log.debug(`Remove Configuration from the controller: ${targetId}`)
                 this.controller.items.delete(targetId)
             }
@@ -155,30 +162,24 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         log.debug('Successfully registered.')
     }
 
-    private createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
+    private _createWorkspaceTestItem(workspaceFolder: vscode.WorkspaceFolder) {
         const workspaceItem = this.controller.createTestItem(
             `workspace:${workspaceFolder.uri.fsPath}`,
             workspaceFolder.name,
             workspaceFolder.uri
         )
-        this.setMetadata(workspaceItem, {
-            uri: workspaceFolder.uri,
-            isWorkspace: true,
-            isConfigFile: false,
-            isSpecFile: false,
-            isTestcase: false,
-        })
+        this._metadata.createWorkspaceMetadata(workspaceItem, { uri: workspaceFolder.uri })
         return workspaceItem
     }
 
-    private async createWdioConfigTestItem(
+    private async _createWdioConfigTestItem(
         workspaceFolder: vscode.WorkspaceFolder,
         workspaceTestItem: vscode.TestItem,
         wdioConfigPath: string
     ) {
         const uri = convertPathToUri(wdioConfigPath)
         const configItem = this.controller.createTestItem(
-            this.generateConfigTestItemId(workspaceTestItem, uri),
+            this._generateConfigTestItemId(workspaceTestItem, uri),
             basename(wdioConfigPath),
             uri
         )
@@ -186,31 +187,25 @@ export class RepositoryManager extends MetadataRepository implements IRepository
         workspaceTestItem.children.add(configItem)
         this._wdioConfigTestItems.push(configItem)
 
-        const repo = new TestRepository(
+        const repository = new TestRepository(
             this.configManager,
             this.controller,
             wdioConfigPath,
             configItem,
-            this.workerManager,
+            this._workerManager,
             workspaceFolder
         )
-        this._repos.add(repo)
+        this._repos.add(repository)
 
         configItem.description = relative(workspaceTestItem.uri!.fsPath, dirname(wdioConfigPath))
 
-        this.setMetadata(configItem, {
-            uri,
-            isWorkspace: false,
-            isConfigFile: true,
-            isSpecFile: false,
-            isTestcase: false,
-            repository: repo,
-            runProfiles: createRunProfile.call(this, configItem, !this.isCreatedDefaultProfile),
-        })
+        const runProfiles = createRunProfile.call(this, configItem, !this._isCreatedDefaultProfile)
+
+        this._metadata.createWdioConfigFileMetadata(configItem, { uri, repository, runProfiles })
         return configItem
     }
 
-    private generateConfigTestItemId(workspaceTestItem: vscode.TestItem, configUri: vscode.Uri) {
+    private _generateConfigTestItemId(workspaceTestItem: vscode.TestItem, configUri: vscode.Uri) {
         return [workspaceTestItem.id, `config:${configUri.fsPath}`].join(TEST_ID_SEPARATOR)
     }
 
@@ -218,40 +213,29 @@ export class RepositoryManager extends MetadataRepository implements IRepository
      * Refresh WebdriverIO tests
      */
     public async refreshTests(): Promise<void> {
-        return vscode.window.withProgress(
-            {
-                location: vscode.ProgressLocation.Notification,
-                title: 'Reloading WebdriverIO tests...',
-                cancellable: false,
-            },
-            async () => {
-                try {
-                    if (!this._isInitialized) {
-                        await this.initialize()
-                    }
-                    for (const repo of this._repos) {
-                        // Clear existing tests
-                        repo.clearTests()
-                        // Discover tests again
-                        await repo.discoverAllTests()
-                    }
-
-                    vscode.window.showInformationMessage('WebdriverIO tests reloaded successfully')
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error)
-                    log.error(`Failed to reload tests: ${errorMessage}`)
-                    vscode.window.showErrorMessage(`Failed to reload WebdriverIO tests: ${errorMessage}`)
-                }
+        this.controller.items.replace([this._loadingTestItem])
+        try {
+            if (!this._isInitialized) {
+                await this.initialize()
             }
-        )
+            await Promise.all(
+                this.repos.map(async (repo) => {
+                    return await repo.discoverAllTests()
+                })
+            )
+
+            this.registerToTestController()
+            await this._workerManager.reorganize(this.configManager.getWdioConfigPaths())
+        } catch (error) {
+            this.controller.items.replace([])
+            const errorMessage = error instanceof Error ? error.message : String(error)
+            log.error(`Failed to reload tests: ${errorMessage}`)
+            vscode.window.showErrorMessage(`Failed to reload WebdriverIO tests: ${errorMessage}`)
+        }
     }
 
     public async dispose() {
-        await Promise.all(
-            Array.from(this._repos).map(async (repo) => {
-                await repo.dispose()
-            })
-        )
+        await Promise.all(this.repos.map(async (repo) => repo.dispose()))
         this._repos.clear()
         this._workspaceTestItems = []
         this._wdioConfigTestItems = []
