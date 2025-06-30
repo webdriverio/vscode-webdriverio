@@ -5,6 +5,10 @@ on:
     # Make this a reusable workflow, no value needed
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows
     inputs:
+      os:
+        description: 'OS for run'
+        type: string
+        default: "['ubuntu-latest', 'windows-latest', 'macos-latest']"
       scenario:
         description: 'Smoke scenario'
         type: string
@@ -19,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         node-version: ['20']
-        os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+        os: ${{ fromJSON(inputs.os) }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: 👷 Checkout

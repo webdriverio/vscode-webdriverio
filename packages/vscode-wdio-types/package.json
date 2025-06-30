@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@vscode-wdio/constants": "workspace:*",
-    "@wdio/types": "^9.13.0"
+    "@wdio/types": "^9.16.2"
   },
   "dependencies": {
     "@types/ws": "^8.18.1"

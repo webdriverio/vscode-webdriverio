@@ -3,7 +3,7 @@ import * as os from 'node:os'
 import { dirname, isAbsolute, join, resolve } from 'node:path'
 
 import { getLauncherInstance } from './cli.js'
-import { getTempConfigCreator, isWindows } from './utils.js'
+import { getTempConfigCreator, isFixedWdio, isWindows } from './utils.js'
 import type { ResultSet } from '@vscode-wdio/types/reporter'
 import type { RunTestOptions, TestResultData } from '@vscode-wdio/types/server'
 import type { ILogger } from '@vscode-wdio/types/utils'
@@ -15,6 +15,13 @@ const VSCODE_REPORTER_PATH = resolve(__dirname, 'reporter.cjs')
 export async function runTest(this: WorkerMetaContext, options: RunTestOptions): Promise<TestResultData> {
     const outputDir = await getOutputDir.call(this)
     let configFile: string | undefined = undefined
+
+    // To avoid this issue, We use temporary configuration files
+    // only on Windows platforms and for versions of @wdio/utils prior to 9.15.0.
+    // https://github.com/webdriverio/webdriverio/issues/14532
+    // This issue was fixed by this PR.
+    // https://github.com/webdriverio/webdriverio/pull/14565
+    const useTempConfigFile = isWindows() && !(await isFixedWdio.call(this, options.configPath))
     try {
         // Prepare launcher options
         const wdioArgs: RunCommandArguments = {
@@ -42,16 +49,14 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
             await fs.mkdir(logDir, { recursive: true })
         }
 
-        if (isWindows()) {
+        if (useTempConfigFile) {
             const creator = await getTempConfigCreator(this)
             configFile = await creator(options.configPath, outputDir.json!)
             options.configPath = configFile
             wdioArgs.configPath = configFile
-        }
-
-        // The `stdout` must be true because the name of the logger is
-        // the name of the file and the initialization of Write Stream will fail.
-        if (!isWindows()) {
+        } else {
+            // The `stdout` must be true because the name of the logger is
+            // the name of the file and the initialization of Write Stream will fail.
             wdioArgs.reporters = [[VSCODE_REPORTER_PATH, { stdout: true, outputDir: outputDir.json }]]
         }
 
@@ -122,7 +127,7 @@ export async function runTest(this: WorkerMetaContext, options: RunTestOptions):
         if (outputDir.json) {
             await removeResultDir(this.log, outputDir.json)
         }
-        if (isWindows() && configFile) {
+        if (useTempConfigFile && configFile) {
             try {
                 this.log.debug(`Remove temp config file...: ${configFile}`)
                 await fs.rm(configFile, { recursive: true, force: true })
