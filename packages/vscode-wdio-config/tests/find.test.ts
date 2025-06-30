@@ -64,12 +64,6 @@ describe('findWdioConfig', () => {
         // Setup
         const accessibleFile = path.join(mockWorkspaceRoot, 'wdio.conf.js')
 
-        // vi.mocked(vscode.workspace.findFiles).mockImplementation(async (p:vscode.GlobPattern)=>{
-        //     if (p.toString() === accessibleFile) {
-        //         return [vscode.Uri.file(p.toString())]
-        //     }
-        //     return []
-        // })
         vi.mocked(vscode.workspace.findFiles).mockImplementation(async (p: vscode.GlobPattern) => {
             return [vscode.Uri.file(p.toString())]
         })
