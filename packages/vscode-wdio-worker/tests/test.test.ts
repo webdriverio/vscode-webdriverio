@@ -8,6 +8,7 @@ import { getLauncherInstance } from '../src/cli.js'
 import { runTest } from '../src/test.js'
 import { getTempConfigCreator, isWindows } from '../src/utils.js'
 import type { Dirent } from 'node:fs'
+import type { RunTestOptions } from '@vscode-wdio/types'
 import type { WorkerMetaContext } from '@vscode-wdio/types/worker'
 
 // Mock dependencies
@@ -25,6 +26,7 @@ vi.mock('../src/cli.js', () => {
 vi.mock('../src/utils.js', () => {
     return {
         isWindows: vi.fn(() => false),
+        isFixedWdio: vi.fn(() => false),
         getTempConfigCreator: vi.fn(),
     }
 })
@@ -42,11 +44,15 @@ describe('runTest', () => {
     } as unknown as WorkerMetaContext
 
     const mockConfigFile = '/path/to/wdio.conf.js'
-    const mockOptions = {
+    const mockEnv = {
+        paths: [],
+        override: false,
+    }
+    const mockOptions: RunTestOptions = {
         configPath: mockConfigFile,
         specs: ['test.spec.js'],
         grep: 'test pattern',
-        env: { paths: [], override: false },
+        env: mockEnv,
     }
 
     // Mock temporary directories and files
@@ -142,7 +148,7 @@ describe('runTest', () => {
         // Arrange
         const optionsNoSpecs = {
             configPath: '/path/to/wdio.conf.js',
-            env: { paths: [], override: false },
+            env: mockEnv,
         }
 
         // Act
@@ -157,7 +163,7 @@ describe('runTest', () => {
         const optionsNoGrep = {
             configPath: '/path/to/wdio.conf.js',
             specs: ['test.spec.js'],
-            env: { paths: [], override: false },
+            env: mockEnv,
         }
 
         // Act
