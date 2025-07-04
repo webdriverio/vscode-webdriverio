@@ -3,6 +3,7 @@ import url from 'node:url'
 
 import { browser, expect } from '@wdio/globals'
 import shell from 'shelljs'
+import { sleep, type SideBarView, type Workbench } from 'wdio-vscode-service'
 
 import {
     STATUS,
@@ -14,8 +15,6 @@ import {
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
-
-import type { SideBarView, Workbench } from 'wdio-vscode-service'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..', '..')
@@ -85,20 +84,24 @@ describe('VS Code Extension Testing (Update config)', function () {
 
         // Emulate the changing configuration
         shell.cp('-f', afterConfig, beforeConfig)
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await sleep(1500)
         await browser.waitUntil(
             async () => {
-                if (!(await items[0].isExpanded())) {
-                    await items[0].expand()
-                }
+                try {
+                    if (!(await items[0].isExpanded())) {
+                        await items[0].expand()
+                    }
 
-                const children = await items[0].getChildren()
-                const target = children[0]
-                if (!target) {
+                    const children = await items[0].getChildren()
+                    const target = children[0]
+                    if (!target) {
+                        return false
+                    }
+                    const regex = new RegExp('after.test.ts')
+                    return regex.test(await target.getLabel())
+                } catch {
                     return false
                 }
-                const regex = new RegExp('after.test.ts')
-                return regex.test(await target.getLabel())
             },
             { timeoutMsg: 'The label "after.test.ts" is not found.' }
         )
