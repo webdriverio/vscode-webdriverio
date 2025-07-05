@@ -11,6 +11,19 @@
 
 ---
 
+## v0.4.2 (2025-07-05)
+
+#### :nail_care: Polish
+
+- `vscode-wdio-config`, `vscode-webdriverio`
+    - [#77](https://github.com/webdriverio/vscode-webdriverio/pull/77) chore: use vscode.glob instead of glob ([@mato533](https://github.com/mato533))
+- `vscode-wdio-reporter`, `vscode-wdio-types`, `vscode-wdio-worker`, `vscode-webdriverio`
+    - [#76](https://github.com/webdriverio/vscode-webdriverio/pull/76) feat: Standardization of test execution methods in Windows ([@mato533](https://github.com/mato533))
+
+#### Committers: 1
+
+- [@mato533](https://github.com/mato533)
+
 ## v0.4.1 (2025-06-28)
 
 #### :nail_care: Polish
