@@ -38,20 +38,20 @@ function defineSpecs(target: TestTargets) {
 const specs = defineSpecs(target)
 
 class ScreenshotNameGenerator {
-    private readonly _counterMap = new Map<string, number>
+    private readonly _counterMap = new Map<string, number>()
 
-    private _generateMapId(file:string, title:string) {
+    private _generateMapId(file: string, title: string) {
         return `${file}-${title}`
     }
 
-    getFilename(file:string, title:string) {
+    getFilename(file: string, title: string) {
         const mapId = this._generateMapId(file, title)
         const counter = this._counterMap.get(mapId)
         const newCounter = typeof counter === 'undefined' ? 0 : counter + 1
         this._counterMap.set(mapId, newCounter)
-        const _title =  title
+        const _title = title
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join('')
         return `screenshot-${path.basename(file)}-${_title}-${newCounter}.png`
     }
