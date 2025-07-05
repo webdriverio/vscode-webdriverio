@@ -13,7 +13,7 @@ jobs:
         with:
           repo-token: ${{ secrets.WDIO_BOT_GITHUB_TOKEN }}
           only-issue-labels: 'Reproducible Example Missing'
-          stale-issue-label: ':classical_building: Stale'
+          stale-issue-label: 'Stale :classical_building:'
           days-before-close: 0
           days-before-stale: 7
           close-issue-message: >

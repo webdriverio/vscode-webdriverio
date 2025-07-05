@@ -28,6 +28,7 @@
     "wdio": "wdio run ./wdio.conf.ts"
   },
   "devDependencies": {
+    "@actions/core": "^1.11.1",
     "@types/semver": "^7.7.0",
     "@wdio/cli": "^9.16.2",
     "@wdio/globals": "^9.16.2",

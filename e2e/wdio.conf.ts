@@ -1,6 +1,7 @@
 import * as path from 'node:path'
 import * as url from 'node:url'
 
+import * as core from '@actions/core'
 import { minVersion } from 'semver'
 import shell from 'shelljs'
 
@@ -10,6 +11,7 @@ import type { Frameworks } from '@wdio/types'
 type TestTargets = 'workspace' | 'mocha' | 'jasmine' | 'cucumber'
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url))
+const prjRoot = path.resolve(__dirname, '..')
 const target = (process.env.VSCODE_WDIO_E2E_SCENARIO || 'mocha') as TestTargets
 
 const minimumVersion = minVersion(pkg.engines.vscode)?.version || 'stable'
@@ -34,7 +36,28 @@ function defineSpecs(target: TestTargets) {
 }
 
 const specs = defineSpecs(target)
-let screenshotCount = 0
+
+class ScreenshotNameGenerator {
+    private readonly _counterMap = new Map<string, number>
+
+    private _generateMapId(file:string, title:string) {
+        return `${file}-${title}`
+    }
+
+    getFilename(file:string, title:string) {
+        const mapId = this._generateMapId(file, title)
+        const counter = this._counterMap.get(mapId)
+        const newCounter = typeof counter === 'undefined' ? 0 : counter + 1
+        this._counterMap.set(mapId, newCounter)
+        const _title =  title
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join('')
+        return `screenshot-${path.basename(file)}-${_title}-${newCounter}.png`
+    }
+}
+
+const ssNameGenerator = new ScreenshotNameGenerator()
 
 export function createBaseConfig(workspacePath: string, userSettings = {}): WebdriverIO.Config {
     const resolvedUserSettings = Object.assign(
@@ -80,16 +103,24 @@ export function createBaseConfig(workspacePath: string, userSettings = {}): Webd
             require: ['assertions/index.ts'],
         },
         before: async function (_capabilities, _specs, _browser) {
-            if (process.platform === 'linux') {
-                const result = shell.exec('xdotool search --onlyvisible --name code')
+            // For Github Actions on Linux, Maximize the screen by GUI approach
+            // See also .github/actions/set-screen-resolution/action.yml
+            if (process.env.GITHUB_ACTIONS === 'true' && process.platform === 'linux') {
+                const result = shell.exec('xdotool search --onlyvisible --name code', { silent: true })
                 const windowId = result.stdout.trim()
                 shell.exec(`xdotool windowmove ${windowId} 0 0`, { silent: true })
                 shell.exec(`xdotool windowsize ${windowId} 100% 100%`, { silent: true })
             }
         },
-        afterTest: async function (_test: unknown, _context: unknown, result: Frameworks.TestResult) {
+        afterTest: async function (test: Frameworks.Test, _context: unknown, result: Frameworks.TestResult) {
             if (!result.passed) {
-                await browser.saveScreenshot(path.join(outputDir, `screenshot-${screenshotCount++}.png`))
+                await browser.saveScreenshot(path.join(outputDir, ssNameGenerator.getFilename(test.file, test.title)))
+            }
+            if (process.env.GITHUB_ACTIONS === 'true' && result.retries.attempts === 1) {
+                core.warning(`Retried: ${test.title}`, {
+                    title: 'Test was retried.',
+                    file: path.relative(prjRoot, test.file),
+                })
             }
         },
     }

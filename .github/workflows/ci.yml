@@ -77,7 +77,7 @@ jobs:
 
   smoke-retro-wdio:
     name: Smoke - Run test with temporary configuration file when lower version of WDIO
-    needs: [lint, build, e2e]
+    needs: [lint, build, unit, license-check, typecheck, e2e]
     uses: ./.github/workflows/ci-smoke.yml
     with:
       os: "['windows-latest']"
