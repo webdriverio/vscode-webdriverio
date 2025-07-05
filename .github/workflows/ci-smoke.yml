@@ -15,7 +15,7 @@ on:
 
 env:
   TURBO_TELEMETRY_DISABLED: 1
-  FORCE_COLOR: 1
+  FORCE_COLOR: 3
 
 jobs:
   smoke:
