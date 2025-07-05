@@ -11,6 +11,7 @@ import {
     collapseAllTests,
     getTestingSection,
     openTestingView,
+    resetFileChange,
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
@@ -43,7 +44,7 @@ describe('VS Code Extension Testing (Update config)', function () {
     })
 
     after(function () {
-        shell.exec(`git checkout ${beforeConfig}`)
+        resetFileChange(beforeConfig)
     })
 
     it('should be resolved the configuration file with no spec files', async function () {
@@ -99,7 +100,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
-        shell.exec(`git checkout ${beforeConfig}`)
+        resetFileChange(beforeConfig)
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
         await clickTreeItemButton(browser, items[0], 'Run Test')

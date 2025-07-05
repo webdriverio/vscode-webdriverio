@@ -11,6 +11,7 @@ import {
     collapseAllTests,
     getTestingSection,
     openTestingView,
+    resetFileChange,
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
@@ -47,7 +48,7 @@ describe('VS Code Extension Testing (Update config)', function () {
     })
 
     after(function () {
-        shell.exec(`git checkout ${spec.before}`)
+        resetFileChange(spec.before)
     })
 
     it('should be resolved the no tests after spec file is changed with invalid syntax', async function () {
@@ -175,7 +176,7 @@ describe('VS Code Extension Testing (Update config)', function () {
         const testingSection = await getTestingSection(sideBarView.getContent())
         const items = await testingSection.getVisibleItems()
 
-        shell.exec(`git checkout ${spec.before}`)
+        resetFileChange(spec.before)
         await new Promise((resolve) => setTimeout(resolve, 1000))
 
         await clickTreeItemButton(browser, items[0], 'Run Test')

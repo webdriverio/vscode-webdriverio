@@ -12,6 +12,7 @@ import {
     collapseAllTests,
     getTestingSection,
     openTestingView,
+    resetFileChange,
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
@@ -44,7 +45,7 @@ describe('VS Code Extension Testing (EnableEnv)', function () {
     })
 
     after(function () {
-        shell.exec(`git checkout ${envPath}`)
+        resetFileChange(envPath)
     })
 
     it('should be resolved the defined tests before run tests', async function () {

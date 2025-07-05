@@ -12,6 +12,7 @@ import {
     collapseAllTests,
     getTestingSection,
     openTestingView,
+    resetFileChange,
     waitForResolved,
     waitForTestStatus,
 } from '../helpers/index.js'
@@ -42,7 +43,7 @@ describe('VS Code Extension Testing (Update config)', function () {
     })
 
     after(function () {
-        shell.exec(`git checkout ${beforeConfig}`)
+        resetFileChange(beforeConfig)
     })
 
     it('should be resolved the defined tests after configuration changed', async function () {

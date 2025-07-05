@@ -1,3 +1,4 @@
+import shell from 'shelljs'
 import { DefaultTreeSection } from 'wdio-vscode-service'
 import type { StatusStrings } from 'assertions/index.ts'
 import type { TreeItem, Workbench, ViewControl, ViewContent, ViewItemAction, ViewTitlePart } from 'wdio-vscode-service'
@@ -120,4 +121,8 @@ export async function collapseAllTests(testingSection: DefaultTreeSection) {
             await item.collapse()
         }
     }
+}
+
+export function resetFileChange(filePath: string) {
+    shell.exec(`git checkout ${filePath}`, { silent: true })
 }
