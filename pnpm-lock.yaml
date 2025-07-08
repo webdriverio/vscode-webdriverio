@@ -302,11 +302,11 @@ importers:
         specifier: ^7.27.5
         version: 7.28.0
       '@cucumber/gherkin':
-        specifier: ^32.1.0
-        version: 32.2.0
+        specifier: ^33.0.0
+        version: 33.0.0
       '@cucumber/messages':
-        specifier: ^27.2.0
-        version: 27.2.0
+        specifier: ^28.0.0
+        version: 28.0.0
       '@vscode-wdio/constants':
         specifier: workspace:*
         version: link:../vscode-wdio-constants
@@ -669,8 +669,8 @@ packages:
   '@cucumber/gherkin@31.0.0':
     resolution: {integrity: sha512-wlZfdPif7JpBWJdqvHk1Mkr21L5vl4EfxVUOS4JinWGf3FLRV6IKUekBv5bb5VX79fkDcfDvESzcQ8WQc07Wgw==}
 
-  '@cucumber/gherkin@32.2.0':
-    resolution: {integrity: sha512-X8xuVhSIqlUjxSRifRJ7t0TycVWyX58fygJH3wDNmHINLg9sYEkvQT0SO2G5YlRZnYc11TIFr4YPenscvdlBIw==}
+  '@cucumber/gherkin@33.0.0':
+    resolution: {integrity: sha512-01+cAGttXsYIQ3xoEFJ8BsfxzppXKPxjz7/FzVv/+uKAVcVQtrcsxU8dAp5Cf+Qu31CWOa4SyB1nMz1ADLnApw==}
 
   '@cucumber/html-formatter@21.10.1':
     resolution: {integrity: sha512-isaaNMNnBYThsvaHy7i+9kkk9V3+rhgdkt0pd6TCY6zY1CSRZQ7tG6ST9pYyRaECyfbCeF7UGH0KpNEnh6UNvQ==}
@@ -703,6 +703,9 @@ packages:
 
   '@cucumber/messages@27.2.0':
     resolution: {integrity: sha512-f2o/HqKHgsqzFLdq6fAhfG1FNOQPdBdyMGpKwhb7hZqg0yZtx9BVqkTyuoNk83Fcvk3wjMVfouFXXHNEk4nddA==}
+
+  '@cucumber/messages@28.0.0':
+    resolution: {integrity: sha512-y/DT0uWK1ODrN+PLPWL9/M/9kW9d4Rivw3P4w7QLsb8EGMXeQ84Cn3uH4/a3U/GOA37OvJwKof4KTjBZ+unxQg==}
 
   '@cucumber/query@13.2.0':
     resolution: {integrity: sha512-S3g4u+2u/vo444bR1xL0+oVZmF8zb9QZ3MoiNF4GjBt6gG7Kf4S3NyJKjGUAQfESTb8oumOR1YMKHbv79FzA5w==}
@@ -6566,6 +6569,10 @@ packages:
     resolution: {integrity: sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==}
     hasBin: true
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
@@ -7206,9 +7213,9 @@ snapshots:
     dependencies:
       '@cucumber/messages': 26.0.1
 
-  '@cucumber/gherkin@32.2.0':
+  '@cucumber/gherkin@33.0.0':
     dependencies:
-      '@cucumber/messages': 27.2.0
+      '@cucumber/messages': 28.0.0
 
   '@cucumber/html-formatter@21.10.1(@cucumber/messages@27.2.0)':
     dependencies:
@@ -7261,6 +7268,13 @@ snapshots:
       class-transformer: 0.5.1
       reflect-metadata: 0.2.2
       uuid: 11.0.5
+
+  '@cucumber/messages@28.0.0':
+    dependencies:
+      '@types/uuid': 10.0.0
+      class-transformer: 0.5.1
+      reflect-metadata: 0.2.2
+      uuid: 11.1.0
 
   '@cucumber/query@13.2.0(@cucumber/messages@27.2.0)':
     dependencies:
@@ -13985,6 +13999,8 @@ snapshots:
   uuid@10.0.0: {}
 
   uuid@11.0.5: {}
+
+  uuid@11.1.0: {}
 
   uuid@8.3.2: {}
 
