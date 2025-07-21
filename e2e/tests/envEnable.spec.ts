@@ -53,6 +53,7 @@ describe('VS Code Extension Testing (EnableEnv)', function () {
         const items = await testingSection.getVisibleItems()
 
         await waitForResolved(browser, items[0])
+        await collapseAllTests(testingSection)
 
         await expect(items).toMatchTreeStructure([
             {
@@ -93,6 +94,7 @@ describe('VS Code Extension Testing (EnableEnv)', function () {
         await clickTreeItemButton(browser, items[0], 'Run Test')
 
         await waitForTestStatus(browser, items[0], STATUS.PASSED)
+        await collapseAllTests(testingSection)
 
         await expect(items).toMatchTreeStructure([
             {
