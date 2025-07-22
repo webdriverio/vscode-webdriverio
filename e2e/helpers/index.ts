@@ -124,5 +124,5 @@ export async function collapseAllTests(testingSection: DefaultTreeSection) {
 }
 
 export function resetFileChange(filePath: string) {
-    shell.exec(`git checkout ${filePath}`, { silent: true })
+    shell.cmd('git', 'checkout', filePath)
 }
