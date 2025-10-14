@@ -36,7 +36,6 @@
     "@wdio/mocha-framework": "^9.16.2",
     "@wdio/spec-reporter": "^9.16.2",
     "@wdio/types": "^9.16.2",
-    "chai": "^5.2.0",
     "expect": "^30.0.0",
     "semver": "^7.7.2",
     "wdio-vscode-service": "^6.1.3",
