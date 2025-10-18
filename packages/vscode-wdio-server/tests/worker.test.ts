@@ -63,7 +63,7 @@ describe('WdioExtensionWorker', () => {
             exitCode: null,
             killed: false,
         }
-        vi.mocked(childProcess.spawn).mockReturnValue(mockChildProcess as any)
+        vi.mocked(childProcess.spawn).mockReturnValue(mockChildProcess)
 
         // Setup HTTP server mock
         mockServer = {
@@ -71,7 +71,7 @@ describe('WdioExtensionWorker', () => {
             unref: vi.fn(),
             close: vi.fn().mockImplementation((cb) => cb && cb(null)),
         }
-        vi.mocked(http.createServer).mockReturnValue(mockServer as any)
+        vi.mocked(http.createServer).mockReturnValue(mockServer)
 
         // Setup WebSocketServer mock
         mockWs = new EventEmitter()

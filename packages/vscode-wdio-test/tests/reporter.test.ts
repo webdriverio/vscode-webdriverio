@@ -120,7 +120,7 @@ describe('TestReporter', () => {
         it('should return true when all tests passed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js') as vscode.TestItem
+            const specTestItem = createMockTestItem(specPath, 'spec.js')
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 2, failed: 0, skipped: 0 })
 
@@ -138,7 +138,7 @@ describe('TestReporter', () => {
         it('should return false when any test failed', () => {
             // Setup
             const specPath = '/path/to/spec.js'
-            const specTestItem = createMockTestItem(specPath, 'spec.js') as vscode.TestItem
+            const specTestItem = createMockTestItem(specPath, 'spec.js')
             const mockSuite = createMockTestSuite('Test Suite')
             const mockResult = createMockResultSet([specPath], [mockSuite], { passed: 1, failed: 1, skipped: 0 })
 
