@@ -10,7 +10,7 @@
     "changelog": "tsx ./src/changelog.ts"
   },
   "devDependencies": {
-    "@actions/core": "^1.11.1",
+    "@actions/core": "^3.0.1",
     "@octokit/rest": "^22.0.0",
     "@types/semver": "^7.7.0",
     "dotenv": "^17.0.0",
