@@ -18,9 +18,9 @@
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/logger": "workspace:*",
     "@vscode-wdio/utils": "workspace:*",
-    "birpc": "^2.3.0",
+    "birpc": "^4.2.0",
     "get-port": "^7.1.0",
-    "which": "^5.0.0",
+    "which": "^7.0.0",
     "ws": "^8.18.1"
   },
   "devDependencies": {
