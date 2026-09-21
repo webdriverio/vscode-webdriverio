@@ -9,7 +9,7 @@
     "wdio": "wdio run ./wdio.conf.ts"
   },
   "devDependencies": {
-    "@cucumber/cucumber": "^12.1.0",
+    "@cucumber/cucumber": "^13.2.1",
     "@types/node": "^20.17.50",
     "@wdio/cli": "^9.16.2",
     "@wdio/cucumber-framework": "^9.16.2",
