@@ -25,12 +25,12 @@
   },
   "dependencies": {
     "@babel/parser": "^7.27.5",
-    "@cucumber/gherkin": "^33.0.0",
-    "@cucumber/messages": "^28.0.0",
+    "@cucumber/gherkin": "^42.0.1",
+    "@cucumber/messages": "^34.2.1",
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/utils": "workspace:*",
-    "birpc": "^2.3.0",
-    "dotenv": "^17.0.0",
+    "birpc": "^4.2.0",
+    "dotenv": "^18.0.5",
     "import-meta-resolve": "^4.1.0",
     "recast": "^0.23.11",
     "ws": "^8.18.1"
