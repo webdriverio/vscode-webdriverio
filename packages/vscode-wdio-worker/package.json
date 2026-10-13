@@ -24,13 +24,13 @@
     "clean": "shx rm -rf out dist coverage"
   },
   "dependencies": {
-    "@babel/parser": "^7.27.5",
-    "@cucumber/gherkin": "^33.0.0",
-    "@cucumber/messages": "^28.0.0",
+    "@babel/parser": "^8.0.7",
+    "@cucumber/gherkin": "^42.0.1",
+    "@cucumber/messages": "^34.2.1",
     "@vscode-wdio/constants": "workspace:*",
     "@vscode-wdio/utils": "workspace:*",
-    "birpc": "^2.3.0",
-    "dotenv": "^17.0.0",
+    "birpc": "^4.2.0",
+    "dotenv": "^18.0.7",
     "import-meta-resolve": "^4.1.0",
     "recast": "^0.23.11",
     "ws": "^8.18.1"
@@ -38,6 +38,6 @@
   "devDependencies": {
     "@types/ws": "^8.18.1",
     "@vscode-wdio/types": "workspace:*",
-    "@wdio/cli": "^9.16.2"
+    "@wdio/cli": "^10.0.2"
   }
 }
