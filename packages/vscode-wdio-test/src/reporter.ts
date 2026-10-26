@@ -94,6 +94,20 @@ export class TestReporter {
             this._processTest(test, suiteItem)
         }
 
+        const failedHook = suite.hooks?.find((hook) => Boolean(hook.error) || hook.state === 'failed')
+        if (failedHook) {
+            const reportedTestNames = new Set(suite.tests.map((t) => t.name))
+            const nestedSuiteNames = new Set((suite.suites || []).map((s) => s.name))
+            const hookMessage = new vscode.TestMessage(
+                failedHook.error ? `Hook failed: ${failedHook.error.message}` : `Hook failed: ${failedHook.title}`
+            )
+            suiteItem.children.forEach((child) => {
+                if (!reportedTestNames.has(child.label) && !nestedSuiteNames.has(child.label)) {
+                    this._run.failed(child, hookMessage)
+                }
+            })
+        }
+
         // Process nested suites if any
         if (suite.suites && suite.suites.length > 0) {
             for (const nestedSuite of suite.suites) {
@@ -149,9 +163,19 @@ export class TestReporter {
      * @param suiteResult The suite result from WebdriverIO
      */
     private _updateSuiteStatus(suiteItem: vscode.TestItem, suiteResult: TestSuite): void {
-        const hasFailedTests = suiteResult.tests.some((test) => test.state === 'failed')
+        const failedHook = suiteResult.hooks?.find((hook) => Boolean(hook.error) || hook.state === 'failed')
+        if (failedHook) {
+            const message = new vscode.TestMessage(
+                failedHook.error ? `Hook failed: ${failedHook.error.message}` : `Hook failed: ${failedHook.title}`
+            )
+            this._run.failed(suiteItem, message, suiteResult.duration)
+            return
+        }
 
-        if (hasFailedTests || suiteResult.tests.length > 0) {
+        const hasFailedTests = suiteResult.tests.some((test) => test.state === 'failed')
+        const hasNestedSuites = Boolean(suiteResult.suites && suiteResult.suites.length > 0)
+
+        if (hasFailedTests || suiteResult.tests.length > 0 || hasNestedSuites) {
             // Set the suite as failed but without displaying the error message
             // This will mark the suite as failed in the UI but won't show the red error message
             // or alternatively, if you want to indicate failure in the UI but without error text:

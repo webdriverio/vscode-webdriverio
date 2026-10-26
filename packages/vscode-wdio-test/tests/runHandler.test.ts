@@ -84,6 +84,7 @@ describe('Run Handler', () => {
         // Setup default mocks
         mockTestRun = {
             started: vi.fn(),
+            passed: vi.fn(),
             failed: vi.fn(),
             appendOutput: vi.fn(),
             end: vi.fn(),
@@ -323,6 +324,48 @@ describe('Run Handler', () => {
 
             // Verify
             expect(mockTestRun.failed).toHaveBeenCalled()
+            expect(mockTestRun.end).toHaveBeenCalled()
+        })
+
+        it('should mark test item and children as failed when runner finishes with success=false and no suite results', async () => {
+            const mockSpecTestData = createTestItem('spec1', {
+                isSpecFile: true,
+                repository: { getWorker: vi.fn(), framework: 'mocha' },
+            })
+            const mockChildTestData = createTestItem(
+                'test1',
+                {
+                    isTestcase: true,
+                    repository: { getWorker: vi.fn(), framework: 'mocha' },
+                },
+                mockSpecTestData.testItem
+            )
+            mockSpecTestData.testItem.children.forEach = vi.fn().mockImplementation((callback) => {
+                callback(mockChildTestData.testItem)
+            })
+            testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
+            testItemMap.set(mockChildTestData.testItem, mockChildTestData.metadata)
+
+            const request = {
+                include: [mockSpecTestData.testItem],
+            } as unknown as vscode.TestRunRequest
+
+            vi.mocked(TestRunner.prototype.run).mockResolvedValue({
+                success: false,
+                detail: [
+                    {
+                        specs: ['/path/to/spec.js'],
+                        suites: [],
+                        state: { passed: 0, failed: 1, skipped: 0 },
+                    },
+                ],
+                log: 'Session creation failed',
+            } as any)
+
+            await runHandler(request, mockToken)
+
+            expect(mockTestRun.failed).toHaveBeenCalledWith(mockSpecTestData.testItem, expect.any(Object))
+            expect(mockTestRun.failed).toHaveBeenCalledWith(mockChildTestData.testItem, expect.any(Object))
             expect(mockTestRun.end).toHaveBeenCalled()
         })
     })

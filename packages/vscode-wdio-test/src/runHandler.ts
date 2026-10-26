@@ -92,7 +92,30 @@ export function createHandler(
 
                 if (result.detail && result.detail.length > 0) {
                     // Update test status based on actual test results
-                    reporter.updateTestStatus(result.detail)
+                    const allPassed = reporter.updateTestStatus(result.detail)
+                    const hasAnySuites = result.detail.some((r) => Array.isArray(r.suites) && r.suites.length > 0)
+                    if (result.success === false && !hasAnySuites) {
+                        markTestsAsFailed(
+                            run,
+                            testData.testItem,
+                            new vscode.TestMessage(result.errorMessage || 'Test execution failed')
+                        )
+                    } else if (metadata.isConfigFile && hasAnySuites) {
+                        if (allPassed && result.success !== false) {
+                            run.passed(testData.testItem)
+                        } else {
+                            run.failed(
+                                testData.testItem,
+                                new vscode.TestMessage(result.errorMessage || 'One or more tests failed')
+                            )
+                        }
+                    }
+                } else if (result.success === false) {
+                    markTestsAsFailed(
+                        run,
+                        testData.testItem,
+                        new vscode.TestMessage(result.errorMessage || 'Test execution failed')
+                    )
                 }
                 if ('log' in result && result.log) {
                     run.appendOutput(result.log.replace(/\n/g, '\r\n'))
@@ -102,7 +125,7 @@ export function createHandler(
                 }
             } catch (e) {
                 // Runtime error handling
-                run.failed(test, new vscode.TestMessage(`Runtime error: ${(e as Error).message}`))
+                markTestsAsFailed(run, test, new vscode.TestMessage(`Runtime error: ${(e as Error).message}`))
             }
         }
 
@@ -117,6 +140,17 @@ export function createHandler(
 function markTestsAsRunning(run: vscode.TestRun, test: vscode.TestItem): void {
     run.started(test)
     test.children.forEach((child) => markTestsAsRunning(run, child))
+}
+
+/**
+ * Mark a test and all its children as failed
+ * @param run The current test run
+ * @param test The test item to mark as failed
+ * @param message The failure message
+ */
+function markTestsAsFailed(run: vscode.TestRun, test: vscode.TestItem, message: vscode.TestMessage): void {
+    run.failed(test, message)
+    test.children?.forEach((child) => markTestsAsFailed(run, child, message))
 }
 
 function conversionCucumberStep(this: RepositoryManager, testItem: vscode.TestItem) {

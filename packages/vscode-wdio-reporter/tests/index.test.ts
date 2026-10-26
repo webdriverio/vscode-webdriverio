@@ -339,6 +339,7 @@ describe('VscodeJsonReporter', () => {
                             tests: [
                                 { name: 'Nested Test 1', state: 'passed', duration: 15, start: new Date() },
                                 { name: 'Nested Test 2', state: 'skipped', duration: 0, start: new Date() },
+                                { name: 'Nested Test 3', state: 'pending', duration: 0, start: new Date() },
                             ],
                             hooks: [],
                             suites: [],
@@ -355,8 +356,30 @@ describe('VscodeJsonReporter', () => {
         expect(resultSet.state).toEqual({
             passed: 2, // 1 from Suite 1 + 1 from Nested Suite 1
             failed: 2, // 1 test from Suite 1 + 1 hook from Suite 1
-            skipped: 1, // 1 from Nested Suite 1
+            skipped: 2, // 1 skipped + 1 pending from Nested Suite 1
         })
+    })
+
+    it('should record runner failures in state.failed when no suites executed', () => {
+        const runner = {
+            cid: 'worker-0',
+            start: new Date('2023-01-01'),
+            end: new Date('2023-01-01T00:05:00'),
+            failures: 1,
+            capabilities: { browserName: 'chrome' },
+            specs: ['test.js'],
+            config: {
+                framework: 'mocha',
+                mochaOpts: { timeout: 10000 },
+            },
+        } as unknown as RunnerStats
+
+        reporter.getOrderedSuites = vi.fn().mockReturnValue([])
+        reporter.createNestedStructure = vi.fn().mockReturnValue([])
+
+        const result = (reporter as any).prepareJson(runner)
+
+        expect(result.state).toEqual({ passed: 0, failed: 1, skipped: 0 })
     })
 
     it('should prepare JSON result correctly', () => {

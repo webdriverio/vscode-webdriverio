@@ -332,6 +332,42 @@ describe('TestReporter', () => {
             // Verify
             expect(mockTestRun.passed).toHaveBeenCalledWith(suiteItem, 500)
         })
+
+        it('should mark parent suite as passed when it contains only nested suites', () => {
+            const nestedSuite = createMockTestSuite('Nested', [createMockTest('Test 1', 'passed', 100)], [], 200)
+            const parentSuiteItem = createMockTestItem('parent', 'Parent Suite')
+            const parentSuite = createMockTestSuite('Parent Suite', [], [nestedSuite], 300)
+
+            ;(testReporter as any)._updateSuiteStatus(parentSuiteItem, parentSuite)
+
+            expect(mockTestRun.passed).toHaveBeenCalledWith(parentSuiteItem, 300)
+        })
+
+        it('should mark suite and unexecuted child tests as failed when a suite hook fails', () => {
+            const childTest1 = createMockTestItem('test1', 'Test 1')
+            const childTest2 = createMockTestItem('test2', 'Test 2')
+            const suiteItem = createMockTestItem('suite', 'Suite', [childTest1, childTest2])
+            const parentItem = createMockTestItem('parent', 'Parent', [suiteItem])
+
+            const mockSuite = {
+                ...createMockTestSuite('Suite', [], [], 250),
+                hooks: [
+                    {
+                        title: '"before all" hook',
+                        state: 'failed',
+                        duration: 50,
+                        start: new Date(),
+                        error: { name: 'Error', message: 'Before hook failed' },
+                    },
+                ],
+            } as unknown as TestSuite
+
+            ;(testReporter as any)._processHierarchicalSuite(mockSuite, parentItem)
+
+            expect(mockTestRun.failed).toHaveBeenCalledWith(childTest1, expect.any(vscode.TestMessage))
+            expect(mockTestRun.failed).toHaveBeenCalledWith(childTest2, expect.any(vscode.TestMessage))
+            expect(mockTestRun.failed).toHaveBeenCalledWith(suiteItem, expect.any(vscode.TestMessage), 250)
+        })
     })
 
     describe('updateSpecFileStatus', () => {
