@@ -31,6 +31,14 @@ describe('normalizePath', () => {
         // Verify
         expect(result).to.equal(normalizedPath)
     })
+
+    it('should strip trailing line and range numbers from Cucumber spec paths and URLs', () => {
+        const fileUrlWithRange = `${pathToFileURL(path.join(process.cwd(), 'path', 'to', 'file')).toString()}:10:20`
+        const filePathWithLine = `${path.join(process.cwd(), 'path', 'to', 'file')}:15`
+
+        expect(normalizePath(fileUrlWithRange)).to.equal(normalizedPath)
+        expect(normalizePath(filePathWithLine)).to.equal(normalizedPath)
+    })
 })
 
 describe('convertUriToPath', () => {

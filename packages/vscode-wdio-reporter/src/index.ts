@@ -281,6 +281,10 @@ export default class VscodeJsonReporter extends WDIOReporter {
             this.calculateStateCounts(resultSet)
         }
 
+        if (runner.failures && runner.failures > 0 && resultSet.state.failed === 0) {
+            resultSet.state.failed = runner.failures
+        }
+
         return resultSet
     }
 
@@ -301,7 +305,9 @@ export default class VscodeJsonReporter extends WDIOReporter {
                 // Count test states
                 resultSet.state.passed += suite.tests.filter((test) => test.state === 'passed').length
                 resultSet.state.failed += suite.tests.filter((test) => test.state === 'failed').length
-                resultSet.state.skipped += suite.tests.filter((test) => test.state === 'skipped').length
+                resultSet.state.skipped += suite.tests.filter(
+                    (test) => test.state === 'skipped' || test.state === 'pending'
+                ).length
 
                 // Process nested suites
                 if (suite.suites && suite.suites.length > 0) {

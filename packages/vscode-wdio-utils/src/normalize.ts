@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url'
 import type * as vscode from 'vscode'
 
 export function normalizePath(p: string) {
-    const _specPath = p.startsWith('file://') ? fileURLToPath(p) : p
+    const withoutLineNumbers = p.replace(/:\d+(:\d+)?$/, '')
+    const _specPath = withoutLineNumbers.startsWith('file://') ? fileURLToPath(withoutLineNumbers) : withoutLineNumbers
     return normalize(normalizeDriveLetter(_specPath))
 }
 
