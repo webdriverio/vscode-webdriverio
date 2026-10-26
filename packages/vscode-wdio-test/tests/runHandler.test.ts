@@ -325,6 +325,32 @@ describe('Run Handler', () => {
             expect(mockTestRun.failed).toHaveBeenCalled()
             expect(mockTestRun.end).toHaveBeenCalled()
         })
+
+        it('should mark test as failed when runner returns unsuccessful result without details', async () => {
+            // Setup
+            const mockSpecTestData = createTestItem('spec1', {
+                isSpecFile: true,
+                repository: { getWorker: vi.fn() },
+            })
+            testItemMap.set(mockSpecTestData.testItem, mockSpecTestData.metadata)
+
+            const request = {
+                include: [mockSpecTestData.testItem],
+            } as unknown as vscode.TestRunRequest
+
+            vi.mocked(TestRunner.prototype.run).mockResolvedValue({
+                success: false,
+                errorMessage: 'Session failed to start',
+                detail: [],
+            } as any)
+
+            // Execute
+            await runHandler(request, mockToken)
+
+            // Verify
+            expect(mockTestRun.failed).toHaveBeenCalledWith(mockSpecTestData.testItem, expect.any(Object))
+            expect(mockTestRun.end).toHaveBeenCalled()
+        })
     })
 
     describe('Cucumber step conversion', () => {

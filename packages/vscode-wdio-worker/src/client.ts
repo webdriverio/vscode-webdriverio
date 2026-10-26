@@ -56,6 +56,7 @@ export function createRpcClient(cid: string, url: string) {
             on: (data) => handlerContext.ws.on('message', data),
             serialize: v8.serialize,
             deserialize: (v) => v8.deserialize(Buffer.from(v) as any),
+            timeout: -1,
         })
 
         isConnected = true

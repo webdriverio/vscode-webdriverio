@@ -183,6 +183,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
                     on: (fn) => ws.on('message', fn),
                     serialize: v8.serialize,
                     deserialize: (v) => v8.deserialize(Buffer.from(v) as any),
+                    timeout: -1,
                 })
                 this._workerConnected = true
 
@@ -344,6 +345,7 @@ export class WdioExtensionWorker extends TypedEventEmitter<WdioExtensionWorkerEv
         if (!this.isConnected()) {
             await this.stop()
             await this.start()
+            await this.waitForStart()
         }
     }
 

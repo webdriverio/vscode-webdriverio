@@ -93,6 +93,11 @@ export function createHandler(
                 if (result.detail && result.detail.length > 0) {
                     // Update test status based on actual test results
                     reporter.updateTestStatus(result.detail)
+                } else if (!result.success) {
+                    run.failed(
+                        testData.testItem,
+                        new vscode.TestMessage(result.errorMessage || 'Test execution failed')
+                    )
                 }
                 if ('log' in result && result.log) {
                     run.appendOutput(result.log.replace(/\n/g, '\r\n'))

@@ -31,6 +31,14 @@ describe('normalizePath', () => {
         // Verify
         expect(result).to.equal(normalizedPath)
     })
+
+    it('should strip line numbers from cucumber spec path', () => {
+        const fileUrlWithLines = `${pathToFileURL(path.join(process.cwd(), 'path', 'to', 'file')).toString()}:3:7`
+
+        const result = normalizePath(fileUrlWithLines)
+
+        expect(result).to.equal(normalizedPath)
+    })
 })
 
 describe('convertUriToPath', () => {

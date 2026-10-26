@@ -179,6 +179,11 @@ describe('WdioExtensionWorker', () => {
             const server = vi.mocked(createBirpc).mock.calls[0][0] as ExtensionApi
             expect(server).toHaveProperty('log')
             expect(typeof server.log).toBe('function')
+            expect(vi.mocked(createBirpc).mock.calls[0][1]).toEqual(
+                expect.objectContaining({
+                    timeout: -1,
+                })
+            )
         })
 
         it('should handle connection timeout', async () => {
@@ -364,12 +369,14 @@ describe('WdioExtensionWorker', () => {
 
             const stopSpy = vi.spyOn(worker, 'stop').mockResolvedValue()
             const startSpy = vi.spyOn(worker, 'start').mockResolvedValue()
+            const waitForStartSpy = vi.spyOn(worker, 'waitForStart').mockResolvedValue()
 
             await worker.ensureConnected()
 
-            // Verify stop and start were called
+            // Verify stop, start, and waitForStart were called
             expect(stopSpy).toHaveBeenCalled()
             expect(startSpy).toHaveBeenCalled()
+            expect(waitForStartSpy).toHaveBeenCalled()
         })
 
         it('should do nothing if already connected', async () => {

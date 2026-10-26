@@ -162,6 +162,7 @@ describe('client', () => {
                 on: expect.any(Function),
                 serialize: v8.serialize,
                 deserialize: expect.any(Function),
+                timeout: -1,
             })
         )
     })
