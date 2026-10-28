@@ -99,6 +99,7 @@ jobs:
           pnpm run publish:next
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
           VSCODE_WDIO_PRE_RELEASE_PATCH_NUMBER: ${{ steps.gen-pre-release-ver.outputs.result }}
@@ -109,6 +110,7 @@ jobs:
           pnpm run publish
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
           GITHUB_AUTH: ${{ secrets.GITHUB_TOKEN }}
           VSCODE_WDIO_DRY_RUN: ${{ github.event.inputs.dryRun }}
 

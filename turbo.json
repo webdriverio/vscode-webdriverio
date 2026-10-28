@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["GITHUB_*", "VSCODE_WDIO_*", "VSCE_PAT"],
+  "globalEnv": ["GITHUB_*", "VSCODE_WDIO_*", "VSCE_PAT", "OVSX_PAT"],
   "tasks": {
     "clean": {
       "cache": false
