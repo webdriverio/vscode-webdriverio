@@ -53,7 +53,7 @@
     "@vscode-wdio/types": "workspace:*",
     "@vscode-wdio/utils": "workspace:*",
     "@vscode-wdio/worker": "workspace:*",
-    "@vscode/vsce": "^3.4.2"
+    "@vscode/vsce": "^4.0.0"
   },
   "publisher": "WebdriverIO",
   "homepage": "https://webdriver.io",

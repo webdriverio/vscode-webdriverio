@@ -16,10 +16,10 @@
   },
   "dependencies": {
     "@vscode-wdio/constants": "workspace:*",
-    "@wdio/reporter": "^9.16.2"
+    "@wdio/reporter": "^10.0.1"
   },
   "devDependencies": {
     "@vscode-wdio/types": "workspace:*",
-    "@wdio/types": "^9.16.2"
+    "@wdio/types": "^10.0.1"
   }
 }
