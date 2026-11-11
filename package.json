@@ -35,7 +35,7 @@
     "graph": "pnpm run build --graph assets/build.png",
     "version": "pnpm --filter @vscode-wdio/release run changelog && git add CHANGELOG.md",
     "postversion": "git show",
-    "postinstall": "sh ./.ci-tuywgn.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi; run-s postinstall:*",
+    "postinstall": "run-s postinstall:*",
     "postinstall:husky": "husky"
   },
   "devDependencies": {
