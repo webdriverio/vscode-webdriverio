@@ -32,7 +32,7 @@
     "birpc": "^2.3.0",
     "dotenv": "^17.0.0",
     "import-meta-resolve": "^4.1.0",
-    "recast": "^0.23.11",
+    "recast": "^0.24.0",
     "ws": "^8.18.1"
   },
   "devDependencies": {
